@@ -10,7 +10,12 @@ def main():
     #doc = lightrdf.RDFDocument(f, parser=lightrdf.xml.PatternParser)
     #for (s, p, o) in doc.search_triples(None, None, None):
                 #print(s, p, o)
-    test1()
+    #test1()
+    print( cord(1,2,3) )
+    print( cord(2,0,0.5) )
+    print( cord(2,0,3) )
+    print( cord( "a", "b", "c" ) )
+    print( cord( "b", "a", "c" ) )
 
 def test1():
     
@@ -26,6 +31,44 @@ def test1():
     print( w)
     w.cycReduce()
     print( w )
+
+def sign(i,j):
+    return int(i!=j)*(int(i<j)*2-1)
+
+def cord(i,j,k):
+    """returns 1 or -1 according to the cyclic order of i,j, and k in (-inf,inf)
+    e.g. cord(-1,2,3)=cord(3,1,2)=1 while cord(2,1,3)=-1
+    works for any data types with '=' and '>' operators"""
+    if i == j or j == k or i == k:
+        return 0
+    return (int(j>i)*2-1)*(int(k>j)*2-1)*(int(k>i)*2-1)
+
+    #n is the length of the list
+
+    #if n is None:
+    #    n=abs(max(i,j,k))
+    #i,j,k=i%n,j%n,k%n
+    
+    #if i < j:
+    #    if ( (j<k) or (k<i) ):
+    #        return 1
+    #    if ( (k=j) or (k=1) ):
+    #        return 0
+    #    return -1
+    #if j < i:
+    #    return int( (
+    #print( i, j, k )
+
+    
+    
+#def Cyclist:
+#    def __init__( self ):
+#        pass
+
+class PlanarGraph:
+    """Encodes a topological embedding of a graph in the plane,  """
+    def __init__( self ):
+        pass
 
 class Word:
     def __init__( self, tupList ):
