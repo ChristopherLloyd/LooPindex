@@ -30,6 +30,10 @@ def test3():
     print()
     print( G )
 
+    print( "DFS from v0: " )
+    for edge, vert in G.dfs():
+        print( "edge: ", ALPHABET[ edge-1 ],"     downstream vert: ", vert )
+
     def testReducedWordRep( graph, word, fill ):
         print( "\nOriginal word: ", word )
         print( "Punctures filled: ", fill )
@@ -274,14 +278,23 @@ class SurfaceGraph:
 
     def __str__( self ):
         
-        toRet = "Edge to [left,right] vertices: {"
+        toRet = "Local words around each vertex: \n"
+        for i in range( len( self.wordList ) ):
+            toRet += str( i ) + ": " + str( self.wordList[ i ] ) + "\n"
+        
+
+        toRet += "\nEdge to [left,right] vertices: {"
         for key in self.adjDict:
             toRet += str( ALPHABET[ key - 1] )+ ": " + str( self.adjDict[ key ] )+", "
         toRet = toRet[:-2]+"}\nGlobal cyclic edge order: "
         if self.order is not None:
             toRet += str(Word( self.order ) )
             return toRet
-        return toRet + "None computed"        
+        return toRet + "None computed"   
+
+
+        
+             
 
 class Word:
     def __init__( self, seq ):
@@ -354,8 +367,7 @@ class Word:
         from i (inclusive) to j (exclusive).
         If wrap is False it behaves like list slice (empty if i>=j)
         If wrap is True and i >= j we slice cyclically
-        In fact we obtain the ith shift with i=j
-        Input a j larger than len( self ) to take a "slice to the end" """
+        In fact we obtain the ith shift with i=j"""
         assert( i >= 0 )
         assert( j >= 0 )
         assert( i <= len( self ) )
