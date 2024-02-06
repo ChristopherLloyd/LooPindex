@@ -1,22 +1,42 @@
-import lightrdf
+#import lightrdf
 import gzip
 from random import *
 import traceback
+import warnings
 #import itertools
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyz" # generator alphabet, used for readable output only. Inverses are upper case
 
 def main():
     
-    RDF_FILENAME = 'knotdata/Knots11.rdf.gz'
+    #RDF_FILENAME = 'knotdata/Knots11.rdf.gz'
 
-    f = gzip.open(RDF_FILENAME, 'rb')
+    #f = gzip.open(RDF_FILENAME, 'rb')
     #doc = lightrdf.RDFDocument(f, parser=lightrdf.xml.PatternParser)
     #for (s, p, o) in doc.search_triples(None, None, None):
                 #print(s, p, o)
-    test3()
+    test4()
 
 ####################### TESTS ####################################
+
+
+def test4():
+    
+    trefoil = SurfaceGraph( [[-1],[-3,1],[4,3,2],[-2],[-4]] )
+    trefoil.createCyclicGenOrder()
+    print( trefoil )
+    w=Word( [1,2,3,4] ) #represents the trefoil loop
+    #w2 = Word( [2,2] )
+    #print( w2.naive_primitive_root()[0], w2.naive_primitive_root()[1] )
+    #return
+    w1 = trefoil.reducedWordRep( w, [] )
+    print( pow(w1,2).i(pow( w1, 4 ),trefoil.orderDict ) )
+    return
+    w = Word( [1,4])
+    v = Word( [3,1])
+    
+    print( w.crossval(v,trefoil.orderDict) )
+                           
 
 def test3():
     #G = SurfaceGraph( [[-1], [-3, 1], [3, 2, 4], [-2],[-4]] )
@@ -172,9 +192,10 @@ class SurfaceGraph:
         for key in self.adjDict:
             assert( self.adjDict[key][0] is not None and self.adjDict[key][1] is not None ) # otherwise you've got hanging edges
 
-        # This attribute is used to store a global cyclic order on generators and their inverses
+        # These attributes are used to store a global cyclic order on generators and their inverses
         # How this is calculated depends on the topology of the graph
         self.order = None
+        self.orderDict = None
 
     def createCyclicGenOrder( self ):
         """This function computes a consistent cyclic order on the set
@@ -200,7 +221,14 @@ class SurfaceGraph:
         assert( len( order ) == len( self.adjDict )*2 ) # Otherwise this isn't a tree
 
         self.order = order
-
+                
+        # to optimize cross function, we create a dictionary that allows us to get the index
+        # of an edge or its inverse in O(1) (the information we need to pass to the cross function)
+        orderDict = {}
+        for i in range( len( self.order ) ):
+            orderDict[order[i]]=i
+            
+        self.orderDict = orderDict
 
     def reducedWordRep( self, w, filledPunctures, source = 0 ):
         """Given a word w representing a loop in the punctured surface S carrying self
@@ -222,14 +250,12 @@ class SurfaceGraph:
             assert( type( puncture ) == int )
             assert( puncture >= 0 )
             assert( puncture < len( self.wordList ) )
-            assert( w != puncture )
+            #assert( w.seq != puncture )
             fillDict[ puncture ] = None
 
         copyword = w.copy()
         
         for edge, vert in self.dfs( curVert = source ):
-
-            #print( "edge: ", edge,"     vert: ", vert )
             
             try:
                 fillDict[ vert ] # skip if KeyError; puncture unfilled
@@ -243,7 +269,7 @@ class SurfaceGraph:
                     ind = currInv.seq.index( edge )
                     word = currInv
 
-                replWord = ~word.slice( 0,ind ) / word.slice( ind+1, len(word) )
+                replWord = ~word.wslice( 0,ind ) / word.wslice( ind+1, len(word) )
 
                 copyword = copyword.simpleRewrite( edge, replWord )
                
@@ -290,11 +316,7 @@ class SurfaceGraph:
         if self.order is not None:
             toRet += str(Word( self.order ) )
             return toRet
-        return toRet + "None computed"   
-
-
-        
-             
+        return toRet + "None computed"             
 
 class Word:
     def __init__( self, seq ):
@@ -360,9 +382,19 @@ class Word:
         revseq = []
         for i in range( len( self.seq ) - 1, -1, -1 ):
             revseq.append( -self.seq[i] )
-        return Word( revseq )      
+        return Word( revseq ) 
 
-    def slice( self, i, j, wrap = False ):
+    def __pow__( self, n):
+        assert( type( n ) == int )
+        seq = []
+        for i in range( abs( n ) ):
+            if n > 0:
+                seq += self.seq
+            else:
+                seq += ~self.seq
+        return Word( seq )            
+
+    def wslice( self, i, j, wrap = False ):
         """Returns a new word which is the subword which is the slice of self
         from i (inclusive) to j (exclusive).
         If wrap is False it behaves like list slice (empty if i>=j)
@@ -380,7 +412,143 @@ class Word:
     def shift( self, i ):
         """Returns the cyclically shifted word conjugate to self whose first letter is
         the one at index i in w. Returns a new word and does not modify w"""
-        return self.slice( i, i, wrap = True )
+        return self.wslice( i, i, wrap = True )
+    
+    def naivePrimitiveRoot( self ):
+        """Returns the pair (w, n) such that self = w^n AS FREE WORDS and n is maximal.
+        In particular will not find the root of gw^ng^(-1) for nontrivial g"""
+        for i in range( 1, len( self )//2+1 ):
+            if len( self )%i == 0:
+                seg = self.wslice(0,i)
+                if pow( self.wslice(0,i), len( self )//i )==self:
+                    return seg, len(self)//i
+        return self.copy(), 1
+    
+    def isCyclicPermUpToInverse( self, other ):
+        """Returns true/false iff self and other are cyclic permutatations of each other
+        up to taking inverses (as free words)"""
+        if len( self ) != len( other ):
+            return False
+        for i in range( len( self ) ):
+            if self.shift( i ) == other or self.shift( i ) == ~other:
+                return True
+        return False
+    
+    def si( self, order ):
+        """Counts self intersections of self with respect to a global cylic order"""
+        return self.i( self, order )//2
+    
+    def i( self, other, order, bypassCycReduce = False ):
+        """ Computes the geometric self intersection between self and other relative to
+        a global cyclic order on generators and their inverses occuring in the word
+        EXPECTS WORDS TO BE CYCLICALLY REDUCED
+        set bypassCycReduce to True to skip this check"""
+        
+        # could stand to add more preconditions
+        assert( type( order) == dict )
+        
+        if not bypassCycReduce:
+            self.cycReduce()
+            other.cycReduce()
+        else:
+            warnings.warn( "WARNING: input may not be cyclically reduced") 
+            
+        # first compute primitive roots
+        rootself, powself = self.naivePrimitiveRoot()
+        rootother, powother = other.naivePrimitiveRoot()         
+        
+        # count intersections of primitive roots
+        # can make this faster by skipping ahead if fellow travel is encountered
+        primCrossCount = 0
+        for i in range( len( rootself ) ):
+            for j in range( len( rootother ) ):
+                cross, val = rootself.crossval( rootother, order, i=i, j=j)
+                primCrossCount += abs( cross )/(1 + abs( val ) )
+                
+        crossCount = int( primCrossCount )*powself*powother
+    
+        # if self and other are coprime, we are done
+        if not rootself.isCyclicPermUpToInverse( rootother ):
+            return crossCount
+        
+        # otherwise check if powers disagree
+        if powself != powother:
+            return 2*crossCount
+        
+        # otherwise powers agree and the answer is a little more complicated
+        if powself == powother:
+            return crossCount+2*powself-2
+    
+    def crossval( self, other, order, i=0, j=0 ):
+        """ Words must be cyclically reduced and positive length
+        WORDS MUST BE CYCLICALLY REDUCED
+        returns (cross, val) pair where cross is -1,0 or 1 (right hand rule from self+ to other+)
+        and val is signed length of fellow traveling
+        for convenience, val is set to 0 if periodisations are identical up to inverses """
+        
+        assert( len( self ) > 0 and len( other ) > 0 )
+        
+        # could make this marginally faster by not slicing unless i, j != 0?
+        w1plus = self.shift( i )
+        w1minus = ~w1plus
+
+        w2plus = other.shift( j )
+        w2minus = ~w2plus
+        
+        # define letters that are relevant to consider, p for positive and n for negative
+        p1 = w1plus.seq[0]
+        p2 = w2plus.seq[0]
+        n1 = w1minus.seq[0]
+        n2 = w2minus.seq[0]
+        
+        initcross1 = cord( order[n1], order[n2], order[p1] )
+        initcross2 = cord( order[n1], order[p2], order[p1] )
+        initcross = initcross2 - initcross1
+        
+        if abs( initcross ) == 2: #cross is \pm 1; no fellow traveling
+            return sign( 0, initcross ), 0
+        
+        # if here, there is some fellow traveling
+        
+        if p1 == p2 or n1 == n2: # val>0
+            plusdata = w1plus.initinfo( w2plus )
+            minusdata = w1minus.initinfo( w2minus )
+            initcross1 = cord( order[plusdata[1]], order[plusdata[2]], order[plusdata[3]] )
+            if initcross1 == 0: #equal periodisations at these indices
+                return 0, 0 
+            initcross2 = cord( order[minusdata[1]], order[minusdata[2]], order[minusdata[3]] )
+            return int( initcross1 == initcross2 ), plusdata[0]+minusdata[0]
+        else: # p1==n2 or p2==n1 #val <0
+            plusdata = w1plus.initinfo( w2minus )
+            minusdata = w1minus.initinfo( w2plus )
+            initcross1 = cord( order[plusdata[1]], order[plusdata[2]], order[plusdata[3]] )
+            if initcross1 == 0: #inverse periodisations at these indices
+                return 0, 0 
+            initcross2 = cord( order[minusdata[1]], order[minusdata[2]], order[minusdata[3]] )
+            return -int( initcross1 == initcross2 ), -plusdata[0]-minusdata[0]
+            
+    def initinfo( self, other ):
+        """given two words, returns data about common initial segments of their periodisations
+        as a quadruple (dist, letter1, letter2, letterprev)"""
+        
+        assert( len( self ) > 0 and len( other ) > 0 ) 
+        
+        threshold = max( len( self ), len( other ) ) #can probably halve this but let's be safe
+        letter1 = self.seq[0]
+        letter2 = other.seq[0]
+        letterprev = -self.seq[-1] #ensures you return the right thing from crossval
+        # if there is no fellow traveling in this direction, but there is in the opposite direction
+        length = 0
+        
+        while letter1 == letter2:
+            letterprev = -letter1
+            letter1 = self.seq[ (length+1)%len( self ) ]
+            letter2 = other.seq[ (length+1)%len( other ) ]
+            length += 1
+            if length > threshold: # These words share a root, 
+                break # letter1 and letter2 will be equal so cross will be 0
+        
+        return length, letterprev, letter1, letter2
 
     def simpleRewrite( self, gen, repl ):
         """Iterates over self once, replacing each instance of gen with the Word repl
@@ -405,7 +573,10 @@ class Word:
 
     def copy( self ):
         """Returns a copy of self"""
-        return Word( self.seq )        
+        return Word( self.seq )
+
+    def __eq__( self, other ):
+        return self.seq == other.seq
 
     def __len__( self ):
         return len( self.seq )
