@@ -22,8 +22,62 @@ def main():
 
 def test7():
     link = '9_24'
-    SurfaceTreeFromPD( plinkPD( link ) )
-    snappy.Link( link ).exterior().plink()
+    G = SurfaceGraphFromPD( plinkPD( link ) )
+    print()
+    #print( G )
+    T = G.spanningTree()
+    T.createCyclicGenOrder()
+    print( T )
+    print()
+
+    loop = T.genProd()
+
+    print( "gamma", loop )
+    print( "si(gamma):", loop.si( T.orderDict ) )
+    print()
+
+    loop1 = T.reducedWordRep( loop, [2564] )
+    
+    print( "gamma_{2564}", loop1) 
+    print( "si(gamma_{2564}):", loop1.si( T.orderDict ) )
+    print()
+
+    loop1 = T.reducedWordRep( loop, [2564,18754] )    
+    print( "gamma_{2564,18754}", loop1) 
+    print( "si(gamma_{2564,18754}):", loop1.si( T.orderDict ) )
+    print()
+
+    loop1 = T.reducedWordRep( loop, [2564,18754,70152] )    
+    print( "gamma_{2564,18754,70152}", loop1) 
+    print( "si(gamma_{2564,18754,70152}):", loop1.si( T.orderDict ) )
+    print()
+
+    loop1 = T.reducedWordRep( loop, [2564,18754,70152,132138] )    
+    print( "gamma_{2564,18754,70152,132138}", loop1) 
+    print( "si(gamma_{2564,18754,70152,132138}):", loop1.si( T.orderDict ) )
+    print()
+
+    loop1 = T.reducedWordRep( loop, [2564,18754,70152,132138,37120] )    
+    print( "gamma_{2564,18754,70152,132138,37120}", loop1) 
+    print( "si(gamma_{2564,18754,70152,132138,37120}):", loop1.si( T.orderDict ) )
+    print()
+
+    loop1 = T.reducedWordRep( loop, [2564,18754,70152,132138,37120,41088] )    
+    print( "gamma_{2564,18754,70152,132138,37120,41088}", loop1) 
+    print( "si(gamma_{2564,18754,70152,132138,37120,41088}):", loop1.si( T.orderDict ) )
+    print()
+
+    
+
+    
+
+
+    
+
+
+
+    
+    #snappy.Link( link ).exterior().plink()
     
 
 def test6():
@@ -182,7 +236,7 @@ def plinkPD( link ):
         pd_out.append( cycle )
     return pd_out
 
-def SurfaceTreeFromPD( pd ):
+def SurfaceGraphFromPD( pd ):
     sigma = pd
     coordsDict = {}
     for i in range( len( sigma ) ):
@@ -193,9 +247,9 @@ def SurfaceTreeFromPD( pd ):
                 coordsDict[ sigma[i][j] ] = []
                 coordsDict[ sigma[i][j] ].append( [i,j] )
             
-    print( sigma )
-    print()
-    print( coordsDict )
+    #print( sigma )
+    #print()
+    #print( coordsDict )
 
     def regionFromCoords( coords ):
         startEdge = sigma[coords[0]][coords[1]]
@@ -203,8 +257,8 @@ def SurfaceTreeFromPD( pd ):
         #print( sigma[coords[0]][coords[1]] )
         while True:
             # depending on PD code convention, may need to
-            # subtract or add from indices here
-            # to match clockswise/counterclockwise
+            # subtract or add from index here
+            # to match clockwise/counterclockwise convention
             nextEdge = sigma[coords[0]][(coords[1]-1)%4 ]
             #print( "nextEdge", nextEdge )
             if nextEdge == startEdge:
@@ -229,6 +283,7 @@ def SurfaceTreeFromPD( pd ):
     curRightCoords = coordsDict[1][0]
     
     regDict = {}
+    indexDict = {}
 
     for i in range( 1, len( sigma )*2+1 ): # this is the number of segments in the loop
         # we must check whether regions on left and right of this edge exist yet
@@ -246,21 +301,25 @@ def SurfaceTreeFromPD( pd ):
             eltToIndex = {}
             for j in range( len(curLeftRegion) ):
                 eltToIndex[curLeftRegion[j]] = j
-            regDict[leftkey] = [curLeftRegion,eltToIndex]
+            regDict[leftkey] = curLeftRegion
+            indexDict[leftkey] = eltToIndex
 
         try:
             #regDict[rightkey]
             #print( "hi", regDict[rightkey][0][eltToIndex[i]] )
             pass
-            regDict[rightkey][0][regDict[rightkey][1][i]] *= -1 # right region sees this edge negative
+            regDict[rightkey][indexDict[rightkey][i]] *= -1 # right region sees this edge negative
         except KeyError:
             eltToIndex = {}
             for j in range( len(curRightRegion) ):
                 eltToIndex[curRightRegion[j]] = j
-            regDict[rightkey] = [curRightRegion,eltToIndex]
-            regDict[rightkey][0][regDict[rightkey][1][i]] *= -1
+            regDict[rightkey] = curRightRegion
+            indexDict[rightkey] = eltToIndex
+            regDict[rightkey][indexDict[rightkey][i]] *= -1
+            #regDict[rightkey][0][regDict[rightkey][1][i]] *= -1
 
-        edgeDict[i] = [[ leftkey , rightkey ],[curLeftRegion,curRightRegion]]
+        #edgeDict[i] = [[ leftkey , rightkey ],[curLeftRegion,curRightRegion]]
+        edgeDict[i] = [ leftkey , rightkey ]
 
         if i == len( sigma )* 2:
             break
@@ -270,11 +329,16 @@ def SurfaceTreeFromPD( pd ):
         else:
             curLeftCoords, curRightCoords = coordsDict[i+1][1], coordsDict[i+1][0]
 
-    print()
-    print( edgeDict )
+    #print()
+    #print( edgeDict )
 
-    print()
-    print( regDict )
+    #print()
+    #print( regDict )
+
+    #print()
+    #print( indexDict )
+
+    return SurfaceGraph( regDict, adjDict = edgeDict )
     
 
 """def PlaneTreeFromPlanarDiagram( diag ):
@@ -531,7 +595,31 @@ def binHash( distinctNatList ):
     hashkey = 0
     for elt in distinctNatList:
         hashkey += 2**elt
-    return hashkey       
+    return hashkey
+
+def binSet( num ):
+    """Returns set of indices where a binary number is nonzero"""
+    indexSet = set()
+    i = 0
+    while num != 0:
+        if num%2 != 0:
+            indexSet.add( i )
+        i += 1
+        num >>= 1
+    return indexSet    
+
+def listToDict( a ):
+    """Converts list to dictionary"""
+    toRet = {}
+    for i in range( len( a ) ):
+        toRet[i] = a[i]
+    return toRet
+
+def getKey( a ):
+    """Returns some key from a dictionary, or None if the dict is empty"""
+    for key in a:
+        return key
+    return None    
     
 
 ####################### DATA STRUCTURES ####################################
@@ -543,51 +631,59 @@ class SurfaceGraph:
     and that the complement is a disk."""
     
     
-    def __init__( self, wordList ):
-        """Assumes wordList is list of integers that can be cast to Words.
+    def __init__( self, wordDict, adjDict = None ):
+        """Assumes wordDict is dict of integers that can be cast to Words.
         Each Word specifies a cyclic order
-        of edge labels encountered around the vertex of that Word's index in the list.
-        In case wordList data comes from a spanning tree of a dual graph to a loop in the plane,
-        it is convenient to assume that the vertex 0 corresponds to the region at infinity.
-        Raises an assertion error if the there are any isolated vertices."""
+        of edge labels encountered around the vertex (key) 
+        In case wordDict data comes from a spanning tree of a dual graph to a loop in the plane,
+        Raises an assertion error if the there are any isolated vertices.
+        If wordDict is a list, will create a dictionary with keys corresponding to list
+        indices."""
 
-
+        # if wordDict is a list, cast to dictionary
+        if type( wordDict ) == list:
+            wordDict = listToDict( wordDict )
+            
         # Create dictionary whose keys are positive indices corresponding to edge labels
         # and values are vertex labels [left, right] encountered when crossing this
         # edge in the positive direction (for orientable surfaces, left is index 0 and right is index 1)
         # For nonorientable surface, this choice is not well-defined, but adjDict still contains the
         # adjacency information
 
-        self.adjDict = {}
+        if adjDict is None:
+            self.adjDict = {}
+        else:
+            self.adjDict = adjDict        
+        
+        self.wordDict = {}        
 
-        self.wordList = []
-
-        for i in range( len( wordList ) ):
-            w = Word( wordList[ i ] )
+        for key in wordDict:
+            w = Word( wordDict[ key ] )
             w.cycReduce() # Cyclically reducing all words
             assert( len( w ) > 0 ) # Ruling out isolated vertices
-            for letter in w.seq:
-                try:
-                    self.adjDict[ abs( letter ) ] # check if key error
-                except KeyError:
-                    self.adjDict[ abs( letter ) ] = [ None, None ]
-                finally:
+            if adjDict is None:
+                for letter in w.seq:
+                    try:
+                        self.adjDict[ abs( letter ) ] # check if key error
+                    except KeyError:
+                        self.adjDict[ abs( letter ) ] = [ None, None ]
+                    finally:
 
-                    # if this is a new label, put this vertex on left or right according to sign
-                    if self.adjDict[ abs( letter ) ] == [ None, None ]:                        
-                        self.adjDict[ abs( letter ) ][ not (sign( 0, letter)+1)//2  ] = i
+                        # if this is a new label, put this vertex on left or right according to sign
+                        if self.adjDict[ abs( letter ) ] == [ None, None ]:                        
+                            self.adjDict[ abs( letter ) ][ not (sign( 0, letter)+1)//2  ] = key
 
-                        # otherwise put it in the left over slot
-                    elif self.adjDict[ abs( letter ) ][0] is None:
-                        self.adjDict[ abs( letter ) ][0] = i
-                    elif self.adjDict[ abs( letter ) ][1] is None:
-                        self.adjDict[ abs( letter ) ][1] = i
+                            # otherwise put it in the left over slot
+                        elif self.adjDict[ abs( letter ) ][0] is None:
+                            self.adjDict[ abs( letter ) ][0] = key
+                        elif self.adjDict[ abs( letter ) ][1] is None:
+                            self.adjDict[ abs( letter ) ][1] = key
 
-                        # unless you've seen it twice already
-                    else:
-                        raise( "An edge label occured more than twice" )
+                            # unless you've seen it twice already
+                        else:
+                            raise( "An edge label occured more than twice" )
                     
-            self.wordList.append( w )
+            self.wordDict[key]= w
 
         # Make sure the adjDict has no remaining None labels:
         for key in self.adjDict:
@@ -598,6 +694,43 @@ class SurfaceGraph:
         self.order = None
         self.orderDict = None
 
+    def spanningTree( self, baseRegion = None ):
+        """Returns a new SurfaceGraph formed from a spanning tree of self.
+        Computes tree via dfs from baseRegion"""
+        if baseRegion is None:
+            baseRegion = getKey( self.wordDict )
+
+        edgesToKeep = {}
+
+        for edge, vert in self.dfs( curVert = baseRegion, spanningTree = True ):
+            edgesToKeep[edge]=None
+
+        adjDict = {}
+        for key in self.adjDict:
+            try:
+                edgesToKeep[key]
+                adjDict[key]=self.adjDict[key]
+            except KeyError:
+                pass
+
+        wordDict = {}
+        for key in self.wordDict:
+            newWord = []
+            for letter in self.wordDict[key].seq:
+                try:
+                    edgesToKeep[abs(letter)]
+                    newWord.append( letter )
+                except KeyError:
+                    pass
+            wordDict[key] = newWord
+
+        return SurfaceGraph( wordDict, adjDict = adjDict )
+
+    def genProd( self ):
+        """Returns the word which is the product of all generators
+        in the order they are stored in self.adjDict"""
+        return Word( list( self.adjDict.keys() ) )       
+
     def createCyclicGenOrder( self ):
         """This function computes a consistent cyclic order on the set
         of generators and their inverses, if possible.
@@ -607,14 +740,15 @@ class SurfaceGraph:
         And in this case the cyclic order is found by 'walking around the tree and reading edge labels' """
 
         order = []
-        curVert = 0
-        curEdge = self.wordList[ curVert ].seq[0]
+        startVert = getKey( self.wordDict )
+        curVert = startVert
+        curEdge = self.wordDict[ curVert ].seq[0]
         while True:
             order.append( curEdge )
             curVert = self.adjDict[ abs( curEdge )  ][ (sign( 0, curEdge )+1)//2 ]
-            curWord = self.wordList[ curVert ].seq
+            curWord = self.wordDict[ curVert ].seq
             curEdge = curWord[ ( curWord.index( -curEdge ) + 1 ) % len( curWord ) ] # (*)
-            if curVert == 0:
+            if curVert == startVert:
                 break
 
         # Check that we hit every edge twice to know if we are in a tree
@@ -643,16 +777,22 @@ class SurfaceGraph:
 
         assert( type( w ) == Word )
         assert( type( source ) == int )
-        assert( source >= 0 )
-        assert( source < len( self.wordList ) )
+        #assert( source >= 0 )
+        #assert( source < len( self.wordList ) )
         assert( type( filledPunctures ) == list )
         fillDict = {}
         for puncture in filledPunctures:
             assert( type( puncture ) == int )
-            assert( puncture >= 0 )
-            assert( puncture < len( self.wordList ) )
+            #assert( puncture >= 0 )
+            #assert( puncture < len( self.wordList ) )
             #assert( w.seq != puncture )
             fillDict[ puncture ] = None
+
+        # make sure the source is a key in wordDict
+        try:
+            self.wordDict[source]
+        except KeyError:
+            source = getKey( self.wordDict )
 
         copyword = w.copy()
         
@@ -660,7 +800,7 @@ class SurfaceGraph:
             
             try:
                 fillDict[ vert ] # skip if KeyError; puncture unfilled
-                currWord = self.wordList[ vert ]           
+                currWord = self.wordDict[ vert ]           
             
                 currInv = ~currWord
                 try:
@@ -680,40 +820,70 @@ class SurfaceGraph:
         copyword.freeReduce()
         return copyword
     
-    def dfs( self, curVert=0, visited={} ):
+    def dfs( self, curVert=0, spanningTree = True ):
         """Recursively generates a list of (edge, downsteam vertex) pairs via depth first search from a source vertex,
         where downstream vertex is the endpoint farther from the source,
         visited is a dictionary whose keys are edges that have already been visited, and values
         are terminal vertices to search from. curVert is the current vertex to search from.
-        All edges in the resulting list are positive"""
+        All edges in the resulting list are positive
+        Unless spanningTree is set to to False, only returns pairs with edges
+        from a spanningTree"""
     
         pairList = []
 
-        def dfsHelper( data, curVert=0, visited={} ):                
-            for edge in data.wordList[ curVert ].seq:
+        try:
+            self.wordDict[curVert]
+        except KeyError:
+            curvert = getKey( self.wordDict )
+
+        def dfsHelper( data, curVert, visitedV, visitedE, spanningTree ):                
+            for edge in data.wordDict[ curVert ].seq:
                 try:
                     e = abs( edge )
-                    visited[ e ]
-                    # Base case. If you made it here with no error, time to backtrack.
-                except KeyError:               
-                    visited[ e ] =  data.adjDict[ e ][ not data.adjDict[ e ].index( curVert ) ] # get the other vertex of e 
-                    pairList.append(( e, visited[ e ]))
-                    dfsHelper( data, curVert=visited[ e ], visited=visited )
-        dfsHelper( self, curVert=0, visited = {} )
+                    visitedE[ e ]
+                    # If you made it here, you have seen this edge already
+                    # so do nothing
+                    continue
+                except KeyError:
+                    # get the other vertex of e:         
+                    otherVert = data.adjDict[ e ][ not data.adjDict[ e ].index( curVert ) ]
+                    # if in spanningTree mode, only add the pair
+                    # and make a recursive call if the other vertex isn't seen
+                    if spanningTree:
+                        try:
+                            visitedV[ otherVert ]
+                            # if you made it here, add this edge
+                            # to prevent infinite loop and go next
+                            # no recursive call
+                            visitedE[ e ] =  None
+                            continue                            
+                        except KeyError:
+                            visitedV[ otherVert ] = None
+                            pairList.append(( e, otherVert))
+                    else: # otherwise, add the pair unconditionally
+                        visitedE[ e ] =  None
+                        visitedV[ otherVert ] = None
+                        pairList.append(( e, otherVert))
+                    # make a recursive call if appropriate
+                    dfsHelper( data, otherVert, visitedV, visitedE, spanningTree )
+        dfsHelper( self, curVert, {curVert:None}, {}, spanningTree )
 
         return pairList
 
     def __str__( self ):
         
         toRet = "Local words around each vertex: \n"
-        for i in range( len( self.wordList ) ):
-            toRet += str( i ) + ": " + str( self.wordList[ i ] ) + "\n"
+        for key in self.wordDict:
+            toRet += str( binSet(key) ) + " ("+str(key)+"): "\
+                     + str( self.wordDict[ key ] ) + "\n"
         
 
         toRet += "\nEdge to [left,right] vertices: {"
         for key in self.adjDict:
-            toRet += str( ALPHABET[ key - 1] )+ ": " + str( self.adjDict[ key ] )+", "
-        toRet = toRet[:-2]+"}\nGlobal cyclic edge order: "
+            toRet += str( ALPHABET[ key - 1] )+ ": [" \
+                + str( binSet( self.adjDict[ key ][0] ) )+", " \
+                + str( binSet( self.adjDict[ key ][1] ) )+"], "
+        toRet = toRet[:-2]+"}\n\nGlobal cyclic edge order: "
         if self.order is not None:
             toRet += str(Word( self.order ) )
             return toRet
