@@ -15,8 +15,6 @@ def main():
 
     test7()
 
-
-
 ####################### TESTS ####################################
 
 
@@ -66,19 +64,14 @@ def test7():
     print( "gamma_{2564,18754,70152,132138,37120,41088}", loop1) 
     print( "si(gamma_{2564,18754,70152,132138,37120,41088}):", loop1.si( T.orderDict ) )
     print()
-
-    
-
-    
-
-
-    
-
-
-
     
     #snappy.Link( link ).exterior().plink()
-    
+    plink( link )
+    print(  "PD code from the hacky function:", plinkPD( link ) )
+    print()
+    print( "PD code that snappy returns:", snappy.Link( link ).PD_code() )
+    print()
+    print( "PD code from rolfsen tables:", readPlanarDiagram( link ) )
 
 def test6():
     #snappy sample usage
@@ -220,9 +213,9 @@ def test1():
 ####################### DATABASE FUNCTIONS ####################################
 
 
-def plinkPD( link ):
-    """Gets the PD code for a snappy link that is displayed when
-    drawing the link using snappy.plink"""
+"""def plinkPDold( link ):
+    Gets the PD code for a snappy link that is displayed when
+    drawing the link using snappy.plink
     pd_in = snappy.Link( link ).PD_code()
     edgeLength = len(pd_in)*2
     pd_out = []
@@ -234,7 +227,16 @@ def plinkPD( link ):
             else:
                 cycle.append( (j-1)%edgeLength )
         pd_out.append( cycle )
-    return pd_out
+    return pd_out"""
+
+def plinkPD( link ):
+    LE = snappy.Link( link ).view()
+    code = LE.PD_code()
+    LE.done()
+    return code
+
+def plink( link ):
+    snappy.Link( link ).view()    
 
 def SurfaceGraphFromPD( pd ):
     sigma = pd
@@ -1100,7 +1102,7 @@ class Word:
         
         assert( len( self ) > 0 and len( other ) > 0 ) 
         
-        threshold = max( len( self ), len( other ) ) #can probably halve this but let's be safe
+        threshold = len( self )+ len( other )
         letter1 = self.seq[0]
         letter2 = other.seq[0]
         letterprev = -self.seq[-1] #ensures you return the right thing from crossval
