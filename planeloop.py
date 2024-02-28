@@ -18,14 +18,56 @@ def main():
     test8()
 
 def test8():
+    """Demonstrates PD code discrepancy with the Mona Lisa loop and 9 crossing loop.
+    Also illustrates 'correct' use of which PD to feed to snappy
+    vs our algorithm"""
 
 
-    link = 'K14a4'
+    #link = 'K14a4'
     #mona lisa loop:
     link = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
             (6, 14, 7, 13), (2, 17, 3, 18), (8, 15, 9, 16), \
             (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
             (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
+    # 8 crossing loop with no embedded monorbigons
+    link = [(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), \
+            (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
+    # another equivalent one:
+    #link = [(11,16,12,1),(13,3,14,2),(8,4,9,3),(15,4,16,5),(10,5,11,6),(1,7,2,6),(12,8,13,7),(9,15,10,14)]
+    # The algorithm is finding a consistent pinning poset for this loop
+    #link= rawPDtoPlinkPD( link )
+
+    # a 9 crossing example cycle 0, 1 and 4 times to see small discrepancy
+    link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
+            (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
+            (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
+    drawnpd = plinkPD( link )
+    #link.sort()
+    #print( "original:", link )
+    #print()
+
+    #link1 = plinkPD( link )
+    
+    # do this cycling to make sure pinset behavior is preserved for different PD codes
+    for i in range( 4 ):
+        link = drawnpd
+        drawnpd = plinkPD( drawnpd )
+        
+        #link.sort()
+        #print( i, ":", link )
+    #   print()
+       
+    #return
+    #print( rawPDtoPlinkPD( plinkPDtoRawPD( link ) ) )
+    #print( plinkPDtoRawPD( rawPDtoPlinkPD( link ) ) )
+    #print( plinkPDtoRawPD( plinkPDtoRawPD( rawPDtoPlinkPD( link ) ) ) )
+    #print( rawPDtoPlinkPD( link ) )
+    #print( rawPDtoPlinkPD( link ) )
+    #plinkFromPD( link )
+    #print( hackyPD( link ) )
+    #plink( link1 )
+    #return
+    #link = '6_1'
     
     # the tests below all go faster than before
     #link = 'K14n1'
@@ -33,7 +75,8 @@ def test8():
     #link = 'K11a340' #takes about 30 seconds to run
     #link = 'K11n100' #takes about a minute to run
     #pinSets( link, debug = True )
-    pinsets = pinSets( link )
+    pinsets = pinSets( drawnpd )
+    #print( pinsets )
     minlen = len( pinsets[0] )
     for elt in pinsets:
         print( elt )
@@ -42,10 +85,50 @@ def test8():
     print()
     print( "Number of minimal pinning sets:", len( pinsets ) )
     print( "Pinning number:", minlen )
-        #print()
-    #plink( link )
+    print()
+    print( "Input PD:", link )
+    print( "Drawn PD:", drawnpd )
 
+    plinkFromPD( link )
+    
 ####################### DATABASE FUNCTIONS ####################################
+
+# These functions are failing to capture the general behavior of how snappy messes with PD codes
+# I can't figure out the exact relationship between
+def rawPDtoPlinkPD( link ):
+    """Gets the PD code for a snappy link that is displayed when
+    drawing the link using snappy.plink.
+    Input can be a string or a list"""
+    #assert( type( link ) == str )
+    pd_in = snappy.Link( link ).PD_code()
+    edgeLength = len(pd_in)*2
+    pd_out = []
+    for i in range( len( pd_in ) ):
+        cycle = []
+        for j in pd_in[i]:
+            if j == 1:
+                cycle.append( edgeLength )
+            else:
+                cycle.append( (j-1)%edgeLength )
+        pd_out.append( cycle )
+    return pd_out
+
+def plinkPDtoRawPD( link ):
+    """Gets the raw PD code associated to a plink PD (inverse of function above)"""
+    #pd_in = snappy.Link( link ).PD_code()
+    assert( type( link ) == list )
+    edgeLength = len( link )*2
+    pd_out = []
+    for i in range( len( link ) ):
+        cycle = []
+        for j in link[i]:
+            if j == edgeLength - 2:
+                cycle.append( edgeLength )
+            else:
+                cycle.append( (j+2)%edgeLength )
+        pd_out.append( cycle )
+    return pd_out
+    
 
 def plinkPD( link ):
     LE = snappy.Link( link ).view()
@@ -53,8 +136,13 @@ def plinkPD( link ):
     LE.done()
     return code
 
-def plink( link ):
+def plinkFromStr( link ):
+    assert( type( link ) == str )
     snappy.Link( link ).view()
+
+def plinkFromPD( link ):
+    assert( type( link ) == list )
+    snappy.Link( link ).view()    
 
 def drawLoop():
     M = snappy.Manifold()
@@ -293,7 +381,7 @@ def pinSets( link, debug = False ):
     print( T )
     #plink( link )
 
-    print( T.wordDict )
+    #print( T.wordDict )
 
     fullRegList = list( T.wordDict.copy().keys() )
     #fullRegList.sort()
@@ -302,7 +390,7 @@ def pinSets( link, debug = False ):
     for key in T.wordDict:
         if len( G.wordDict[key] ) <= 2:
             monorBigonSet.add( key )
-    print( monorBigonSet )
+    #print( monorBigonSet )
     #return
     #i=0
     #for key in T.wordDict:
@@ -311,16 +399,17 @@ def pinSets( link, debug = False ):
     fullRegSet = set( fullRegList )
     numRegions = len( fullRegSet )
         
-    print( fullRegList )
+    #print( fullRegList )
     #print( type( fullRegSet ) )  
 
     def isPinning( regSet ):
         return T.reducedWordRep( gamma, fullRegSet.difference( regSet ) ).si( T.orderDict ) == n        
 
     pinSets = []
-    falseMins = [0]
+    falseMins = {"superset":0,"subset":0 }
 
     def getPinSetsWithin( regSet, minOnly = True, minIndex = 0):
+        nonlocal pinSets
         #print( regSet, minIndex )
         #print( fullRegSet )
         if regSet != fullRegSet and not isPinning( regSet ):
@@ -336,13 +425,24 @@ def pinSets( link, debug = False ):
                     minimal = False
                 nextSet.add( fullRegList[i] )
             if minimal or not minOnly:
-                encountered = False
-                for elt in pinSets:
-                    if elt.issubset( nextSet ):
-                        encountered = True
-                        falseMins[0] += 1 #just for benchmarking purposes
+                superset = False
+                #subsetIndices = set()
+                newPinsets = []
+                for i in range( len( pinSets ) ):
+                    if pinSets[i].issubset( nextSet ):
+                        superset = True
+                        falseMins["superset"] += 1 #just for benchmarking purposes
                         break
-                if not encountered:
+                    #experimentally, this is not needed:
+                    if not nextSet.issubset( pinSets[i] ):
+                        newPinsets.append( pinSets[i] )
+
+                #experimentally, this is not needed:
+                if len( newPinsets ) != len( pinSets ) and not superset:
+                    falseMins["subset"] += 1 #just for benchmarking purposes
+                    pinSets = newPinsets                
+                
+                if not superset:
                     #print( "Adding", nextSet )
                     pinSets.append( nextSet )                
             return True
@@ -397,7 +497,7 @@ def pinSets( link, debug = False ):
         getPinSetsWithin( fullRegSet )
 
     #print( pinSets )
-    print( "Number of false minimals sets:", falseMins )
+    print( "False minimals sets:", falseMins )
 
     """def complementIsPinning( regSet ):
         return T.reducedWordRep( gamma, regSet ).si( T.orderDict ) == n
@@ -471,9 +571,7 @@ def pinSets( link, debug = False ):
         for elt in pinSets:
             assert( elt in naivePinSets )
     else:
-        maxContaining()"""
-
-    
+        maxContaining()"""    
             
     #print( pinSets )
     #print()
