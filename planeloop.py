@@ -7,18 +7,43 @@ import warnings
 #import re
 #from math import sqrt
 import snappy
-#import itertools
+from itertools import chain, combinations
 
-ALPHABET = "abcdefghijklmnopqrstuvwxyz" # generator alphabet, used for readable output only. Inverses are upper case
-
+ALPHABET = "abcdefghijklmnopqrstuvwxyz"*5 # generator alphabet, used for readable output only. Inverses are upper case
+    
 def main():
-
+    
+    #pd = drawLoop()
+    #print( pd )
     test8()
 
 def test8():
-    link = '5_1'
-    pinSets( link )
-    plink( link )
+
+
+    link = 'K14a4'
+    #mona lisa loop:
+    link = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
+            (6, 14, 7, 13), (2, 17, 3, 18), (8, 15, 9, 16), \
+            (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
+            (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
+    
+    # the tests below all go faster than before
+    #link = 'K14n1'
+    #link = '10_24' # not showing minimal pinsets only? is computing ALL pinsets correctly by naive check
+    #link = 'K11a340' #takes about 30 seconds to run
+    #link = 'K11n100' #takes about a minute to run
+    #pinSets( link, debug = True )
+    pinsets = pinSets( link )
+    minlen = len( pinsets[0] )
+    for elt in pinsets:
+        print( elt )
+        if len( elt ) < minlen:
+            minlen = len( elt )
+    print()
+    print( "Number of minimal pinning sets:", len( pinsets ) )
+    print( "Pinning number:", minlen )
+        #print()
+    #plink( link )
 
 ####################### DATABASE FUNCTIONS ####################################
 
@@ -29,7 +54,13 @@ def plinkPD( link ):
     return code
 
 def plink( link ):
-    snappy.Link( link ).view()    
+    snappy.Link( link ).view()
+
+def drawLoop():
+    M = snappy.Manifold()
+    #while str( M ) == "Empty Triangulation":
+    input( "Draw loop and send to snappy. Press any key when finished." )
+    return M.getPDcode()
 
 def SurfaceGraphFromPD( pd ):
     sigma = pd
@@ -63,14 +94,12 @@ def SurfaceGraphFromPD( pd ):
     #create dual graph 
     edgeDict = {}
 
-    print( pd )
-    print() 
-    print( coordsDict )
+    #print( pd )
+    #print() 
+    #print( coordsDict )
 
     # define left and right relative to the first segment
-    # might need to switch the 0 and 1 (left and right) depending on
-    # where the PD code is from, or drawing convention
-    # (will not affect pinning sets but could mirror everything)
+    # you want to start at the cycle containing 1 but not containing 2
 
     if coordsDict[1][0][0] == coordsDict[2][0][0] or coordsDict[1][0][0] == coordsDict[2][1][0]:
         curLeftCoords = coordsDict[1][0] 
@@ -177,7 +206,15 @@ def readPlanarDiagram( knot ):
     return None
 
 ####################### OTHER GENERALLY USEFUL FUNCTIONS ####################################
-
+def powerset(iterable):
+    """
+    powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
+    stolen from https://stackoverflow.com/questions/374626/how-can-i-find-all-the-subsets-of-a-set-with-exactly-n-elements
+    for a 'naive check' of the pinset function
+    """
+    xs = list(iterable)
+    # note we return an iterator rather than a list
+    return chain.from_iterable(combinations(xs,n) for n in range(len(xs)+1))
 
 def randomWord( n, m, s = None ):
     """Returns a random (unreduced) word of length n on m generators. s is random seed"""
@@ -228,7 +265,7 @@ def listToDict( a ):
     return toRet
 
 def getKey( a ):
-    """Returns some key from a dictionary, or None if the dict is empty"""
+    """Returns some key from a dictionary/set, or None if the dict/set is empty"""
     for key in a:
         return key
     return None
@@ -237,64 +274,212 @@ def getKey( a ):
 ####################### COMPUTING PINSETS ####################################
 
 
-def pinSets( link  ):
+def pinSets( link, debug = False ):
     """Returns the minimal pinning sets of a link"""
 
-    G = SurfaceGraphFromPD( plinkPD( link ) )
+    if type( link ) == list:
+        G = SurfaceGraphFromPD( link )
+    else:
+        G = SurfaceGraphFromPD( plinkPD( link ) )       
+
+   
     T = G.spanningTree()
     T.createCyclicGenOrder()
     gamma = T.genProd()
     print( gamma )
     n = gamma.si( T.orderDict )
 
-    
-
     print( n )
     print( T )
     #plink( link )
 
-    return
+    print( T.wordDict )
 
-    fullRegSet = set( T.wordDict.copy() )
-    print( fullRegSet )
-    print( type( fullRegSet ) )            
+    fullRegList = list( T.wordDict.copy().keys() )
+    #fullRegList.sort()
+    #fullRegDict = {}
+    monorBigonSet = set()
+    for key in T.wordDict:
+        if len( G.wordDict[key] ) <= 2:
+            monorBigonSet.add( key )
+    print( monorBigonSet )
+    #return
+    #i=0
+    #for key in T.wordDict:
+    #    fullRegDict[key]=i
+    #    i+=1
+    fullRegSet = set( fullRegList )
+    numRegions = len( fullRegSet )
+        
+    print( fullRegList )
+    #print( type( fullRegSet ) )  
 
-    def complementIsPinning( regSet ):
-        return T.reducedWordRep( gamma, list( regSet ) ).si( T.orderDict ) == n
+    def isPinning( regSet ):
+        return T.reducedWordRep( gamma, fullRegSet.difference( regSet ) ).si( T.orderDict ) == n        
 
     pinSets = []
+    falseMins = [0]
+
+    def getPinSetsWithin( regSet, minOnly = True, minIndex = 0):
+        #print( regSet, minIndex )
+        #print( fullRegSet )
+        if regSet != fullRegSet and not isPinning( regSet ):
+            return False
+        else:
+            minimal = True
+            nextSet = regSet.copy()
+            for i in range( minIndex, numRegions ):
+                if fullRegList[i] in monorBigonSet:
+                    continue
+                nextSet.remove( fullRegList[i] )
+                if getPinSetsWithin( nextSet, minOnly = minOnly, minIndex = i+1 ):
+                    minimal = False
+                nextSet.add( fullRegList[i] )
+            if minimal or not minOnly:
+                encountered = False
+                for elt in pinSets:
+                    if elt.issubset( nextSet ):
+                        encountered = True
+                        falseMins[0] += 1 #just for benchmarking purposes
+                        break
+                if not encountered:
+                    #print( "Adding", nextSet )
+                    pinSets.append( nextSet )                
+            return True
+
+    """def getPinSetsWithinOld( regSet, minOnly = True, minIndex = 0):
+        #print( "hi" )
+        print( regSet, minIndex )
+        #print( fullRegSet )
+        if regSet != fullRegSet and not isPinning( regSet ):
+            return set()
+        else:
+            minsWithin = []
+            nextSet = regSet.copy()
+            for i in range( minIndex, numRegions ):
+                nextSet.remove( fullRegList[i] )
+                curmin = getPinSetsWithin( nextSet, minOnly = minOnly, minIndex = i+1 )
+                nextSet.add( fullRegList[i] )
+                if not curmin:
+                    continue
+
+                
+                #print( "curmin:", curmin )
+                #print()
+                
+                minimal = True
+                for elt in minsWithin:
+                    if elt.issubset( curmin ):
+                        print( elt, curmin )
+                        minimal = False
+                if minimal:
+                    #print( "Adding", curmin )
+                    minsWithin.append( curmin )
+
+                #print( "HELLLOOOO", minsWithin )
+
+            if minsWithin == []:
+                print( "regSet", regSet, "is minimal" )
+                pinSets.append( nextSet )
+                return regSet
+            else:
+                return minsWithin[0]"""
+
+    if debug:
+        getPinSetsWithin( fullRegSet, minOnly = False )
+        naivePinSets = powerSetCheck()
+        for elt in naivePinSets:
+            assert( elt in pinSets )
+        for elt in pinSets:
+            assert( elt in naivePinSets )
+    else:
+        print( "minOnly mode" )
+        getPinSetsWithin( fullRegSet )
+
+    #print( pinSets )
+    print( "Number of false minimals sets:", falseMins )
+
+    """def complementIsPinning( regSet ):
+        return T.reducedWordRep( gamma, regSet ).si( T.orderDict ) == n
     
-    def maxContaining( regSet ):
-        print( regSet, complementIsPinning( regSet ) )
+    def maxContaining( regSet = set() , minOnly = True, exclude = set() ):
+        #Helper function for returning minimal pinning sets. Max language is used because
+        #in practice we fill in punctures starting from the empty set. Complements are
+        #returned in the end
+        loop1 = T.reducedWordRep( gamma, regSet )
+        #print()
         if regSet != set() and not complementIsPinning( regSet ):
             # The complement of regSet is not pinning
             return None
         else:
-            isMinimal = True
+           
+            #print( regSet )
+            #print( fullRegSet.difference( regSet ) )
+            isMaximal = True
             nextSet = regSet.copy()
-            for reg in fullRegSet:                
-                if reg not in regSet:
-                    #add it and make recursive call                    
-                    nextSet.add( reg )
-                    if maxContaining( nextSet ) is None:
-                        # this is not a pinset
-                        isMinimal = False
-                        #break
-                    nextSet.remove( reg )
-            if isMinimal:
-                pinSets.add( regSet )
-                
-    maxContaining( set() )
+            newExclude = exclude.copy()
+            remSet = fullRegSet.difference( regSet )
+            for reg in remSet.difference( exclude ):                
+                #add it and make recursive call                    
+                nextSet.add( reg )
+                # If you take this one out and the pinning number doesn't go down, then this pinset can't be maximal
+                # I want exclude = newExclude but it is giving me problems, e.g. with 10_24 (34 seconds)
+                # function goes ~3 times as fast with this shortcut
+                if maxContaining( regSet = nextSet, minOnly = minOnly, exclude = set() ) is not None:
+                    # this could be a pinset
+                    isMaximal = False
+                else:
+                    # otherwise taking this pin out made the pinning number go down,
+                    # so it must be part of any pinset that is a subset of regSet.
+                    # we don't need to check it on subsequent recursive calls
+                    newExclude.add( reg )
+                    #print( regSet, remSet, loop1, loop1.si( T.orderDict ), complementIsPinning( regSet ) )
+                    #print( "excluding:", newExclude )
+                nextSet.remove( reg )
 
-    print( pinSets )
-
-    return pinSets
-
+            # I don't see an easy way to avoid duplicates at the moment; just check if this has been encountered
+            if isMaximal and not remSet in pinSets:
+                #print()
+                #print( "appending", remSet )
+                #print()
+                pinSets.append( remSet )
+                #print( pinSets )
+            if minOnly:
+                return 1
+            else:
+                # Returning None here gives a a list of all pinsets, not just minimal ones
+                # I didn't do this intentionally but it seems useful for later
+                # Anyway it's good for debugging
+                return None"""
 
     
-        
 
-    #loop1 = T.reducedWordRep( loop, [2564,18754,70152] )        
+    def powerSetCheck():
+        """Naive O(exp) function for debugging purposes"""
+        pinsets = []
+        for subset in powerset( fullRegSet ):
+            s = set( subset )
+            if s != fullRegSet and T.reducedWordRep( gamma, s ).si( T.orderDict ) == n:
+                pinsets.append( fullRegSet.difference( s ) )
+        return pinsets
+
+    """if debug:
+        maxContaining( minOnly = False )
+        naivePinSets = powerSetCheck()
+        for elt in naivePinSets:
+            assert( elt in pinSets )
+        for elt in pinSets:
+            assert( elt in naivePinSets )
+    else:
+        maxContaining()"""
+
+    
+            
+    #print( pinSets )
+    #print()
+    #print( naivePinSets )
+
+    return pinSets
     
 
 ####################### DATA STRUCTURES ####################################
@@ -444,8 +629,8 @@ class SurfaceGraph:
         """Given a word w representing a loop in the punctured surface S carrying self
         (so that w is a "cutting sequence" of edges), this method computes a canonical
         reduced representative of w relative to a vertex source in the surface
-        with all punctures in the list filledPunctures filled in. The vertex source must not be an element
-        of filledPunctures and is taken to be the vertex at infinity by default.
+        with all punctures in the set filledPunctures filled in. The vertex source must not be an element
+        of filledPunctures and is taken to be a random such vertex by default.
         Each filled-in puncture gives rise to a simple rewriting rule which eliminates
         one generator (the one corresponding to the edge which is 'upstream' from the vertex
         relative to the source), and the reduced representative is unique up to this choice."""
@@ -454,27 +639,32 @@ class SurfaceGraph:
         assert( type( source ) == int )
         #assert( source >= 0 )
         #assert( source < len( self.wordList ) )
-        assert( type( filledPunctures ) == list )
-        fillDict = {}
+        assert( type( filledPunctures ) == set )
+        #fillDict = {}
         for puncture in filledPunctures:
             assert( type( puncture ) == int )
             #assert( puncture >= 0 )
             #assert( puncture < len( self.wordList ) )
             #assert( w.seq != puncture )
-            fillDict[ puncture ] = None
+            #fillDict[ puncture ] = None
 
         # make sure the source is a key in wordDict
+        # but is not in filledPunctures
         try:
             self.wordDict[source]
         except KeyError:
-            source = getKey( self.wordDict )
+            choices = set( self.wordDict.keys() ).difference( filledPunctures )
+            assert( choices != set() )
+            source = getKey( choices )
+            #print( "hi" )
+            
 
         copyword = w.copy()
         
         for edge, vert in self.dfs( curVert = source ):
             
-            try:
-                fillDict[ vert ] # skip if KeyError; puncture unfilled
+            if vert in filledPunctures:
+                #filledPunctures[ vert ] # skip if KeyError; puncture unfilled
                 currWord = self.wordDict[ vert ]           
             
                 currInv = ~currWord
@@ -489,8 +679,8 @@ class SurfaceGraph:
 
                 copyword = copyword.simpleRewrite( edge, replWord )
                
-            except KeyError:
-                pass
+            #except KeyError:
+            #    pass
 
         copyword.freeReduce()
         return copyword
