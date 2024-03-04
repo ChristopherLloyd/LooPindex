@@ -17,6 +17,136 @@ def main():
     #print( pd )
     test8()
 
+def test9():
+    """Debugging the 9-crossing loop having different behavior for different spanning trees"""
+    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
+    link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
+            (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
+            (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
+    drawnpd = plinkPD( link )
+
+    print( "Input PD:", link )
+    print( "Drawn PD:", drawnpd )
+
+    # For debugging 9-crossing monorbigon-free example with PD_offset 0
+    # toggle between baseRegion = 16898 ( naivePinSets: 374, recursivePinsets: 347 )
+    # and baseRegion = 270864 ( naivePinSets: 395, recursivePinsets: 395 )
+    base1 = 16898
+    base2 = 270864
+    # base2 is the infinite region, so we always try to rewrite from there
+    # however the answer should not depend on spanning tree (specified by treeBase)
+    print( "All pinsets rel treeBase=", base1, ":" )
+    allpinsets1, naive1 = pinSets( drawnpd, debug = True, treeBase = base1, rewriteFrom = base2 )
+    print()
+    
+    print( "All pinsets rel treeBase=", base2, ":" )
+    allpinsets2, naive2 = pinSets( drawnpd, debug = True, treeBase = base2, rewriteFrom = base2 )
+    print()
+    
+    print( "Min pinsets rel treeBase=", base1, ":" )
+    minpinsets1 = pinSets( drawnpd, debug = False, treeBase = base1, rewriteFrom = base2 )
+    print()
+    
+    print( "Min pinsets rel treeBase=", base2, ":" )
+    minpinsets2 = pinSets( drawnpd, debug = False, treeBase = base2, rewriteFrom = base2 )
+    print()
+
+    print( "Min1 is subset All1?", isSubset( minpinsets1, allpinsets1 ) )
+    print( "Min2 is subset All2?", isSubset( minpinsets2, allpinsets2 ) )
+    print( "All1 is subset Naive1?", isSubset( allpinsets1, naive1 ) )
+    print( "All2 is subset Naive2?", isSubset( allpinsets2, naive2 ) )
+    print( "All1 cap Min2 is a subset of Min1", isSubset( intersection( allpinsets1, minpinsets2), minpinsets1 ) )
+    print( "#Naive1\\(Min2 cup All1)", len( difference( naive1, union( minpinsets2, allpinsets1 ) ) ) )
+    print( "#All1\\Naive1", len( difference( allpinsets1, naive1 ) ) )
+    print( "#Naive1\\All1", len( difference( naive1, allpinsets1 ) ) )
+    print( "#Min1\\#Min2:", len( difference( minpinsets1, minpinsets2 ) ) )
+    print( "#Min2\\#Min1:", len( difference( minpinsets2, minpinsets1 ) ) )
+    print( "#Min2\\#All1:", len( difference( minpinsets2, allpinsets1 ) ) )
+    print( "#Min2\\#Naive1:", len( difference( minpinsets2, naive1 ) ) ) 
+
+    print( "Discrepancies follow..." )
+    print()
+
+    badcount = 0
+    for elt in naive2:
+        # base2 is the infinite region, so we always try to rewrite from there
+        dataBase1 = testSi( drawnpd, elt, treeBase = base1, rewriteFrom = base2 )
+        dataBase2 = testSi( drawnpd, elt, treeBase = base2, rewriteFrom = base2 )
+        #return {"gamma.si( T.orderDict )":gamma.si( T.orderDict ), \
+        #    "rep.si( T.orderDict )":rep.si( T.orderDict ), \
+        #   "rep":rep, "newRewriteFrom":newRewriteFrom, \
+        #    "gamma":gamma, "T.orderDict":T.orderDict, "T.order":T.order}
+        if dataBase1["gamma.si( T.orderDict )"] != dataBase1["rep.si( T.orderDict )"]\
+           or dataBase2["gamma.si( T.orderDict )"] != dataBase2["rep.si( T.orderDict )"]:
+            testSi( drawnpd, elt, treeBase = base1, rewriteFrom = base2, verbose = True )
+            testSi( drawnpd, elt, treeBase = base2, rewriteFrom = base2, verbose = True )
+
+            
+            print( "Considering pinset:", elt, "(size", len(elt), ")" )
+            print()
+            print( "  Relative to treeBase=", base1, " and rewriteFrom=", dataBase1["newRewriteFrom"], " we have:" )
+            print( "  gamma=", dataBase1["gamma"] )
+            print( "  gamma(pinset,rewriteFrom)=", dataBase1["rep"] )
+            print( "  si(gamma,{},rewriteFrom)=", dataBase1["gamma.si( T.orderDict )"],\
+                   ",\tsi(gamma,pinset,rewriteFrom)=", dataBase1["rep.si( T.orderDict )"] )
+            print( "  T(treeBase).orderDict=", dataBase1["T.orderDict"] )
+            print( "  T(treeBase).order=", Word(dataBase1["T.order"]) )
+            
+            if base2 != dataBase1["newRewriteFrom"]:
+                print( "  rewriteFrom=", base2, "was to be filled, so it was modified as above." )
+    
+            print()
+            print( "  Relative to treeBase=", base2, " and rewriteFrom=", dataBase2["newRewriteFrom"], " we have:" )
+            print( "  gamma=", dataBase2["gamma"] )
+            print( "  gamma(pinset,rewriteFrom)=", dataBase2["rep"] )
+            print( "  si(gamma,{},rewriteFrom)=", dataBase2["gamma.si( T.orderDict )"],\
+                   ",\tsi(gamma,pinset,rewriteFrom)=", dataBase2["rep.si( T.orderDict )"] )
+            print( "  T(treeBase).orderDict=", dataBase2["T.orderDict"] )
+            print( "  T(treeBase).order=", Word(dataBase2["T.order"]) )
+            if base2 != dataBase2["newRewriteFrom"]:
+                print( "  rewriteFrom=", base2, "was to be filled, so it was modified as above." )
+            
+            print()
+            badcount += 1
+       
+        #if :
+        #    print( "Considering pinset:", elt )
+            
+        #    print()
+        #    badcount += 1
+    print( "Total discrepancies:", badcount )
+    #print( "\nPinning sets in second not in first:" )
+    #for elt in difference( pinsets2, pinsets1 ):
+    #    print( "Considering pinset:", elt )
+    #    print( "Relative to", base1, "we have", testSi( drawnpd, elt, baseRegion = base1 ) )
+    #    print( "Relative to", base2, "we have", testSi( drawnpd, elt, baseRegion = base2 ) )
+    #    print()
+
+    return
+    
+    print( "Pinning sets in first not in second:" )
+    for elt in difference( pinsets1, pinsets2 ):
+        print( "Considering pinset:", elt )
+        print( "Relative to", base1, "we have", testSi( drawnpd, elt, baseRegion = base1 ) )
+        print( "Relative to", base2, "we have", testSi( drawnpd, elt, baseRegion = base2 ) )
+        print()
+    print( "\nPinning sets in second not in first:" )
+    for elt in difference( pinsets2, pinsets1 ):
+        print( "Considering pinset:", elt )
+        print( "Relative to", base1, "we have", testSi( drawnpd, elt, baseRegion = base1 ) )
+        print( "Relative to", base2, "we have", testSi( drawnpd, elt, baseRegion = base2 ) )
+        print()
+
+    # grab the pinset of size 4 that pins loop 2 but not loop 1
+    #special = difference( pinsets2, pinsets1 )[1]
+    #print(  )
+
+    # double check that it doesnt pin loop1
+
+    
+
+    
+
 def test8():
     """Demonstrates PD code discrepancy with the Mona Lisa loop and 9 crossing loop.
     Also illustrates 'correct' use of which PD to feed to snappy
@@ -37,7 +167,7 @@ def test8():
     # The algorithm is finding a consistent pinning poset for this loop
     #link= rawPDtoPlinkPD( link )
 
-    # a 9 crossing example cycle 0, 1 and 4 times to see small discrepancy
+    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
     link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
             (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
             (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
@@ -49,7 +179,8 @@ def test8():
     #link1 = plinkPD( link )
     
     # do this cycling to make sure pinset behavior is preserved for different PD codes
-    for i in range( 4 ):
+    offset = 0
+    for i in range( 5 ):
         link = drawnpd
         drawnpd = plinkPD( drawnpd )
         
@@ -75,21 +206,27 @@ def test8():
     #link = 'K11a340' #takes about 30 seconds to run
     #link = 'K11n100' #takes about a minute to run
     #pinSets( link, debug = True )
-    pinsets = pinSets( drawnpd )
-    #print( pinsets )
-    minlen = len( pinsets[0] )
-    for elt in pinsets:
-        print( elt )
-        if len( elt ) < minlen:
-            minlen = len( elt )
-    print()
-    print( "Number of minimal pinning sets:", len( pinsets ) )
-    print( "Pinning number:", minlen )
-    print()
-    print( "Input PD:", link )
-    print( "Drawn PD:", drawnpd )
 
-    plinkFromPD( link )
+    # For debugging 9-crossing monorbigon-free example with PD_offset 0
+    # toggle between baseRegion = 16898 ( naivePinSets: 374, recursivePinsets: 347 )
+    # and baseRegion = 270864 ( naivePinSets: 395, recursivePinsets: 395 )
+    
+        pinsets = pinSets( drawnpd, debug = False )#, treeBase = 270864 )#, rewriteFrom = 270864 )
+        #print( pinsets )
+        minlen = len( pinsets[0] )
+        for elt in pinsets:
+            print( elt )
+            if len( elt ) < minlen:
+                minlen = len( elt )
+        print()
+        print( "Number of minimal pinning sets:", len( pinsets ) )
+        print( "Pinning number:", minlen )
+        print()
+        print( "PD_code offset:", offset )
+        print( "Input PD:", link )
+        print( "Drawn PD:", drawnpd )
+
+    #plinkFromPD( link )
     
 ####################### DATABASE FUNCTIONS ####################################
 
@@ -294,6 +431,38 @@ def readPlanarDiagram( knot ):
     return None
 
 ####################### OTHER GENERALLY USEFUL FUNCTIONS ####################################
+def intersection( list1, list2 ):
+    """Returns a list of all elements from list1 and list2"""
+    toReturn = []
+    for elt in list1:
+        if elt in list2 and not elt in toReturn:
+            toReturn.append( elt )
+    return toReturn
+
+def union( list1, list2 ):
+    """Returns a list of elements from list1 or list2"""
+    toReturn = []
+    for elt in list1:
+        if not elt in toReturn:
+            toReturn.append( elt )
+    for elt in list2:
+        if not elt in toReturn:
+            toReturn.append( elt )
+    return toReturn
+    
+
+def difference( list1, list2 ):
+    """Returns a list of all elements in list1 and not in list2"""
+    toReturn = []
+    for elt in list1:
+        if not elt in list2 and not elt in toReturn:
+            toReturn.append( elt )
+    return toReturn
+
+def isSubset( list1, list2 ):
+    """Returns True if and only if every element of list1 is in list2"""
+    return len( difference( list2, list1 ) ) == len( list2 ) - len( list1 )
+
 def powerset(iterable):
     """
     powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
@@ -360,27 +529,41 @@ def getKey( a ):
 
 
 ####################### COMPUTING PINSETS ####################################
+def testSi( link, pinSet, treeBase = 0, rewriteFrom = 0, verbose = False):
+    """Returns si(gamma) relative to all pins, and si(gamma) relative to the pins in pinSet
+    using a spanning tree from treeBase and rewriting rule from rewriteFrom"""
+    if type( link ) == list:
+        G = SurfaceGraphFromPD( link )
+    else:
+        G = SurfaceGraphFromPD( plinkPD( link ) )
+    #print( set( G.wordDict.keys() ) )
+    T = G.spanningTree( treeBase )
+    T.createCyclicGenOrder()
+    gamma = T.genProd()
+    unPinSet = set( T.wordDict.copy().keys() ).difference( pinSet )
+    rep, newRewriteFrom = T.reducedWordRep( gamma, unPinSet, source = rewriteFrom )
+    return {"gamma.si( T.orderDict )":gamma.si( T.orderDict ), \
+            "rep.si( T.orderDict )":rep.si( T.orderDict, verbose = verbose ), \
+           "rep":rep, "newRewriteFrom":newRewriteFrom, \
+            "gamma":gamma, "T.orderDict":T.orderDict, "T.order":T.order}
 
-
-def pinSets( link, debug = False ):
+def pinSets( link, debug = False, treeBase = None, rewriteFrom = 0 ):
     """Returns the minimal pinning sets of a link"""
-
     if type( link ) == list:
         G = SurfaceGraphFromPD( link )
     else:
         G = SurfaceGraphFromPD( plinkPD( link ) )       
 
-   
-    T = G.spanningTree()
+    
+    T = G.spanningTree( baseRegion = treeBase )
     T.createCyclicGenOrder()
     gamma = T.genProd()
-    print( gamma )
+    #print( gamma )
     n = gamma.si( T.orderDict )
 
-    print( n )
-    print( T )
+    #print( n )
+    #print( T )
     #plink( link )
-
     #print( T.wordDict )
 
     fullRegList = list( T.wordDict.copy().keys() )
@@ -403,13 +586,16 @@ def pinSets( link, debug = False ):
     #print( type( fullRegSet ) )  
 
     def isPinning( regSet ):
-        return T.reducedWordRep( gamma, fullRegSet.difference( regSet ) ).si( T.orderDict ) == n        
+        nonlocal rewriteFrom
+        rep = T.reducedWordRep( gamma, fullRegSet.difference( regSet ), source = rewriteFrom )[0]
+        return rep.si( T.orderDict ) == n        
 
     pinSets = []
     falseMins = {"superset":0,"subset":0 }
 
     def getPinSetsWithin( regSet, minOnly = True, minIndex = 0):
         nonlocal pinSets
+        #nonlocal baseRegion
         #print( regSet, minIndex )
         #print( fullRegSet )
         if regSet != fullRegSet and not isPinning( regSet ):
@@ -442,7 +628,7 @@ def pinSets( link, debug = False ):
                     falseMins["subset"] += 1 #just for benchmarking purposes
                     pinSets = newPinsets                
                 
-                if not superset:
+                if not superset or not minOnly:
                     #print( "Adding", nextSet )
                     pinSets.append( nextSet )                
             return True
@@ -485,16 +671,40 @@ def pinSets( link, debug = False ):
             else:
                 return minsWithin[0]"""
 
+    def powerSetCheck( powerset ):
+        nonlocal rewriteFrom
+        """Naive O(exp) function for debugging purposes"""
+        pinsets = []
+        
+        i = 0
+        for subset in powerset( fullRegSet ):
+            s = set( subset )
+            if s == fullRegSet:
+                continue
+            rep = T.reducedWordRep( gamma, s, source = rewriteFrom )[0]
+            if s != fullRegSet and rep.si( T.orderDict ) == n:
+                pinsets.append( fullRegSet.difference( s ) )
+            i+=1
+        print( "Total number of subsets:", i )
+        return pinsets
+
+
     if debug:
         getPinSetsWithin( fullRegSet, minOnly = False )
-        naivePinSets = powerSetCheck()
-        for elt in naivePinSets:
-            assert( elt in pinSets )
-        for elt in pinSets:
-            assert( elt in naivePinSets )
+        naivePinSets = powerSetCheck( powerset )
+        print( "naivePinSets:", len( naivePinSets ) )
+        print( "recursivePinsets:", len( pinSets ) )
+        print( "#Naive\\Recursive=", len( difference( naivePinSets, pinSets ) ) )
+        print( "#Recursive\\Naive=", len( difference( pinSets, naivePinSets ) ) )
+        
+        #for elt in naivePinSets        
+        #    assert( elt in pinSets )
+        #for elt in pinSets:
+        #    assert( elt in naivePinSets )
     else:
-        print( "minOnly mode" )
+        
         getPinSetsWithin( fullRegSet )
+        print( "minPinsets:", len( pinSets ) )
 
     #print( pinSets )
     print( "False minimals sets:", falseMins )
@@ -554,15 +764,7 @@ def pinSets( link, debug = False ):
 
     
 
-    def powerSetCheck():
-        """Naive O(exp) function for debugging purposes"""
-        pinsets = []
-        for subset in powerset( fullRegSet ):
-            s = set( subset )
-            if s != fullRegSet and T.reducedWordRep( gamma, s ).si( T.orderDict ) == n:
-                pinsets.append( fullRegSet.difference( s ) )
-        return pinsets
-
+    
     """if debug:
         maxContaining( minOnly = False )
         naivePinSets = powerSetCheck()
@@ -576,6 +778,8 @@ def pinSets( link, debug = False ):
     #print( pinSets )
     #print()
     #print( naivePinSets )
+    if debug:
+        return pinSets, naivePinSets
 
     return pinSets
     
@@ -655,8 +859,11 @@ class SurfaceGraph:
     def spanningTree( self, baseRegion = None ):
         """Returns a new SurfaceGraph formed from a spanning tree of self.
         Computes tree via dfs from baseRegion"""
+       
         if baseRegion is None:
             baseRegion = getKey( self.wordDict )
+
+        #print( baseRegion )
 
         edgesToKeep = {}
 
@@ -713,6 +920,7 @@ class SurfaceGraph:
         # If graph is disconnected or contains cycles, this is false
         assert( len( order ) == len( self.adjDict )*2 ) # Otherwise this isn't a tree
 
+        #order.reverse() # walking around the tree clockwise vs anticlockwise shouldn't change si
         self.order = order
                 
         # to optimize cross function, we create a dictionary that allows us to get the index
@@ -748,13 +956,21 @@ class SurfaceGraph:
 
         # make sure the source is a key in wordDict
         # but is not in filledPunctures
-        try:
-            self.wordDict[source]
-        except KeyError:
-            choices = set( self.wordDict.keys() ).difference( filledPunctures )
-            assert( choices != set() )
+        choices = set( self.wordDict.keys() ).difference( filledPunctures )
+        assert( choices != set() )
+        if source not in choices:
             source = getKey( choices )
-            #print( "hi" )
+
+        #print( "Searching from:", source )
+        
+        #try:
+        #    self.wordDict[source]
+        #    print( "0 is a vertex" )
+        #except KeyError:
+        #    choices = set( self.wordDict.keys() ).difference( filledPunctures )
+        #    assert( choices != set() )
+        #    source = getKey( choices )
+        #print( "hi" )
             
 
         copyword = w.copy()
@@ -781,7 +997,7 @@ class SurfaceGraph:
             #    pass
 
         copyword.freeReduce()
-        return copyword
+        return copyword, source
     
     def dfs( self, curVert=0, spanningTree = True ):
         """Recursively generates a list of (edge, downsteam vertex) pairs via depth first search from a source vertex,
@@ -959,15 +1175,15 @@ class Word:
                     return seg, power
         return self.copy(), 1
     
-    def si( self, order, bypassCycReduce = False ):
+    def si( self, order, bypassCycReduce = False, verbose = False ):
         """Counts self intersections of self with respect to a global cylic order
         EXPECTS INPUT TO BE CYCLICALLY REDUCED
         set bypassCycReduce to True to skip this check"""
         rootself, powself = self.naivePrimitiveRoot()
-        I = rootself.I( rootself, order, bypassCycReduce = bypassCycReduce, assumePrimitive = True )
+        I = rootself.I( rootself, order, bypassCycReduce = bypassCycReduce, assumePrimitive = False, verbose = verbose )
         return powself**2*I//2+powself-1
     
-    def I( self, other, order, bypassCycReduce = False, assumePrimitive = False ):
+    def I( self, other, order, bypassCycReduce = False, assumePrimitive = False, verbose = False ):
         """ Computes the geometric self intersection between self and other relative to
         a global cyclic order on generators and their inverses occuring in the word
         EXPECTS WORDS TO BE CYCLICALLY REDUCED
@@ -988,18 +1204,34 @@ class Word:
         else:
             rootself, powself = self, 1
             rootother, powother = other, 1
+
+        if verbose:
+            print( "Computing cross/val for each shift of", self, "along", other )
+            print( "(powself=", powself, ", powother=", powother, ")" )
+            print()
         
         # count intersections of primitive roots
         # can make this faster by skipping ahead if fellow travel is encountered
         primCrossCount = 0
+        shiftCount = 0
         for i in range( len( rootself ) ):
             for j in range( len( rootother ) ):
-                cross, val = rootself.crossval( rootother, order, i=i, j=j)
+                cross, val = rootself.crossval( rootother, order, i=i, j=j, verbose = verbose)
+                if verbose:
+                    print( " cross:", cross, "val:", val )
+                    print()
+                shiftCount += 1
                 primCrossCount += abs( cross )/(1 + abs( val ) )
+
+
+        if verbose:
+            print( "Number of shifts for this computation:", shiftCount )
+            print( "primCrossCount=", primCrossCount )
+            print()
                 
-        return int( primCrossCount )*powself*powother
+        return round( primCrossCount )*powself*powother
     
-    def crossval( self, other, order, i=0, j=0 ):
+    def crossval( self, other, order, i=0, j=0, verbose = False ):
         """ Words must be cyclically reduced and positive length
         WORDS MUST BE CYCLICALLY REDUCED
         returns (cross, val) pair where cross is -1,0 or 1 (right hand rule from self+ to other+)
@@ -1020,6 +1252,12 @@ class Word:
         p2 = w2plus.seq[0]
         n1 = w1minus.seq[0]
         n2 = w2minus.seq[0]
+
+        if verbose:
+            print( "w1plus:", w1plus, "w1minus:", w1minus )
+            print( "w2plus:", w2plus, "w2minus:", w2minus )        
+
+        assert( p1 != n1 and p2 != n2 ) # this would contradict cyclic reduction
         
         initcross1 = cord( order[n1], order[n2], order[p1] )
         initcross2 = cord( order[n1], order[p2], order[p1] )
@@ -1028,24 +1266,41 @@ class Word:
         if abs( initcross ) == 2: #cross is \pm 1; no fellow traveling
             return sign( 0, initcross ), 0
         
-        # if here, there is some fellow traveling
-        
+        # otherwise check for fellow traveling
         if p1 == p2 or n1 == n2: # val>0
             plusdata = w1plus.initinfo( w2plus )
             minusdata = w1minus.initinfo( w2minus )
             initcross1 = cord( order[plusdata[1]], order[plusdata[2]], order[plusdata[3]] )
             if initcross1 == 0: #equal periodisations at these indices
-                return 0, 0 
+                return 0, 0
+            #print( "Nontrivial fellow travel" )
             initcross2 = cord( order[minusdata[1]], order[minusdata[2]], order[minusdata[3]] )
+            assert( initcross2 != 0 )
             return int( initcross1 == initcross2 ), plusdata[0]+minusdata[0]
-        else: # p1==n2 or p2==n1 #val <0
+        if p1==n2 or p2==n1:
+        #else: # p1==n2 or p2==n1 #val <0
             plusdata = w1plus.initinfo( w2minus )
             minusdata = w1minus.initinfo( w2plus )
             initcross1 = cord( order[plusdata[1]], order[plusdata[2]], order[plusdata[3]] )
             if initcross1 == 0: #inverse periodisations at these indices
-                return 0, 0 
+                return 0, 0
+            #print( "Nontrivial fellow travel" )
             initcross2 = cord( order[minusdata[1]], order[minusdata[2]], order[minusdata[3]] )
+            assert( initcross2 != 0 )
             return -int( initcross1 == initcross2 ), -plusdata[0]-minusdata[0]
+
+        # if here, there is no fellow traveling, and they don't cross
+        return 0, 0
+
+        
+
+        print( "hi" )
+        print( p1, p2, n1, n2 )
+        print( order[p1], order[p2], order[n1], order[n2] )
+        print( initcross2, initcross1 )
+        assert( False )
+
+        
             
     def initinfo( self, other ):
         """given two words, returns data about common initial segments of their periodisations
@@ -1053,7 +1308,7 @@ class Word:
         
         assert( len( self ) > 0 and len( other ) > 0 ) 
         
-        threshold = len( self )+ len( other )
+        threshold = len( self )+len( other )
         letter1 = self.seq[0]
         letter2 = other.seq[0]
         letterprev = -self.seq[-1] #ensures you return the right thing from crossval
