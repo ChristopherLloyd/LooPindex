@@ -12,14 +12,10 @@ from itertools import chain, combinations
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"*5 # generator alphabet, used for readable output only. Inverses are upper case
     
 def main():
-    print( "small change" )
-    print( "small change from windows" )
-    print( "A small change from linux that will need to be merged" )
-    print( "another small change from windows" )
     
     #pd = drawLoop()
     #print( pd )
-    test9()
+    test8()
 
 def test10():
     """Another function to compute pinning sets of drawn loops"""
@@ -203,7 +199,7 @@ def test9():
     
 
 def test8():
-    """Demonstrates PD code discrepancy with the Mona Lisa loop and 9 crossing loop.
+    """Demonstrates/tests for PD code discrepancy (originally with the Mona Lisa loop and 9 crossing loop.)
     Also illustrates 'correct' use of which PD to feed to snappy
     vs our algorithm"""
 
@@ -235,7 +231,7 @@ def test8():
     
     # do this cycling to make sure pinset behavior is preserved for different PD codes
     offset = 0
-    for i in range( 5 ):
+    for i in range( 2 ):
         link = drawnpd
         drawnpd = plinkPD( drawnpd )
         
@@ -266,20 +262,32 @@ def test8():
     # toggle between baseRegion = 16898 ( naivePinSets: 374, recursivePinsets: 347 )
     # and baseRegion = 270864 ( naivePinSets: 395, recursivePinsets: 395 )
     
-        pinsets = pinSets( drawnpd, debug = False )#, treeBase = 270864 )#, rewriteFrom = 270864 )
+        pinsets = pinSets( drawnpd, debug = False )[0]#, treeBase = 270864 )#, rewriteFrom = 270864 )
         #print( pinsets )
+        pinSetDict = {}
         minlen = len( pinsets[0] )
+        print( "Minimal pinning sets:" )
         for elt in pinsets:
+            try:
+                pinSetDict[len(elt)]+=1
+            except KeyError:
+                pinSetDict[len(elt)] = 1
             print( elt )
             if len( elt ) < minlen:
                 minlen = len( elt )
         print()
         print( "Number of minimal pinning sets:", len( pinsets ) )
         print( "Pinning number:", minlen )
+        keys = list( pinSetDict.keys() )
+        keys.sort()
+        print( "Minimal pining sets by size:" )
+        for key in keys:
+           print( " Number of minimal pinning sets of size", key, ":", pinSetDict[key] )
         print()
-        print( "PD_code offset:", offset )
+        print( "PD_code offset:", i )
         print( "Input PD:", link )
         print( "Drawn PD:", drawnpd )
+        print()
 
     #plinkFromPD( link )
     
@@ -781,7 +789,7 @@ def pinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFrom =
     #print( pinSets )
     #print()
     #print( naivePinSets )
-    if debug:
+    if debug and not minOnly:
         return pinSets, naivePinSets
 
     return pinSets, numPinSets
@@ -1215,7 +1223,8 @@ class Word:
         
         # count intersections of primitive roots
         # can make this faster by skipping ahead if fellow travel is encountered
-        #crossValDict = {}
+        # crossValDict = {}
+        indexDict = {}
         primCrossCount = 0
         shiftCount = 0
         i = 0
@@ -1224,6 +1233,7 @@ class Word:
             while j < len( rootother ):
                 cross, valplus, valminus = rootself.crossval( rootother, order, i=i, j=j, verbose = verbose)
                 val = abs( valplus ) + abs( valminus )
+                indexDict[(i,j)]={"cross":abs(cross),"valplus":abs(valplus),"valminus":abs(valminus)}
                 #crossValDict[((i-abs(valminus))%len(rootself),(j-abs(valminus))%len(rootother),\
                 #              (i+abs(valplus))%len(rootself),(j+abs(valplus))%len(rootother))] = abs( cross )
                 if verbose:
@@ -1234,31 +1244,37 @@ class Word:
                 j+= 1#abs( val ) + 1
             i+=1
 
-        #trying to experiment with skipping ahead, it's not working so far:
+        # trying to experiment with skipping ahead, it's not working so far.
+        # I really don't understand why the crossValDict method here doesn't work
         #count = 0
         #for key in crossValDict:
         #    count += crossValDict[key]
 
         #return count*powself*powother
 
-        #an earlier attempt:
+        #a smarter attempt (This one should actually be faster, but it's also not working):
+            
+        for key in indexDict.copy():
+            if key in indexDict:
+                for i in range( 1, indexDict[key]["valminus"]+1 ):
+                    try:
+                        del indexDict[((key[0]-i)%len(rootself),(key[1]-i)%len(rootother))]
+                    except KeyError:
+                        break #continue
+                for i in range( 1, indexDict[key]["valplus"]+1 ):
+                    try:
+                        del indexDict[((key[0]+i)%len(rootself),(key[1]+i)%len(rootother))]
+                    except KeyError:
+                        break #continue
+                if indexDict[key]["cross"] == 0:
+                    del indexDict[key]
 
-        #for key in crossValDict.copy():
-        #    if key in crossValDict:
-        #        for i in range( key[0]+1, crossValDict[key][2]+1 ):
-        #            try:
-        #                del crossValDict[((key[0]-i)%len(rootself),(key[1]-i)%len(rootother))]
-        #            except KeyError:
-        #                continue
-        #        for i in range( key[0]+1, crossValDict[key][1]+1 ):
-        #            try:
-        #                del crossValDict[((key[0]+i)%len(rootself),(key[1]+i)%len(rootother))]
-        #            except KeyError:
-        #                continue
-        #        if crossValDict[key][0] == 0:
-        #            del crossValDict[key]
+        count = 0
+        for key in indexDict:
+            count += indexDict[key]["cross"]
 
-        #return len( crossValDict.keys() )*powself*powother
+        #return count*powself*powother
+        #return len( indexDict.keys() )*powself*powother
 
         #indexSet = {}
         #for i in range( len( rootself ) ):
