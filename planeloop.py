@@ -12,6 +12,7 @@ from itertools import chain, combinations
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"*5 # generator alphabet, used for readable output only. Inverses are upper case
     
 def main():
+    print( "small change" )
     
     #pd = drawLoop()
     #print( pd )
