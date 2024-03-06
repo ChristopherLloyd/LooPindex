@@ -15,7 +15,58 @@ def main():
     
     #pd = drawLoop()
     #print( pd )
-    test8()
+    test9()
+
+def test10():
+    """Another function to compute pinning sets of drawn loops"""
+
+
+    #link = 'K14a4'
+    #mona lisa loop:
+    link = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
+            (6, 14, 7, 13), (2, 17, 3, 18), (8, 15, 9, 16), \
+            (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
+            (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
+    # 8 crossing loop with no embedded monorbigons
+    #link = [(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), \
+    #        (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
+    # another equivalent one:
+    #link = [(11,16,12,1),(13,3,14,2),(8,4,9,3),(15,4,16,5),(10,5,11,6),(1,7,2,6),(12,8,13,7),(9,15,10,14)]
+
+    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
+    #link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
+    #        (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
+    #        (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
+    
+    drawnpd = plinkPD( link )
+    
+    # do this cycling to make sure pinset behavior is preserved for different PD codes
+    offset = 0
+    for i in range( offset ):
+        link = drawnpd
+        drawnpd = plinkPD( drawnpd )
+
+    minOnly = True
+    debug = True
+    pinsets = pinSets( drawnpd, debug = debug, minOnly = minOnly )
+    if minOnly:
+        print( "Minimal pinning sets:" )
+    minlen = len( pinsets[0] )
+    for elt in pinsets[0]:
+        if minOnly or debug:
+            print( elt )
+        if len( elt ) < minlen:
+            minlen = len( elt )
+    #print( "MinOnly:", minOnly )
+    print()
+    if minOnly:
+        print( "Number of minimal pinning sets:", len( pinsets[0] ) )
+    print( "Number of total pinning sets:", pinsets[1] )
+    print( "Pinning number:", minlen )
+    print()
+    print( "Input PD:", link )
+    print( "Drawn PD:", drawnpd )
+    #plinkFromPD( link )
 
 def test9():
     """Debugging the 9-crossing loop having different behavior for different spanning trees"""
@@ -36,19 +87,19 @@ def test9():
     # base2 is the infinite region, so we always try to rewrite from there
     # however the answer should not depend on spanning tree (specified by treeBase)
     print( "All pinsets rel treeBase=", base1, ":" )
-    allpinsets1, naive1 = pinSets( drawnpd, debug = True, treeBase = base1, rewriteFrom = base2 )
+    allpinsets1, naive1 = pinSets( drawnpd, debug = True, minOnly = False, treeBase = base1, rewriteFrom = base2 )
     print()
     
     print( "All pinsets rel treeBase=", base2, ":" )
-    allpinsets2, naive2 = pinSets( drawnpd, debug = True, treeBase = base2, rewriteFrom = base2 )
+    allpinsets2, naive2 = pinSets( drawnpd, debug = True, minOnly = False, treeBase = base2, rewriteFrom = base2 )
     print()
     
     print( "Min pinsets rel treeBase=", base1, ":" )
-    minpinsets1 = pinSets( drawnpd, debug = False, treeBase = base1, rewriteFrom = base2 )
+    minpinsets1 = pinSets( drawnpd, debug = True, minOnly = True, treeBase = base1, rewriteFrom = base2 )[0]
     print()
     
     print( "Min pinsets rel treeBase=", base2, ":" )
-    minpinsets2 = pinSets( drawnpd, debug = False, treeBase = base2, rewriteFrom = base2 )
+    minpinsets2 = pinSets( drawnpd, debug = True, minOnly = True, treeBase = base2, rewriteFrom = base2 )[0]
     print()
 
     print( "Min1 is subset All1?", isSubset( minpinsets1, allpinsets1 ) )
@@ -547,7 +598,7 @@ def testSi( link, pinSet, treeBase = 0, rewriteFrom = 0, verbose = False):
            "rep":rep, "newRewriteFrom":newRewriteFrom, \
             "gamma":gamma, "T.orderDict":T.orderDict, "T.order":T.order}
 
-def pinSets( link, debug = False, treeBase = None, rewriteFrom = 0 ):
+def pinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFrom = 0 ):
     """Returns the minimal pinning sets of a link"""
     if type( link ) == list:
         G = SurfaceGraphFromPD( link )
@@ -562,7 +613,9 @@ def pinSets( link, debug = False, treeBase = None, rewriteFrom = 0 ):
     n = gamma.si( T.orderDict )
 
     #print( n )
-    #print( T )
+    if debug:
+        print( T )
+        print()
     #plink( link )
     #print( T.wordDict )
 
@@ -591,10 +644,12 @@ def pinSets( link, debug = False, treeBase = None, rewriteFrom = 0 ):
         return rep.si( T.orderDict ) == n        
 
     pinSets = []
+    numPinSets = 0
     falseMins = {"superset":0,"subset":0 }
 
     def getPinSetsWithin( regSet, minOnly = True, minIndex = 0):
         nonlocal pinSets
+        nonlocal numPinSets
         #nonlocal baseRegion
         #print( regSet, minIndex )
         #print( fullRegSet )
@@ -622,6 +677,7 @@ def pinSets( link, debug = False, treeBase = None, rewriteFrom = 0 ):
                     #experimentally, this is not needed:
                     if not nextSet.issubset( pinSets[i] ):
                         newPinsets.append( pinSets[i] )
+                
 
                 #experimentally, this is not needed:
                 if len( newPinsets ) != len( pinSets ) and not superset:
@@ -630,7 +686,8 @@ def pinSets( link, debug = False, treeBase = None, rewriteFrom = 0 ):
                 
                 if not superset or not minOnly:
                     #print( "Adding", nextSet )
-                    pinSets.append( nextSet )                
+                    pinSets.append( nextSet )
+            numPinSets += 1
             return True
 
     """def getPinSetsWithinOld( regSet, minOnly = True, minIndex = 0):
@@ -685,95 +742,37 @@ def pinSets( link, debug = False, treeBase = None, rewriteFrom = 0 ):
             if s != fullRegSet and rep.si( T.orderDict ) == n:
                 pinsets.append( fullRegSet.difference( s ) )
             i+=1
-        print( "Total number of subsets:", i )
+        #print( "Total number of subsets:", i )
         return pinsets
 
+    getPinSetsWithin( fullRegSet, minOnly = minOnly )
 
-    if debug:
-        getPinSetsWithin( fullRegSet, minOnly = False )
+    naivePinSets = None
+
+    if debug and not minOnly:
+        #getPinSetsWithin( fullRegSet, minOnly = False )
         naivePinSets = powerSetCheck( powerset )
         print( "naivePinSets:", len( naivePinSets ) )
         print( "recursivePinsets:", len( pinSets ) )
         print( "#Naive\\Recursive=", len( difference( naivePinSets, pinSets ) ) )
         print( "#Recursive\\Naive=", len( difference( pinSets, naivePinSets ) ) )
         
-        #for elt in naivePinSets        
-        #    assert( elt in pinSets )
-        #for elt in pinSets:
-        #    assert( elt in naivePinSets )
-    else:
-        
-        getPinSetsWithin( fullRegSet )
-        print( "minPinsets:", len( pinSets ) )
-
-    #print( pinSets )
-    print( "False minimals sets:", falseMins )
-
-    """def complementIsPinning( regSet ):
-        return T.reducedWordRep( gamma, regSet ).si( T.orderDict ) == n
-    
-    def maxContaining( regSet = set() , minOnly = True, exclude = set() ):
-        #Helper function for returning minimal pinning sets. Max language is used because
-        #in practice we fill in punctures starting from the empty set. Complements are
-        #returned in the end
-        loop1 = T.reducedWordRep( gamma, regSet )
-        #print()
-        if regSet != set() and not complementIsPinning( regSet ):
-            # The complement of regSet is not pinning
-            return None
-        else:
-           
-            #print( regSet )
-            #print( fullRegSet.difference( regSet ) )
-            isMaximal = True
-            nextSet = regSet.copy()
-            newExclude = exclude.copy()
-            remSet = fullRegSet.difference( regSet )
-            for reg in remSet.difference( exclude ):                
-                #add it and make recursive call                    
-                nextSet.add( reg )
-                # If you take this one out and the pinning number doesn't go down, then this pinset can't be maximal
-                # I want exclude = newExclude but it is giving me problems, e.g. with 10_24 (34 seconds)
-                # function goes ~3 times as fast with this shortcut
-                if maxContaining( regSet = nextSet, minOnly = minOnly, exclude = set() ) is not None:
-                    # this could be a pinset
-                    isMaximal = False
-                else:
-                    # otherwise taking this pin out made the pinning number go down,
-                    # so it must be part of any pinset that is a subset of regSet.
-                    # we don't need to check it on subsequent recursive calls
-                    newExclude.add( reg )
-                    #print( regSet, remSet, loop1, loop1.si( T.orderDict ), complementIsPinning( regSet ) )
-                    #print( "excluding:", newExclude )
-                nextSet.remove( reg )
-
-            # I don't see an easy way to avoid duplicates at the moment; just check if this has been encountered
-            if isMaximal and not remSet in pinSets:
-                #print()
-                #print( "appending", remSet )
-                #print()
-                pinSets.append( remSet )
-                #print( pinSets )
-            if minOnly:
-                return 1
-            else:
-                # Returning None here gives a a list of all pinsets, not just minimal ones
-                # I didn't do this intentionally but it seems useful for later
-                # Anyway it's good for debugging
-                return None"""
-
-    
-
-    
-    """if debug:
-        maxContaining( minOnly = False )
-        naivePinSets = powerSetCheck()
-        for elt in naivePinSets:
+        for elt in naivePinSets:        
             assert( elt in pinSets )
         for elt in pinSets:
             assert( elt in naivePinSets )
-    else:
-        maxContaining()"""    
+        assert( fullRegSet in pinSets )
+    if debug and minOnly:
+        print( "Minimal Pinsets:", len( pinSets ) )
+        for i in range( len( pinSets ) ):
+            for j in range( len( pinSets ) ):
+                if i != j:
+                    assert( not pinSets[i].issubset( pinSets[j] ) )
+        #getPinSetsWithin( fullRegSet, minOnly = minOnly )
+        #print( "minPinsets:", len( pinSets ) )
+
+    #print( pinSets )
+    #print( "False minimals sets:", falseMins )  
             
     #print( pinSets )
     #print()
@@ -781,7 +780,7 @@ def pinSets( link, debug = False, treeBase = None, rewriteFrom = 0 ):
     if debug:
         return pinSets, naivePinSets
 
-    return pinSets
+    return pinSets, numPinSets
     
 
 ####################### DATA STRUCTURES ####################################
@@ -1212,18 +1211,58 @@ class Word:
         
         # count intersections of primitive roots
         # can make this faster by skipping ahead if fellow travel is encountered
+        #crossValDict = {}
         primCrossCount = 0
         shiftCount = 0
-        for i in range( len( rootself ) ):
-            for j in range( len( rootother ) ):
-                cross, val = rootself.crossval( rootother, order, i=i, j=j, verbose = verbose)
+        i = 0
+        while i < len( rootself ):
+            j=0
+            while j < len( rootother ):
+                cross, valplus, valminus = rootself.crossval( rootother, order, i=i, j=j, verbose = verbose)
+                val = abs( valplus ) + abs( valminus )
+                #crossValDict[((i-abs(valminus))%len(rootself),(j-abs(valminus))%len(rootother),\
+                #              (i+abs(valplus))%len(rootself),(j+abs(valplus))%len(rootother))] = abs( cross )
                 if verbose:
                     print( " cross:", cross, "val:", val )
                     print()
                 shiftCount += 1
-                primCrossCount += abs( cross )/(1 + abs( val ) )
+                primCrossCount += abs( cross )/(1 + val)
+                j+= 1#abs( val ) + 1
+            i+=1
 
+        #trying to experiment with skipping ahead, it's not working so far:
+        #count = 0
+        #for key in crossValDict:
+        #    count += crossValDict[key]
 
+        #return count*powself*powother
+
+        #an earlier attempt:
+
+        #for key in crossValDict.copy():
+        #    if key in crossValDict:
+        #        for i in range( key[0]+1, crossValDict[key][2]+1 ):
+        #            try:
+        #                del crossValDict[((key[0]-i)%len(rootself),(key[1]-i)%len(rootother))]
+        #            except KeyError:
+        #                continue
+        #        for i in range( key[0]+1, crossValDict[key][1]+1 ):
+        #            try:
+        #                del crossValDict[((key[0]+i)%len(rootself),(key[1]+i)%len(rootother))]
+        #            except KeyError:
+        #                continue
+        #        if crossValDict[key][0] == 0:
+        #            del crossValDict[key]
+
+        #return len( crossValDict.keys() )*powself*powother
+
+        #indexSet = {}
+        #for i in range( len( rootself ) ):
+        #    for j in range( len( rootother ) ):
+        #        try:
+                    
+        #        indexSet[ (i,j) ] = None
+        
         if verbose:
             print( "Number of shifts for this computation:", shiftCount )
             print( "primCrossCount=", primCrossCount )
@@ -1234,9 +1273,9 @@ class Word:
     def crossval( self, other, order, i=0, j=0, verbose = False ):
         """ Words must be cyclically reduced and positive length
         WORDS MUST BE CYCLICALLY REDUCED
-        returns (cross, val) pair where cross is -1,0 or 1 (right hand rule from self+ to other+)
-        and val is signed length of fellow traveling
-        for convenience, val is set to 0 if periodisations are identical up to inverses """
+        returns (cross, valplus, valminus) triple where cross is -1,0 or 1 (right hand rule from self+ to other+)
+        and valplus, valminus are signed lengths of fellow traveling in forward/backward directions
+        for convenience, (valplus,valminus) is set to (0,0) if periodisations are identical up to inverses """
         
         assert( len( self ) > 0 and len( other ) > 0 )
         
@@ -1264,7 +1303,7 @@ class Word:
         initcross = initcross2 - initcross1
         
         if abs( initcross ) == 2: #cross is \pm 1; no fellow traveling
-            return sign( 0, initcross ), 0
+            return sign( 0, initcross ), 0, 0
         
         # otherwise check for fellow traveling
         if p1 == p2 or n1 == n2: # val>0
@@ -1272,33 +1311,32 @@ class Word:
             minusdata = w1minus.initinfo( w2minus )
             initcross1 = cord( order[plusdata[1]], order[plusdata[2]], order[plusdata[3]] )
             if initcross1 == 0: #equal periodisations at these indices
-                return 0, 0
+                return 0, 0, 0
             #print( "Nontrivial fellow travel" )
             initcross2 = cord( order[minusdata[1]], order[minusdata[2]], order[minusdata[3]] )
             assert( initcross2 != 0 )
-            return int( initcross1 == initcross2 ), plusdata[0]+minusdata[0]
+            return int( initcross1 == initcross2 ), plusdata[0], minusdata[0]
         if p1==n2 or p2==n1:
         #else: # p1==n2 or p2==n1 #val <0
             plusdata = w1plus.initinfo( w2minus )
             minusdata = w1minus.initinfo( w2plus )
             initcross1 = cord( order[plusdata[1]], order[plusdata[2]], order[plusdata[3]] )
             if initcross1 == 0: #inverse periodisations at these indices
-                return 0, 0
+                return 0, 0, 0
             #print( "Nontrivial fellow travel" )
             initcross2 = cord( order[minusdata[1]], order[minusdata[2]], order[minusdata[3]] )
             assert( initcross2 != 0 )
-            return -int( initcross1 == initcross2 ), -plusdata[0]-minusdata[0]
+            return -int( initcross1 == initcross2 ), -plusdata[0], -minusdata[0]
 
         # if here, there is no fellow traveling, and they don't cross
-        return 0, 0
-
+        return 0, 0, 0
         
 
-        print( "hi" )
-        print( p1, p2, n1, n2 )
-        print( order[p1], order[p2], order[n1], order[n2] )
-        print( initcross2, initcross1 )
-        assert( False )
+        #print( "hi" )
+        #print( p1, p2, n1, n2 )
+        #print( order[p1], order[p2], order[n1], order[n2] )
+        #print( initcross2, initcross1 )
+        #assert( False )
 
         
             
