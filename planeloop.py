@@ -14,6 +14,7 @@ ALPHABET = "abcdefghijklmnopqrstuvwxyz"*5 # generator alphabet, used for readabl
 def main():
     print( "small change" )
     print( "small change from windows" )
+    print( "another small change from windows" )
     
     #pd = drawLoop()
     #print( pd )
