@@ -1,13 +1,49 @@
+"""
+Title: planeloop.py
+Authors: Christopher-Lloyd Simon and Ben Stucky
+Description: Computes pinning sets of loops in the plane and sphere
+Github: https://github.com/ChristopherLloyd/LooPin
+
+Important info for other users:
+
+ THIS PROGRAM IS INTENDED TO BE LOADED/RUN FROM WITHIN SAGEMATH
+ VIA THE COMMAND
+
+load( 'planeloop.py' )
+
+ IT WILL NOT WORK AS A STANDALONE PYTHON SCRIPT,
+ EXCEPT FROM THE PYTHON ENVIRONMENT BUNDLED WITH SAGE
+ TO OVERRIDE THIS (FOR EXAMPLE IF ONLY INTERESTED IN USING
+ FUNCTIONS WHICH USE SNAPPY FUNCTIONALITY),
+ UNCOMMENT THE FOLLOWING LINE"""
+
+from sage.all import *
+
+"""All imported packages must be installed in the python environment that sage uses
+ For instance you need to run:
+
+ sage -pip install snappy
+
+ or
+
+ sage -pip install snappy_15_knots  # Larger version of HTLinkExteriors
+
+ to be able to use snappy.
+ If you previously installed SnapPy into SageMath and want to upgrade SnapPy to the latest version, do:
+
+ sage -pip install --upgrade snappy"""
+
+# Currently unused imports:
 #import lightrdf
 #import gzip
 #import rdflib
+#import re
+#from math import sqrt
+
 from random import *
 import traceback
 import warnings
-#import re
-#from math import sqrt
 import snappy
-from itertools import chain, combinations
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"*5 # generator alphabet, used for readable output only. Inverses are upper case
     
@@ -17,578 +53,10 @@ def main():
     #print( pd )
     test8()
 
-def test10():
-    """Another function to compute pinning sets of drawn loops"""
-
-
-    #link = 'K14a4'
-    #mona lisa loop:
-    link = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
-            (6, 14, 7, 13), (2, 17, 3, 18), (8, 15, 9, 16), \
-            (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
-            (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
-    # 8 crossing loop with no embedded monorbigons
-    #link = [(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), \
-    #        (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
-    # another equivalent one:
-    #link = [(11,16,12,1),(13,3,14,2),(8,4,9,3),(15,4,16,5),(10,5,11,6),(1,7,2,6),(12,8,13,7),(9,15,10,14)]
-
-    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
-    #link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
-    #        (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
-    #        (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
+def test11():
+    """Testing a bunch of sage commands"""
+    print( factor( 23823482394 ) )
     
-    drawnpd = plinkPD( link )
-    
-    # do this cycling to make sure pinset behavior is preserved for different PD codes
-    offset = 0
-    for i in range( offset ):
-        link = drawnpd
-        drawnpd = plinkPD( drawnpd )
-
-    minOnly = True
-    debug = True
-    pinsets = pinSets( drawnpd, debug = debug, minOnly = minOnly )
-    if minOnly:
-        print( "Minimal pinning sets:" )
-    minlen = len( pinsets[0] )
-    for elt in pinsets[0]:
-        if minOnly or debug:
-            print( elt )
-        if len( elt ) < minlen:
-            minlen = len( elt )
-    #print( "MinOnly:", minOnly )
-    print()
-    if minOnly:
-        print( "Number of minimal pinning sets:", len( pinsets[0] ) )
-    print( "Number of total pinning sets:", pinsets[1] )
-    print( "Pinning number:", minlen )
-    print()
-    print( "Input PD:", link )
-    print( "Drawn PD:", drawnpd )
-    #plinkFromPD( link )
-
-def test9():
-    """Debugging the 9-crossing loop having different behavior for different spanning trees"""
-    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
-    link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
-            (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
-            (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
-    drawnpd = plinkPD( link )
-
-    print( "Input PD:", link )
-    print( "Drawn PD:", drawnpd )
-
-    # For debugging 9-crossing monorbigon-free example with PD_offset 0
-    # toggle between baseRegion = 16898 ( naivePinSets: 374, recursivePinsets: 347 )
-    # and baseRegion = 270864 ( naivePinSets: 395, recursivePinsets: 395 )
-    base1 = 16898
-    base2 = 270864
-    # base2 is the infinite region, so we always try to rewrite from there
-    # however the answer should not depend on spanning tree (specified by treeBase)
-    print( "All pinsets rel treeBase=", base1, ":" )
-    allpinsets1, naive1 = pinSets( drawnpd, debug = True, minOnly = False, treeBase = base1, rewriteFrom = base2 )
-    print()
-    
-    print( "All pinsets rel treeBase=", base2, ":" )
-    allpinsets2, naive2 = pinSets( drawnpd, debug = True, minOnly = False, treeBase = base2, rewriteFrom = base2 )
-    print()
-    
-    print( "Min pinsets rel treeBase=", base1, ":" )
-    minpinsets1 = pinSets( drawnpd, debug = True, minOnly = True, treeBase = base1, rewriteFrom = base2 )[0]
-    print()
-    
-    print( "Min pinsets rel treeBase=", base2, ":" )
-    minpinsets2 = pinSets( drawnpd, debug = True, minOnly = True, treeBase = base2, rewriteFrom = base2 )[0]
-    print()
-
-    print( "Min1 is subset All1?", isSubset( minpinsets1, allpinsets1 ) )
-    print( "Min2 is subset All2?", isSubset( minpinsets2, allpinsets2 ) )
-    print( "All1 is subset Naive1?", isSubset( allpinsets1, naive1 ) )
-    print( "All2 is subset Naive2?", isSubset( allpinsets2, naive2 ) )
-    print( "All1 cap Min2 is a subset of Min1", isSubset( intersection( allpinsets1, minpinsets2), minpinsets1 ) )
-    print( "#Naive1\\(Min2 cup All1)", len( difference( naive1, union( minpinsets2, allpinsets1 ) ) ) )
-    print( "#All1\\Naive1", len( difference( allpinsets1, naive1 ) ) )
-    print( "#Naive1\\All1", len( difference( naive1, allpinsets1 ) ) )
-    print( "#Min1\\#Min2:", len( difference( minpinsets1, minpinsets2 ) ) )
-    print( "#Min2\\#Min1:", len( difference( minpinsets2, minpinsets1 ) ) )
-    print( "#Min2\\#All1:", len( difference( minpinsets2, allpinsets1 ) ) )
-    print( "#Min2\\#Naive1:", len( difference( minpinsets2, naive1 ) ) ) 
-
-    print( "Discrepancies follow..." )
-    print()
-
-    badcount = 0
-    for elt in naive2:
-        # base2 is the infinite region, so we always try to rewrite from there
-        dataBase1 = testSi( drawnpd, elt, treeBase = base1, rewriteFrom = base2 )
-        dataBase2 = testSi( drawnpd, elt, treeBase = base2, rewriteFrom = base2 )
-        #return {"gamma.si( T.orderDict )":gamma.si( T.orderDict ), \
-        #    "rep.si( T.orderDict )":rep.si( T.orderDict ), \
-        #   "rep":rep, "newRewriteFrom":newRewriteFrom, \
-        #    "gamma":gamma, "T.orderDict":T.orderDict, "T.order":T.order}
-        if dataBase1["gamma.si( T.orderDict )"] != dataBase1["rep.si( T.orderDict )"]\
-           or dataBase2["gamma.si( T.orderDict )"] != dataBase2["rep.si( T.orderDict )"]:
-            testSi( drawnpd, elt, treeBase = base1, rewriteFrom = base2, verbose = True )
-            testSi( drawnpd, elt, treeBase = base2, rewriteFrom = base2, verbose = True )
-
-            
-            print( "Considering pinset:", elt, "(size", len(elt), ")" )
-            print()
-            print( "  Relative to treeBase=", base1, " and rewriteFrom=", dataBase1["newRewriteFrom"], " we have:" )
-            print( "  gamma=", dataBase1["gamma"] )
-            print( "  gamma(pinset,rewriteFrom)=", dataBase1["rep"] )
-            print( "  si(gamma,{},rewriteFrom)=", dataBase1["gamma.si( T.orderDict )"],\
-                   ",\tsi(gamma,pinset,rewriteFrom)=", dataBase1["rep.si( T.orderDict )"] )
-            print( "  T(treeBase).orderDict=", dataBase1["T.orderDict"] )
-            print( "  T(treeBase).order=", Word(dataBase1["T.order"]) )
-            
-            if base2 != dataBase1["newRewriteFrom"]:
-                print( "  rewriteFrom=", base2, "was to be filled, so it was modified as above." )
-    
-            print()
-            print( "  Relative to treeBase=", base2, " and rewriteFrom=", dataBase2["newRewriteFrom"], " we have:" )
-            print( "  gamma=", dataBase2["gamma"] )
-            print( "  gamma(pinset,rewriteFrom)=", dataBase2["rep"] )
-            print( "  si(gamma,{},rewriteFrom)=", dataBase2["gamma.si( T.orderDict )"],\
-                   ",\tsi(gamma,pinset,rewriteFrom)=", dataBase2["rep.si( T.orderDict )"] )
-            print( "  T(treeBase).orderDict=", dataBase2["T.orderDict"] )
-            print( "  T(treeBase).order=", Word(dataBase2["T.order"]) )
-            if base2 != dataBase2["newRewriteFrom"]:
-                print( "  rewriteFrom=", base2, "was to be filled, so it was modified as above." )
-            
-            print()
-            badcount += 1
-       
-        #if :
-        #    print( "Considering pinset:", elt )
-            
-        #    print()
-        #    badcount += 1
-    print( "Total discrepancies:", badcount )
-    #print( "\nPinning sets in second not in first:" )
-    #for elt in difference( pinsets2, pinsets1 ):
-    #    print( "Considering pinset:", elt )
-    #    print( "Relative to", base1, "we have", testSi( drawnpd, elt, baseRegion = base1 ) )
-    #    print( "Relative to", base2, "we have", testSi( drawnpd, elt, baseRegion = base2 ) )
-    #    print()
-
-    return
-    
-    print( "Pinning sets in first not in second:" )
-    for elt in difference( pinsets1, pinsets2 ):
-        print( "Considering pinset:", elt )
-        print( "Relative to", base1, "we have", testSi( drawnpd, elt, baseRegion = base1 ) )
-        print( "Relative to", base2, "we have", testSi( drawnpd, elt, baseRegion = base2 ) )
-        print()
-    print( "\nPinning sets in second not in first:" )
-    for elt in difference( pinsets2, pinsets1 ):
-        print( "Considering pinset:", elt )
-        print( "Relative to", base1, "we have", testSi( drawnpd, elt, baseRegion = base1 ) )
-        print( "Relative to", base2, "we have", testSi( drawnpd, elt, baseRegion = base2 ) )
-        print()
-
-    # grab the pinset of size 4 that pins loop 2 but not loop 1
-    #special = difference( pinsets2, pinsets1 )[1]
-    #print(  )
-
-    # double check that it doesnt pin loop1
-
-    
-
-    
-
-def test8():
-    """Demonstrates/tests for PD code discrepancy (originally with the Mona Lisa loop and 9 crossing loop.)
-    Also illustrates 'correct' use of which PD to feed to snappy
-    vs our algorithm"""
-
-
-    #link = 'K14a4'
-    #mona lisa loop:
-    link = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
-            (6, 14, 7, 13), (2, 17, 3, 18), (8, 15, 9, 16), \
-            (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
-            (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
-    # 8 crossing loop with no embedded monorbigons
-    link = [(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), \
-            (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
-    # another equivalent one:
-    #link = [(11,16,12,1),(13,3,14,2),(8,4,9,3),(15,4,16,5),(10,5,11,6),(1,7,2,6),(12,8,13,7),(9,15,10,14)]
-    # The algorithm is finding a consistent pinning poset for this loop
-    #link= rawPDtoPlinkPD( link )
-
-    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
-    link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
-            (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
-            (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
-    drawnpd = plinkPD( link )
-    #link.sort()
-    #print( "original:", link )
-    #print()
-
-    #link1 = plinkPD( link )
-    
-    # do this cycling to make sure pinset behavior is preserved for different PD codes
-    offset = 0
-    for i in range( 2 ):
-        link = drawnpd
-        drawnpd = plinkPD( drawnpd )
-        
-        #link.sort()
-        #print( i, ":", link )
-    #   print()
-       
-    #return
-    #print( rawPDtoPlinkPD( plinkPDtoRawPD( link ) ) )
-    #print( plinkPDtoRawPD( rawPDtoPlinkPD( link ) ) )
-    #print( plinkPDtoRawPD( plinkPDtoRawPD( rawPDtoPlinkPD( link ) ) ) )
-    #print( rawPDtoPlinkPD( link ) )
-    #print( rawPDtoPlinkPD( link ) )
-    #plinkFromPD( link )
-    #print( hackyPD( link ) )
-    #plink( link1 )
-    #return
-    #link = '6_1'
-    
-    # the tests below all go faster than before
-    #link = 'K14n1'
-    #link = '10_24' # not showing minimal pinsets only? is computing ALL pinsets correctly by naive check
-    #link = 'K11a340' #takes about 30 seconds to run
-    #link = 'K11n100' #takes about a minute to run
-    #pinSets( link, debug = True )
-
-    # For debugging 9-crossing monorbigon-free example with PD_offset 0
-    # toggle between baseRegion = 16898 ( naivePinSets: 374, recursivePinsets: 347 )
-    # and baseRegion = 270864 ( naivePinSets: 395, recursivePinsets: 395 )
-    
-        pinsets = pinSets( drawnpd, debug = False )[0]#, treeBase = 270864 )#, rewriteFrom = 270864 )
-        #print( pinsets )
-        pinSetDict = {}
-        minlen = len( pinsets[0] )
-        print( "Minimal pinning sets:" )
-        for elt in pinsets:
-            try:
-                pinSetDict[len(elt)]+=1
-            except KeyError:
-                pinSetDict[len(elt)] = 1
-            print( elt )
-            if len( elt ) < minlen:
-                minlen = len( elt )
-        print()
-        print( "Number of minimal pinning sets:", len( pinsets ) )
-        print( "Pinning number:", minlen )
-        keys = list( pinSetDict.keys() )
-        keys.sort()
-        print( "Minimal pining sets by size:" )
-        for key in keys:
-           print( " Number of minimal pinning sets of size", key, ":", pinSetDict[key] )
-        print()
-        print( "PD_code offset:", i )
-        print( "Input PD:", link )
-        print( "Drawn PD:", drawnpd )
-        print()
-
-    #plinkFromPD( link )
-    
-####################### DATABASE FUNCTIONS ####################################
-
-# These functions are failing to capture the general behavior of how snappy messes with PD codes
-# I can't figure out the exact relationship between
-def rawPDtoPlinkPD( link ):
-    """Gets the PD code for a snappy link that is displayed when
-    drawing the link using snappy.plink.
-    Input can be a string or a list"""
-    #assert( type( link ) == str )
-    pd_in = snappy.Link( link ).PD_code()
-    edgeLength = len(pd_in)*2
-    pd_out = []
-    for i in range( len( pd_in ) ):
-        cycle = []
-        for j in pd_in[i]:
-            if j == 1:
-                cycle.append( edgeLength )
-            else:
-                cycle.append( (j-1)%edgeLength )
-        pd_out.append( cycle )
-    return pd_out
-
-def plinkPDtoRawPD( link ):
-    """Gets the raw PD code associated to a plink PD (inverse of function above)"""
-    #pd_in = snappy.Link( link ).PD_code()
-    assert( type( link ) == list )
-    edgeLength = len( link )*2
-    pd_out = []
-    for i in range( len( link ) ):
-        cycle = []
-        for j in link[i]:
-            if j == edgeLength - 2:
-                cycle.append( edgeLength )
-            else:
-                cycle.append( (j+2)%edgeLength )
-        pd_out.append( cycle )
-    return pd_out
-    
-
-def plinkPD( link ):
-    LE = snappy.Link( link ).view()
-    code = LE.PD_code()
-    LE.done()
-    return code
-
-def plinkFromStr( link ):
-    assert( type( link ) == str )
-    snappy.Link( link ).view()
-
-def plinkFromPD( link ):
-    assert( type( link ) == list )
-    snappy.Link( link ).view()    
-
-def drawLoop():
-    M = snappy.Manifold()
-    #while str( M ) == "Empty Triangulation":
-    input( "Draw loop and send to snappy. Press any key when finished." )
-    return M.getPDcode()
-
-def SurfaceGraphFromPD( pd ):
-    sigma = pd
-    coordsDict = {}
-    for i in range( len( sigma ) ):
-        for j in range( len( sigma[i] ) ):
-            try:
-                coordsDict[ sigma[i][j] ].append( [i,j] )
-            except KeyError:
-                coordsDict[ sigma[i][j] ] = []
-                coordsDict[ sigma[i][j] ].append( [i,j] )
-
-    def regionFromCoords( coords ):
-        startEdge = sigma[coords[0]][coords[1]]
-        reg = [startEdge]
-        #print( sigma[coords[0]][coords[1]] )
-        while True:
-            # depending on PD code convention, may need to
-            # subtract or add from index here
-            # to match clockwise/counterclockwise convention
-            nextEdge = sigma[coords[0]][(coords[1]-1)%4 ]
-            if nextEdge == startEdge:
-                break
-            reg.append( nextEdge )
-            for cordChoice in coordsDict[nextEdge]:
-                if coords[0] != cordChoice[0]:
-                    coords = cordChoice
-                    break
-        return reg   
-
-    #create dual graph 
-    edgeDict = {}
-
-    #print( pd )
-    #print() 
-    #print( coordsDict )
-
-    # define left and right relative to the first segment
-    # you want to start at the cycle containing 1 but not containing 2
-
-    if coordsDict[1][0][0] == coordsDict[2][0][0] or coordsDict[1][0][0] == coordsDict[2][1][0]:
-        curLeftCoords = coordsDict[1][0] 
-        curRightCoords = coordsDict[1][1]
-    else:
-        curLeftCoords = coordsDict[1][1] 
-        curRightCoords = coordsDict[1][0]   
-    
-    regDict = {}
-    indexDict = {}
-
-    for i in range( 1, len( sigma )*2+1 ): # this is the number of segments in the loop
-        # we must check whether regions on left and right of this edge exist yet
-        # make a choice for left and right based on the previous
-
-        curLeftRegion = regionFromCoords( curLeftCoords )
-        curRightRegion = regionFromCoords( curRightCoords )
-
-        leftkey = binHash( curLeftRegion )
-        rightkey = binHash( curRightRegion )
-        
-        try:
-            regDict[leftkey]
-        except KeyError:
-            eltToIndex = {}
-            for j in range( len(curLeftRegion) ):
-                eltToIndex[curLeftRegion[j]] = j
-            regDict[leftkey] = curLeftRegion
-            indexDict[leftkey] = eltToIndex
-
-        try:
-            regDict[rightkey][indexDict[rightkey][i]] *= -1 # right region sees this edge negative
-        except KeyError:
-            eltToIndex = {}
-            for j in range( len(curRightRegion) ):
-                eltToIndex[curRightRegion[j]] = j
-            regDict[rightkey] = curRightRegion
-            indexDict[rightkey] = eltToIndex
-            regDict[rightkey][indexDict[rightkey][i]] *= -1
-        edgeDict[i] = [ leftkey , rightkey ]
-
-        if i == len( sigma )* 2:
-            break
-        
-        if sigma[curLeftCoords[0]] == sigma[ coordsDict[i+1][1][0] ] or sigma[curRightCoords[0]] == sigma[ coordsDict[i+1][0][0] ]:
-            curLeftCoords, curRightCoords = coordsDict[i+1][0], coordsDict[i+1][1]
-        else:
-            curLeftCoords, curRightCoords = coordsDict[i+1][1], coordsDict[i+1][0]
-
-    return SurfaceGraph( regDict, adjDict = edgeDict )
-    
-
-def readPlanarDiagram( knot ):
-    """returns the planar diagram presentation of a knot with
-    at most 11 crossings from Rolfsen/Hoste/Thistlethwaite tables.
-    Knots under eleven crossings should be of the form 'x_y' for integers x
-    and y. Knots with eleven crossings should be of the form 'Kxay' or Kxny'
-    where the n or a stands for alternating or non-alternating."""
-    
-    assert( type( knot ) == str )
-    notfound = "Knot '"+knot+"' not found in database."
-    if ( len( knot ) < 3 ): #could pattern match here to save more time
-        warnings.warn( notfound )
-        return None 
-    try:
-        firstLetter = int( knot[0] )
-    except ValueError:
-        firstLetter = knot[0]
-        if firstLetter != 'K': #could pattern match here to save more time
-            warnings.warn( notfound )
-            return None
-
-    if type( firstLetter ) == int:
-        file = 'knotdata/Rolfsen.rdf'
-    else:
-        file = 'knotdata/Knots11.rdf'
-
-    f = open( file, 'r' )
-    key = "<knot:"+knot+">"
-    for line in f.readlines():
-        data = line.split()[:2]
-        if data[0]==key and data[1] == "<invariant:PD_Presentation>":
-            f.close()
-            data = line.split( "\"")[1].split("sub")
-            sigma = []
-            for i in range( 1, len( data ), 2 ):
-                data[i] = data[i][1:-2]
-                if "," in data[i]:
-                    toAdd = []
-                    for elt in data[i].split( "," ): 
-                        toAdd.append( int( elt ) )
-                    assert( len( toAdd ) == 4 )
-                    sigma.append( toAdd )
-                else:
-                    toAdd = []
-                    for elt in data[i]:
-                        toAdd.append( int( elt ) )
-                    assert( len( toAdd ) == 4 )
-                    sigma.append( toAdd )
-            
-            return sigma
-    f.close()
-    warnings.warn( notfound )
-    return None
-
-####################### OTHER GENERALLY USEFUL FUNCTIONS ####################################
-def intersection( list1, list2 ):
-    """Returns a list of all elements from list1 and list2"""
-    toReturn = []
-    for elt in list1:
-        if elt in list2 and not elt in toReturn:
-            toReturn.append( elt )
-    return toReturn
-
-def union( list1, list2 ):
-    """Returns a list of elements from list1 or list2"""
-    toReturn = []
-    for elt in list1:
-        if not elt in toReturn:
-            toReturn.append( elt )
-    for elt in list2:
-        if not elt in toReturn:
-            toReturn.append( elt )
-    return toReturn
-    
-
-def difference( list1, list2 ):
-    """Returns a list of all elements in list1 and not in list2"""
-    toReturn = []
-    for elt in list1:
-        if not elt in list2 and not elt in toReturn:
-            toReturn.append( elt )
-    return toReturn
-
-def isSubset( list1, list2 ):
-    """Returns True if and only if every element of list1 is in list2"""
-    return len( difference( list2, list1 ) ) == len( list2 ) - len( list1 )
-
-def powerset(iterable):
-    """
-    powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
-    stolen from https://stackoverflow.com/questions/374626/how-can-i-find-all-the-subsets-of-a-set-with-exactly-n-elements
-    for a 'naive check' of the pinset function
-    """
-    xs = list(iterable)
-    # note we return an iterator rather than a list
-    return chain.from_iterable(combinations(xs,n) for n in range(len(xs)+1))
-
-def randomWord( n, m, s = None ):
-    """Returns a random (unreduced) word of length n on m generators. s is random seed"""
-    a = []
-    if s is not None:
-        seed( a=s )
-    for i in range( n ):
-        a.append( (randint( 0,1 )*2-1)*randint( 1, m ) )
-    return Word( a )
-
-def sign(i,j):
-    """Returns 1 if i<j, 0 if i=j, -1 if i>j"""
-    return int(i!=j)*(int(i<j)*2-1)
-
-def cord(i,j,k):
-    """returns 1, -1, or 0 according to the cyclic order of i,j, and k in (-inf,inf)
-    e.g. cord(-1,2,3)=cord(3,1,2)=1, cord(2,1,3)=-1, cord(2,2,3)=cord(3,3,3)=0
-    works for any data types with '=' and '<' operators"""
-    return sign(i,j)*sign(j,k)*sign(i,k)
-
-def binHash( distinctNatList ):
-    """Given a list A of distinct nonnegative integers, computes a large integer
-    which encodes the elements present and serves as a hash key for the
-    corresponding set of naturals+0
-    WILL NOT WORK PROPERLY IF GIVEN LISTS OF NONDISTINCT INTEGERS."""
-
-    hashkey = 0
-    for elt in distinctNatList:
-        hashkey += 2**elt
-    return hashkey
-
-def binSet( num ):
-    """Returns set of indices where a binary number is nonzero"""
-    indexSet = set()
-    i = 0
-    while num != 0:
-        if num%2 != 0:
-            indexSet.add( i )
-        i += 1
-        num >>= 1
-    return indexSet    
-
-def listToDict( a ):
-    """Converts list to dictionary"""
-    toRet = {}
-    for i in range( len( a ) ):
-        toRet[i] = a[i]
-    return toRet
-
-def getKey( a ):
-    """Returns some key from a dictionary/set, or None if the dict/set is empty"""
-    for key in a:
-        return key
-    return None
 
 
 ####################### COMPUTING PINSETS ####################################
@@ -1083,7 +551,7 @@ class Word:
     def __init__( self, seq ):
         """seq is a list nonzero integers.
         The absolute value is the index of the generator and the sign indicates
-        \pm 1 in the exponent"""
+        \\pm 1 in the exponent"""
         # I feel like it might be better to use a linked list when we make the app
         # Depends on whether list slicing/gluing/shifting is O(1)
         assert( type( seq ) == list )
@@ -1436,9 +904,623 @@ class Word:
         return s
 
 
+####################### SNAPPY PD CODE WORKAROUNDS ####################################
 
-####################### TESTS ####################################
+# These functions are failing to capture the general behavior of how snappy messes with PD codes
+# I can't figure out the exact relationship between input PD and output PD
+def rawPDtoPlinkPD( link ):
+    """Gets the PD code for a snappy link that is displayed when
+    drawing the link using snappy.plink.
+    Input can be a string or a list"""
+    #assert( type( link ) == str )
+    pd_in = snappy.Link( link ).PD_code()
+    edgeLength = len(pd_in)*2
+    pd_out = []
+    for i in range( len( pd_in ) ):
+        cycle = []
+        for j in pd_in[i]:
+            if j == 1:
+                cycle.append( edgeLength )
+            else:
+                cycle.append( (j-1)%edgeLength )
+        pd_out.append( cycle )
+    return pd_out
 
+def plinkPDtoRawPD( link ):
+    """Gets the raw PD code associated to a plink PD (inverse of function above)"""
+    #pd_in = snappy.Link( link ).PD_code()
+    assert( type( link ) == list )
+    edgeLength = len( link )*2
+    pd_out = []
+    for i in range( len( link ) ):
+        cycle = []
+        for j in link[i]:
+            if j == edgeLength - 2:
+                cycle.append( edgeLength )
+            else:
+                cycle.append( (j+2)%edgeLength )
+        pd_out.append( cycle )
+    return pd_out
+
+from subprocess import call
+import os
+def plinkPD( link ):
+    """This function is a workaround to get the output PD code when plotting links
+    with snappy from an input PD code. The reason it does this external scripting
+    is a workaround for a known multithreading issue with snappy."""
+    while True:
+        filename = str( random() )+".txt"
+        try:
+            f = open( filename, 'r' )
+            f.close()
+        except FileNotFoundError:
+            break
+    call(['python3', 'plinkpd.py', str(link), filename])
+    f = open( filename, 'r' ) # can wait here if plinkpd.py doesn't have enough time to write to file
+    code = eval( f.read() )
+    f.close()
+    os.remove( filename )
+    return code
+
+# The functions below experiment with multithreading rather than subprocess.call
+# to deal with the snappy multithreading issue
+#from threading import Thread
+#from queue import Queue
+def plinkPDOld( link ):
+    que = Queue()
+    thread = Thread( target=lambda q, arg1: q.put( plinkPDHelper( arg1 ) ), args=(que, link ))
+    thread.start()
+    thread.join()
+    code = que.get()
+    return code
+    #LE = snappy.Link( link ).view()
+    #code = LE.PD_code()
+    #LE.done()
+    #return code
+
+def plinkPDHelper( link ):
+    LE = snappy.Link( link ).view()
+    code = LE.PD_code()
+    #LE.done()
+    return code
+
+def plinkFromStr( link ):
+    assert( type( link ) == str )
+    snappy.Link( link ).view()
+
+def plinkFromPD( link ):
+    assert( type( link ) == list )
+    snappy.Link( link ).view()    
+
+# Experimenting with drawing a loop and getting a PD code
+# Silly multithreading nonsense makes what's below not work as intended
+# Could still experiment with outsourcing to a separate script
+#
+def drawLoop():
+    M = snappy.Manifold()
+    #while str( M ) == "Empty Triangulation":
+    input( "Draw loop and send to snappy. Press any key when finished." )
+    # M.getPDcode() only works in Ben's custom snappy install (modified source code)
+    return M.getPDcode()
+
+####################### DATABASE/TRANSLATION FUNCTIONS ####################################
+
+def SurfaceGraphFromPD( pd ):
+    sigma = pd
+    coordsDict = {}
+    for i in range( len( sigma ) ):
+        for j in range( len( sigma[i] ) ):
+            try:
+                coordsDict[ sigma[i][j] ].append( [i,j] )
+            except KeyError:
+                coordsDict[ sigma[i][j] ] = []
+                coordsDict[ sigma[i][j] ].append( [i,j] )
+
+    def regionFromCoords( coords ):
+        startEdge = sigma[coords[0]][coords[1]]
+        reg = [startEdge]
+        #print( sigma[coords[0]][coords[1]] )
+        while True:
+            # depending on PD code convention, may need to
+            # subtract or add from index here
+            # to match clockwise/counterclockwise convention
+            nextEdge = sigma[coords[0]][(coords[1]-1)%4 ]
+            if nextEdge == startEdge:
+                break
+            reg.append( nextEdge )
+            for cordChoice in coordsDict[nextEdge]:
+                if coords[0] != cordChoice[0]:
+                    coords = cordChoice
+                    break
+        return reg   
+
+    #create dual graph 
+    edgeDict = {}
+
+    #print( pd )
+    #print() 
+    #print( coordsDict )
+
+    # define left and right relative to the first segment
+    # you want to start at the cycle containing 1 but not containing 2
+
+    if coordsDict[1][0][0] == coordsDict[2][0][0] or coordsDict[1][0][0] == coordsDict[2][1][0]:
+        curLeftCoords = coordsDict[1][0] 
+        curRightCoords = coordsDict[1][1]
+    else:
+        curLeftCoords = coordsDict[1][1] 
+        curRightCoords = coordsDict[1][0]   
+    
+    regDict = {}
+    indexDict = {}
+
+    for i in range( 1, len( sigma )*2+1 ): # this is the number of segments in the loop
+        # we must check whether regions on left and right of this edge exist yet
+        # make a choice for left and right based on the previous
+
+        curLeftRegion = regionFromCoords( curLeftCoords )
+        curRightRegion = regionFromCoords( curRightCoords )
+
+        leftkey = binHash( curLeftRegion )
+        rightkey = binHash( curRightRegion )
+        
+        try:
+            regDict[leftkey]
+        except KeyError:
+            eltToIndex = {}
+            for j in range( len(curLeftRegion) ):
+                eltToIndex[curLeftRegion[j]] = j
+            regDict[leftkey] = curLeftRegion
+            indexDict[leftkey] = eltToIndex
+
+        try:
+            regDict[rightkey][indexDict[rightkey][i]] *= -1 # right region sees this edge negative
+        except KeyError:
+            eltToIndex = {}
+            for j in range( len(curRightRegion) ):
+                eltToIndex[curRightRegion[j]] = j
+            regDict[rightkey] = curRightRegion
+            indexDict[rightkey] = eltToIndex
+            regDict[rightkey][indexDict[rightkey][i]] *= -1
+        edgeDict[i] = [ leftkey , rightkey ]
+
+        if i == len( sigma )* 2:
+            break
+        
+        if sigma[curLeftCoords[0]] == sigma[ coordsDict[i+1][1][0] ] or sigma[curRightCoords[0]] == sigma[ coordsDict[i+1][0][0] ]:
+            curLeftCoords, curRightCoords = coordsDict[i+1][0], coordsDict[i+1][1]
+        else:
+            curLeftCoords, curRightCoords = coordsDict[i+1][1], coordsDict[i+1][0]
+
+    return SurfaceGraph( regDict, adjDict = edgeDict )
+    
+
+def readPlanarDiagram( knot ):
+    """returns the planar diagram presentation of a knot with
+    at most 11 crossings from Rolfsen/Hoste/Thistlethwaite tables.
+    Knots under eleven crossings should be of the form 'x_y' for integers x
+    and y. Knots with eleven crossings should be of the form 'Kxay' or Kxny'
+    where the n or a stands for alternating or non-alternating."""
+    
+    assert( type( knot ) == str )
+    notfound = "Knot '"+knot+"' not found in database."
+    if ( len( knot ) < 3 ): #could pattern match here to save more time
+        warnings.warn( notfound )
+        return None 
+    try:
+        firstLetter = int( knot[0] )
+    except ValueError:
+        firstLetter = knot[0]
+        if firstLetter != 'K': #could pattern match here to save more time
+            warnings.warn( notfound )
+            return None
+
+    if type( firstLetter ) == int:
+        file = 'knotdata/Rolfsen.rdf'
+    else:
+        file = 'knotdata/Knots11.rdf'
+
+    f = open( file, 'r' )
+    key = "<knot:"+knot+">"
+    for line in f.readlines():
+        data = line.split()[:2]
+        if data[0]==key and data[1] == "<invariant:PD_Presentation>":
+            f.close()
+            data = line.split( "\"")[1].split("sub")
+            sigma = []
+            for i in range( 1, len( data ), 2 ):
+                data[i] = data[i][1:-2]
+                if "," in data[i]:
+                    toAdd = []
+                    for elt in data[i].split( "," ): 
+                        toAdd.append( int( elt ) )
+                    assert( len( toAdd ) == 4 )
+                    sigma.append( toAdd )
+                else:
+                    toAdd = []
+                    for elt in data[i]:
+                        toAdd.append( int( elt ) )
+                    assert( len( toAdd ) == 4 )
+                    sigma.append( toAdd )
+            
+            return sigma
+    f.close()
+    warnings.warn( notfound )
+    return None
+
+####################### OTHER GENERALLY USEFUL FUNCTIONS ####################################
+
+def randomWord( n, m, s = None ):
+    """Returns a random (unreduced) word of length n on m generators. s is random seed"""
+    a = []
+    if s is not None:
+        seed( a=s )
+    for i in range( n ):
+        a.append( (randint( 0,1 )*2-1)*randint( 1, m ) )
+    return Word( a )
+
+def sign(i,j):
+    """Returns 1 if i<j, 0 if i=j, -1 if i>j"""
+    return int(i!=j)*(int(i<j)*2-1)
+
+def cord(i,j,k):
+    """returns 1, -1, or 0 according to the cyclic order of i,j, and k in (-inf,inf)
+    e.g. cord(-1,2,3)=cord(3,1,2)=1, cord(2,1,3)=-1, cord(2,2,3)=cord(3,3,3)=0
+    works for any data types with '=' and '<' operators"""
+    return sign(i,j)*sign(j,k)*sign(i,k)
+
+def binHash( distinctNatList ):
+    """Given a list A of distinct nonnegative integers, computes a large integer
+    which encodes the elements present and serves as a hash key for the
+    corresponding set of naturals+0
+    WILL NOT WORK PROPERLY IF GIVEN LISTS OF NONDISTINCT INTEGERS."""
+
+    hashkey = 0
+    for elt in distinctNatList:
+        hashkey += 2**elt
+    return hashkey
+
+def binSet( num ):
+    """Returns set of indices where a binary number is nonzero"""
+    indexSet = set()
+    i = 0
+    while num != 0:
+        if num%2 != 0:
+            indexSet.add( i )
+        i += 1
+        num >>= 1
+    return indexSet    
+
+def listToDict( a ):
+    """Converts list to dictionary"""
+    toRet = {}
+    for i in range( len( a ) ):
+        toRet[i] = a[i]
+    return toRet
+
+def getKey( a ):
+    """Returns some key from a dictionary/set, or None if the dict/set is empty"""
+    for key in a:
+        return key
+    return None
+
+####################### FUNCTIONS WHICH SHOULD ONLY BE USED FOR DEBUGGING ####################################
+
+def intersection( list1, list2 ):
+    """Returns a list of all elements from list1 and list2"""
+    toReturn = []
+    for elt in list1:
+        if elt in list2 and not elt in toReturn:
+            toReturn.append( elt )
+    return toReturn
+
+def union( list1, list2 ):
+    """Returns a list of elements from list1 or list2"""
+    toReturn = []
+    for elt in list1:
+        if not elt in toReturn:
+            toReturn.append( elt )
+    for elt in list2:
+        if not elt in toReturn:
+            toReturn.append( elt )
+    return toReturn
+    
+
+def difference( list1, list2 ):
+    """Returns a list of all elements in list1 and not in list2"""
+    toReturn = []
+    for elt in list1:
+        if not elt in list2 and not elt in toReturn:
+            toReturn.append( elt )
+    return toReturn
+
+def isSubset( list1, list2 ):
+    """Returns True if and only if every element of list1 is in list2"""
+    return len( difference( list2, list1 ) ) == len( list2 ) - len( list1 )
+
+from itertools import chain, combinations
+def powerset(iterable):
+    """
+    powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
+    stolen from https://stackoverflow.com/questions/374626/how-can-i-find-all-the-subsets-of-a-set-with-exactly-n-elements
+    for a 'naive check' of the pinset function
+    """
+    xs = list(iterable)
+    # note we return an iterator rather than a list
+    return chain.from_iterable(combinations(xs,n) for n in range(len(xs)+1))
+
+####################### OLD/COMPLETED TESTS ####################################
+def test10():
+    """Another function to compute pinning sets of drawn loops"""
+
+    #link = 'K14a4'
+    #mona lisa loop:
+    link = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
+            (6, 14, 7, 13), (2, 17, 3, 18), (8, 15, 9, 16), \
+            (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
+            (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
+    # 8 crossing loop with no embedded monorbigons
+    #link = [(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), \
+    #        (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
+    # another equivalent one:
+    #link = [(11,16,12,1),(13,3,14,2),(8,4,9,3),(15,4,16,5),(10,5,11,6),(1,7,2,6),(12,8,13,7),(9,15,10,14)]
+
+    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
+    #link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
+    #        (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
+    #        (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
+
+    drawnpd = plinkPD( link )
+    
+    # do this cycling to make sure pinset behavior is preserved for different PD codes
+    offset = 0
+    for i in range( offset ):
+        link = drawnpd
+        drawnpd = plinkPD( drawnpd )
+
+    minOnly = True
+    debug = True
+    pinsets = pinSets( drawnpd, debug = debug, minOnly = minOnly )
+    if minOnly:
+        print( "Minimal pinning sets:" )
+    minlen = len( pinsets[0] )
+    for elt in pinsets[0]:
+        if minOnly or debug:
+            print( elt )
+        if len( elt ) < minlen:
+            minlen = len( elt )
+    #print( "MinOnly:", minOnly )
+    print()
+    if minOnly:
+        print( "Number of minimal pinning sets:", len( pinsets[0] ) )
+    print( "Number of total pinning sets:", pinsets[1] )
+    print( "Pinning number:", minlen )
+    print()
+    print( "Input PD:", link )
+    print( "Drawn PD:", drawnpd )
+    #plinkFromPD( link )
+
+def test9():
+    """Debugging the 9-crossing loop having different behavior for different spanning trees"""
+    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
+    link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
+            (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
+            (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
+    drawnpd = plinkPD( link )
+
+    print( "Input PD:", link )
+    print( "Drawn PD:", drawnpd )
+
+    # For debugging 9-crossing monorbigon-free example with PD_offset 0
+    # toggle between baseRegion = 16898 ( naivePinSets: 374, recursivePinsets: 347 )
+    # and baseRegion = 270864 ( naivePinSets: 395, recursivePinsets: 395 )
+    base1 = 16898
+    base2 = 270864
+    # base2 is the infinite region, so we always try to rewrite from there
+    # however the answer should not depend on spanning tree (specified by treeBase)
+    print( "All pinsets rel treeBase=", base1, ":" )
+    allpinsets1, naive1 = pinSets( drawnpd, debug = True, minOnly = False, treeBase = base1, rewriteFrom = base2 )
+    print()
+    
+    print( "All pinsets rel treeBase=", base2, ":" )
+    allpinsets2, naive2 = pinSets( drawnpd, debug = True, minOnly = False, treeBase = base2, rewriteFrom = base2 )
+    print()
+    
+    print( "Min pinsets rel treeBase=", base1, ":" )
+    minpinsets1 = pinSets( drawnpd, debug = True, minOnly = True, treeBase = base1, rewriteFrom = base2 )[0]
+    print()
+    
+    print( "Min pinsets rel treeBase=", base2, ":" )
+    minpinsets2 = pinSets( drawnpd, debug = True, minOnly = True, treeBase = base2, rewriteFrom = base2 )[0]
+    print()
+
+    print( "Min1 is subset All1?", isSubset( minpinsets1, allpinsets1 ) )
+    print( "Min2 is subset All2?", isSubset( minpinsets2, allpinsets2 ) )
+    print( "All1 is subset Naive1?", isSubset( allpinsets1, naive1 ) )
+    print( "All2 is subset Naive2?", isSubset( allpinsets2, naive2 ) )
+    print( "All1 cap Min2 is a subset of Min1", isSubset( intersection( allpinsets1, minpinsets2), minpinsets1 ) )
+    print( "#Naive1\\(Min2 cup All1)", len( difference( naive1, union( minpinsets2, allpinsets1 ) ) ) )
+    print( "#All1\\Naive1", len( difference( allpinsets1, naive1 ) ) )
+    print( "#Naive1\\All1", len( difference( naive1, allpinsets1 ) ) )
+    print( "#Min1\\#Min2:", len( difference( minpinsets1, minpinsets2 ) ) )
+    print( "#Min2\\#Min1:", len( difference( minpinsets2, minpinsets1 ) ) )
+    print( "#Min2\\#All1:", len( difference( minpinsets2, allpinsets1 ) ) )
+    print( "#Min2\\#Naive1:", len( difference( minpinsets2, naive1 ) ) ) 
+
+    print( "Discrepancies follow..." )
+    print()
+
+    badcount = 0
+    for elt in naive2:
+        # base2 is the infinite region, so we always try to rewrite from there
+        dataBase1 = testSi( drawnpd, elt, treeBase = base1, rewriteFrom = base2 )
+        dataBase2 = testSi( drawnpd, elt, treeBase = base2, rewriteFrom = base2 )
+        #return {"gamma.si( T.orderDict )":gamma.si( T.orderDict ), \
+        #    "rep.si( T.orderDict )":rep.si( T.orderDict ), \
+        #   "rep":rep, "newRewriteFrom":newRewriteFrom, \
+        #    "gamma":gamma, "T.orderDict":T.orderDict, "T.order":T.order}
+        if dataBase1["gamma.si( T.orderDict )"] != dataBase1["rep.si( T.orderDict )"]\
+           or dataBase2["gamma.si( T.orderDict )"] != dataBase2["rep.si( T.orderDict )"]:
+            testSi( drawnpd, elt, treeBase = base1, rewriteFrom = base2, verbose = True )
+            testSi( drawnpd, elt, treeBase = base2, rewriteFrom = base2, verbose = True )
+
+            
+            print( "Considering pinset:", elt, "(size", len(elt), ")" )
+            print()
+            print( "  Relative to treeBase=", base1, " and rewriteFrom=", dataBase1["newRewriteFrom"], " we have:" )
+            print( "  gamma=", dataBase1["gamma"] )
+            print( "  gamma(pinset,rewriteFrom)=", dataBase1["rep"] )
+            print( "  si(gamma,{},rewriteFrom)=", dataBase1["gamma.si( T.orderDict )"],\
+                   ",\tsi(gamma,pinset,rewriteFrom)=", dataBase1["rep.si( T.orderDict )"] )
+            print( "  T(treeBase).orderDict=", dataBase1["T.orderDict"] )
+            print( "  T(treeBase).order=", Word(dataBase1["T.order"]) )
+            
+            if base2 != dataBase1["newRewriteFrom"]:
+                print( "  rewriteFrom=", base2, "was to be filled, so it was modified as above." )
+    
+            print()
+            print( "  Relative to treeBase=", base2, " and rewriteFrom=", dataBase2["newRewriteFrom"], " we have:" )
+            print( "  gamma=", dataBase2["gamma"] )
+            print( "  gamma(pinset,rewriteFrom)=", dataBase2["rep"] )
+            print( "  si(gamma,{},rewriteFrom)=", dataBase2["gamma.si( T.orderDict )"],\
+                   ",\tsi(gamma,pinset,rewriteFrom)=", dataBase2["rep.si( T.orderDict )"] )
+            print( "  T(treeBase).orderDict=", dataBase2["T.orderDict"] )
+            print( "  T(treeBase).order=", Word(dataBase2["T.order"]) )
+            if base2 != dataBase2["newRewriteFrom"]:
+                print( "  rewriteFrom=", base2, "was to be filled, so it was modified as above." )
+            
+            print()
+            badcount += 1
+       
+        #if :
+        #    print( "Considering pinset:", elt )
+            
+        #    print()
+        #    badcount += 1
+    print( "Total discrepancies:", badcount )
+    #print( "\nPinning sets in second not in first:" )
+    #for elt in difference( pinsets2, pinsets1 ):
+    #    print( "Considering pinset:", elt )
+    #    print( "Relative to", base1, "we have", testSi( drawnpd, elt, baseRegion = base1 ) )
+    #    print( "Relative to", base2, "we have", testSi( drawnpd, elt, baseRegion = base2 ) )
+    #    print()
+
+    return
+    
+    print( "Pinning sets in first not in second:" )
+    for elt in difference( pinsets1, pinsets2 ):
+        print( "Considering pinset:", elt )
+        print( "Relative to", base1, "we have", testSi( drawnpd, elt, baseRegion = base1 ) )
+        print( "Relative to", base2, "we have", testSi( drawnpd, elt, baseRegion = base2 ) )
+        print()
+    print( "\nPinning sets in second not in first:" )
+    for elt in difference( pinsets2, pinsets1 ):
+        print( "Considering pinset:", elt )
+        print( "Relative to", base1, "we have", testSi( drawnpd, elt, baseRegion = base1 ) )
+        print( "Relative to", base2, "we have", testSi( drawnpd, elt, baseRegion = base2 ) )
+        print()
+
+    # grab the pinset of size 4 that pins loop 2 but not loop 1
+    #special = difference( pinsets2, pinsets1 )[1]
+    #print(  )
+
+    # double check that it doesnt pin loop1
+
+def test8():
+    """Demonstrates/tests for PD code discrepancy (originally with the Mona Lisa loop and 9 crossing loop.)
+    Also illustrates 'correct' use of which PD to feed to snappy
+    vs our algorithm"""
+
+
+    #link = 'K14a4'
+    #mona lisa loop:
+    link = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
+            (6, 14, 7, 13), (2, 17, 3, 18), (8, 15, 9, 16), \
+            (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
+            (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
+    # 8 crossing loop with no embedded monorbigons
+    link = [(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), \
+            (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
+    # another equivalent one:
+    #link = [(11,16,12,1),(13,3,14,2),(8,4,9,3),(15,4,16,5),(10,5,11,6),(1,7,2,6),(12,8,13,7),(9,15,10,14)]
+    # The algorithm is finding a consistent pinning poset for this loop
+    #link= rawPDtoPlinkPD( link )
+
+    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
+    link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
+            (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
+            (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
+
+    
+   
+    drawnpd = plinkPD( link )
+    #link.sort()
+    #print( "original:", link )
+    #print()
+
+    #link1 = plinkPD( link )
+    
+    # do this cycling to make sure pinset behavior is preserved for different PD codes
+    offset = 0
+    for i in range( 2 ):
+        link = drawnpd
+        drawnpd = plinkPD( drawnpd )
+        
+        #link.sort()
+        #print( i, ":", link )
+    #   print()
+       
+    #return
+    #print( rawPDtoPlinkPD( plinkPDtoRawPD( link ) ) )
+    #print( plinkPDtoRawPD( rawPDtoPlinkPD( link ) ) )
+    #print( plinkPDtoRawPD( plinkPDtoRawPD( rawPDtoPlinkPD( link ) ) ) )
+    #print( rawPDtoPlinkPD( link ) )
+    #print( rawPDtoPlinkPD( link ) )
+    #plinkFromPD( link )
+    #print( hackyPD( link ) )
+    #plink( link1 )
+    #return
+    #link = '6_1'
+    
+    # the tests below all go faster than before
+    #link = 'K14n1'
+    #link = '10_24' # not showing minimal pinsets only? is computing ALL pinsets correctly by naive check
+    #link = 'K11a340' #takes about 30 seconds to run
+    #link = 'K11n100' #takes about a minute to run
+    #pinSets( link, debug = True )
+
+    # For debugging 9-crossing monorbigon-free example with PD_offset 0
+    # toggle between baseRegion = 16898 ( naivePinSets: 374, recursivePinsets: 347 )
+    # and baseRegion = 270864 ( naivePinSets: 395, recursivePinsets: 395 )
+    
+        pinsets = pinSets( drawnpd, debug = False )[0]#, treeBase = 270864 )#, rewriteFrom = 270864 )
+        #print( pinsets )
+        pinSetDict = {}
+        minlen = len( pinsets[0] )
+        print( "Minimal pinning sets:" )
+        for elt in pinsets:
+            try:
+                pinSetDict[len(elt)]+=1
+            except KeyError:
+                pinSetDict[len(elt)] = 1
+            print( elt )
+            if len( elt ) < minlen:
+                minlen = len( elt )
+        print()
+        print( "Number of minimal pinning sets:", len( pinsets ) )
+        print( "Pinning number:", minlen )
+        keys = list( pinSetDict.keys() )
+        keys.sort()
+        print( "Minimal pining sets by size:" )
+        for key in keys:
+           print( " Number of minimal pinning sets of size", key, ":", pinSetDict[key] )
+        print()
+        print( "PD_code offset:", i )
+        print( "Input PD:", link )
+        print( "Drawn PD:", drawnpd )
+        print()
+
+    #plinkFromPD( link )
 
 def test7():
     link = '9_24'
