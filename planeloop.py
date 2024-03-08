@@ -44,21 +44,112 @@ from random import *
 import traceback
 import warnings
 import snappy
+import os
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"*5 # generator alphabet, used for readable output only. Inverses are upper case
     
 def main():
     
-    #pd = drawLoop()
-    #print( pd )
-    test8()
+    test11()
+
+def drawLattice( pinSets ):
+    elms = pinSets
+    listSet = []
+    # elms need to be hashable
+    for elt in elms:
+        listSet.append( elms.index( elt ) )
+    #print( pinSets )
+    rels = []
+    # it seems you have to give sage the relations between elements manually
+    for i in range( len( elms )-1):
+        for j in range( i+1, len(elms) ):
+            if elms[i].issubset( elms[j] ):
+                rels.append([elms.index(elms[i]),elms.index(elms[j])])
+            if elms[j].issubset( elms[i] ):
+                rels.append([elms.index(elms[j]),elms.index(elms[i])])
+    M = JoinSemilattice((listSet, rels))
+    sageplot( M )
 
 def test11():
-    """Testing a bunch of sage commands"""
-    print( factor( 23823482394 ) )
+    """Drawing a semilattice for the 8 crossing knot with no embedded monorbigons"""
+    #print( factor( 23823482394 ) )
+    
+    #M = LatticePoset([{1,2},{3},{2}])
+    #elms = [1,2,3,4,5,6,7]
+
+    #rels = [[1,2],[3,4],[4,5],]
+
+    #M = Poset((elms, rels))
+    
+    #print( M )
+    #sageplot( M )
+    #return
+    #M.plot()
+    #L1 = Link([[2, 1, 1, 2]])
+    #sageplot( L1 )#print( L )
+    #L1.plot()
+    
+    #8 crossing loop with no embedded monorbigons
+    link = [(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), \
+            (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
+
+    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
+    #link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
+    #        (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
+    #        (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
+
+    drawnpd = plinkPD( link )
+    pinsets = pinSets( drawnpd )
+    print( "Minimal pinning sets:" )
+    minlen = len( pinsets[0] )
+    for elt in pinsets[0]:
+        print( elt )
+        if len( elt ) < minlen:
+            minlen = len( elt )
+    print()
+ 
+    print( "Number of minimal pinning sets:", len( pinsets[0] ) )
+    print( "Number of total pinning sets:", pinsets[1] )
+    print( "Pinning number:", minlen )
+
+    pinsets = pinSets( drawnpd, minOnly = False )
+    print( len( pinsets[0] ) )
+
+    #plinkFromPD( link )
+    drawLattice( pinsets[0] )
     
 
+    #print( pinsets[0] )
+    #M = JoinSemilattice([{1},{2},{2,3},{1,2,3}])
+    
+    #print( M )
+    #sageplot( M )
 
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+def sageplot( sageObject ):
+    """A workaround function for getting a sage object to show via matplotlib
+    since sageObject.plot() does not produce visible output when run from script"""
+    p = sageObject.plot()# vertex_labels=False)
+    filename = getUnusedFileName( "png" )
+    p.save( filename )
+    img = mpimg.imread( filename )
+    plt.imshow(img)
+    plt.show()
+    os.remove(filename)
+
+def getUnusedFileName( ext ):
+    """Gets a filename in the current folder that is not in use with the extension str"""
+    assert( type( ext ) == str )
+    while True:
+        filename = str( random() )+"."+ext
+        try:
+            f = open( filename, 'r' )
+            f.close()
+        except FileNotFoundError:
+            break
+    return filename    
+    
 ####################### COMPUTING PINSETS ####################################
 def testSi( link, pinSet, treeBase = 0, rewriteFrom = 0, verbose = False):
     """Returns si(gamma) relative to all pins, and si(gamma) relative to the pins in pinSet
@@ -124,6 +215,7 @@ def pinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFrom =
         return rep.si( T.orderDict ) == n        
 
     pinSets = []
+    minPinSets = []
     numPinSets = 0
     falseMins = {"superset":0,"subset":0 }
 
@@ -607,13 +699,14 @@ class Word:
         return self*~other
 
     def __invert__( self ):
-        """Returns the inverse word (call with ~word)"""
+        """Returns the inverse word (call with ~self)"""
         revseq = []
         for i in range( len( self.seq ) - 1, -1, -1 ):
             revseq.append( -self.seq[i] )
         return Word( revseq ) 
 
     def __pow__( self, n):
+        """Returns self**n"""
         assert( type( n ) == int )
         seq = []
         for i in range( abs( n ) ):
@@ -692,7 +785,7 @@ class Word:
         # count intersections of primitive roots
         # can make this faster by skipping ahead if fellow travel is encountered
         # crossValDict = {}
-        indexDict = {}
+        #indexDict = {}
         primCrossCount = 0
         shiftCount = 0
         i = 0
@@ -701,7 +794,7 @@ class Word:
             while j < len( rootother ):
                 cross, valplus, valminus = rootself.crossval( rootother, order, i=i, j=j, verbose = verbose)
                 val = abs( valplus ) + abs( valminus )
-                indexDict[(i,j)]={"cross":abs(cross),"valplus":abs(valplus),"valminus":abs(valminus)}
+                #indexDict[(i,j)]={"cross":abs(cross),"valplus":abs(valplus),"valminus":abs(valminus)}
                 #crossValDict[((i-abs(valminus))%len(rootself),(j-abs(valminus))%len(rootother),\
                 #              (i+abs(valplus))%len(rootself),(j+abs(valplus))%len(rootother))] = abs( cross )
                 if verbose:
@@ -712,7 +805,15 @@ class Word:
                 j+= 1#abs( val ) + 1
             i+=1
 
-        # trying to experiment with skipping ahead, it's not working so far.
+        if verbose:
+            print( "Number of shifts for this computation:", shiftCount )
+            print( "primCrossCount=", primCrossCount )
+            print()
+                
+        return round( primCrossCount )*powself*powother
+
+        # Experimenting with skipping ahead to avoid relying on
+        # floating point division and get a speedup. It's not working so far.
         # I really don't understand why the crossValDict method here doesn't work
         #count = 0
         #for key in crossValDict:
@@ -749,14 +850,7 @@ class Word:
         #    for j in range( len( rootother ) ):
         #        try:
                     
-        #        indexSet[ (i,j) ] = None
-        
-        if verbose:
-            print( "Number of shifts for this computation:", shiftCount )
-            print( "primCrossCount=", primCrossCount )
-            print()
-                
-        return round( primCrossCount )*powself*powother
+        #        indexSet[ (i,j) ] = None       
     
     def crossval( self, other, order, i=0, j=0, verbose = False ):
         """ Words must be cyclically reduced and positive length
@@ -817,16 +911,7 @@ class Word:
             return -int( initcross1 == initcross2 ), -plusdata[0], -minusdata[0]
 
         # if here, there is no fellow traveling, and they don't cross
-        return 0, 0, 0
-        
-
-        #print( "hi" )
-        #print( p1, p2, n1, n2 )
-        #print( order[p1], order[p2], order[n1], order[n2] )
-        #print( initcross2, initcross1 )
-        #assert( False )
-
-        
+        return 0, 0, 0        
             
     def initinfo( self, other ):
         """given two words, returns data about common initial segments of their periodisations
@@ -903,7 +988,6 @@ class Word:
                 s += letter.upper()
         return s
 
-
 ####################### SNAPPY PD CODE WORKAROUNDS ####################################
 
 # These functions are failing to capture the general behavior of how snappy messes with PD codes
@@ -943,18 +1027,11 @@ def plinkPDtoRawPD( link ):
     return pd_out
 
 from subprocess import call
-import os
 def plinkPD( link ):
     """This function is a workaround to get the output PD code when plotting links
-    with snappy from an input PD code. The reason it does this external scripting
-    is a workaround for a known multithreading issue with snappy."""
-    while True:
-        filename = str( random() )+".txt"
-        try:
-            f = open( filename, 'r' )
-            f.close()
-        except FileNotFoundError:
-            break
+    with snappy from an input PD code. The reason it does external scripting
+    and file I/O is a workaround for a known multithreading issue with snappy."""
+    filename = getUnusedFileName( "txt" )
     call(['python3', 'plinkpd.py', str(link), filename])
     f = open( filename, 'r' ) # can wait here if plinkpd.py doesn't have enough time to write to file
     code = eval( f.read() )
@@ -1094,7 +1171,6 @@ def SurfaceGraphFromPD( pd ):
 
     return SurfaceGraph( regDict, adjDict = edgeDict )
     
-
 def readPlanarDiagram( knot ):
     """returns the planar diagram presentation of a knot with
     at most 11 crossings from Rolfsen/Hoste/Thistlethwaite tables.
