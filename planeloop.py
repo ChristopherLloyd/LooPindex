@@ -48,105 +48,120 @@ import os
 import timeit
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"*5 # generator alphabet, used for readable output only. Inverses are upper case
+
+# SOME OF OUR FAVORITE LOOPS FOR TESTING
+
+#8 crossing loop with no embedded monorbigons
+link8 = [(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), \
+        (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
+
+# a 9 crossing example
+link9 = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
+        (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
+        (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
+
+#mona lisa loop:
+monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
+        (6, 14, 7, 13), (2, 17, 3, 18), (8, 15, 9, 16), \
+        (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
+        (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
     
 def main():
     
     test11()
 
-def minimalSubsetLatticeContaining( subsets ):
-    """This function takes a set of subsets and computes unions
-    and intersections to find the minimal lattice containing them (since sage's functionality
-    to do this seems very slow."""
-
-    fullUnion = set()
-    for elt in subsets:
-        fullUnion = fullUnion.union( elt )
-    fullIntersection = fullUnion.copy()
-    for elt in subsets:
-        fullIntersection = fullIntersection.intersection( elt )    
-
-    print( fullUnion )
-    print( fullIntersection )
-    rels = []
-
-    def downSets( sets, atoms ):
-        #print( "downsets sets:", sets )
-        if sets == [fullIntersection]:
-            return None
-        else:
-            setsD = []
-            for elt1 in sets:
-                for elt2 in atoms:
-                    cap = elt1.intersection( elt2 )
-                    if cap not in setsD:
-                        setsD.append( cap )
-            if setsD == sets:
-                return None
-            else:
-                return setsD
-
-    def upSets( sets, atoms ):
-        if sets == [fullUnion]:
-            return None
-        else:
-            setsU = []
-            for elt1 in sets:
-                for elt2 in atoms:
-                    cup = elt1.union( elt2 )
-                    if cup not in setsU:
-                        setsU.append( cup )
-            if setsU == sets:
-                return None
-            else:
-                return setsU
-
-    allsets = subsets.copy()
-    nextD = subsets
-    nextU = subsets
-    while True:        
-        if not (nextD is None):            
-            for elt in nextD:
-                if not elt in allsets:
-                    allsets.append( elt )
-            nextD = downSets( nextD, subsets )
-        if not (nextU is None):            
-            for elt in nextU:
-                if not elt in allsets:
-                    allsets.append( elt )
-            nextU = upSets( nextU, subsets )
-        if (nextD is None) and (nextU is None):
-            break
-
-    return allsets
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+def posetPlot( sageObject, heights, colors, vertlabels, edgeColors ):
+    """A workaround function for getting a sage object to show via matplotlib
+    since sageObject.plot() does not produce visible output when run from script"""
+    p = sageObject.plot( layout = "ranked",\
+                         vertex_colors = colors, edge_thickness = 2,
+                         edge_style = "-", heights = heights, vertex_labels = vertlabels,
+                         edge_colors = edgeColors)
+    filename = getUnusedFileName( "png" )
+    p.save( filename )
+    img = mpimg.imread( filename )
+    plt.imshow(img)
+    plt.show()
+    os.remove(filename)
 
 def drawLattice( pinSets, minPinSets, fullRegSet ):
-
-    elts = minimalSubsetLatticeContaining( minPinSets )
-    print( len( elts ) )
-    print( elts )
-    for elt1 in elts:
-        for elt2 in elts:
-            assert( elt1.union( elt2 ) in elts )
-            assert( elt1.intersection( elt2 ) in elts )
-   
-
+    elts = minJoinSemilatticeContaining( minPinSets )
+    eltsDict = {}
     rels = []
-    subsets = {}
     for subset in elts:
-        subsets[elts.index( subset )] = set( subset )
+        eltsDict[elts.index( subset )] = subset
     for i in range( len( elts )-1):
         for j in range( i+1, len( elts ) ):
-            if subsets[i].issubset( subsets[j] ):
+            if eltsDict[i].issubset( eltsDict[j] ):
                 rels.append([i,j])
-            if subsets[j].issubset( subsets[i] ):
+            if eltsDict[j].issubset( eltsDict[i] ):
                 rels.append([j,i])
 
-    L = LatticePoset((subsets, rels))
-    sageplot( L )
+    M = JoinSemilattice((eltsDict, rels))
+    print( M )
 
+    heightsDict = {}
+    for elt in M.list():
+        try:
+            heightsDict[len( eltsDict[elt] )].append( elt )
+        except KeyError:
+            heightsDict[len( eltsDict[elt] )] = [elt]
+    minColor = (0,1,0)
+    vertColorsDict = {minColor:[]}
+    for elt in M.list():
+        if eltsDict[elt] in minPinSets:
+            vertColorsDict[minColor].append( elt )
+    vertLabels = {}
+    for elt in M.list():
+        vertLabels[elt]=str( len( eltsDict[elt] ) )
+    edgeColorsDict = {}
+    for rel in rels:
+        pass
+    #print( M.hasse_diagram() )
+    G = DiGraph( M.hasse_diagram() )
+
+    edgeColors = {}
+    #A dictionary specifying edge colors:
+    #    each key is a color recognized by matplotlib, and each corresponding value is a list of edges.
+    diffs = set()
+    
+    for edge in G.edges():
+        diff = len( eltsDict[edge[1]] )-len( eltsDict[edge[0]] )
+        if diff not in diffs:
+            diffs.add( diff )
+
+    #print( diffs )
+
+    maxdiff = max(diffs)
+
+    for edge in G.edges():
+        
+        diff = len( eltsDict[edge[1]] )-len( eltsDict[edge[0]] )
+        #print( edge, eltsDict[edge[1]], eltsDict[edge[0]], diff )
+        #print( diff, maxdiff )
+        try:
+            edgeColors[(0,0,diff/maxdiff)].append( edge )
+        except KeyError:
+            edgeColors[(0,0,diff/maxdiff)] = [edge]
+        
+        
+        #G.set_edge_label(edge[0], edge[1], "green")
+        #edge = (edge[0], edge[1], "blue" )
+        #edge[2] = "blue"
+
+    #print( G.edges( labels=True) )
+
+    G = Graph( G )
+               
+        
+    posetPlot( G, heightsDict, vertColorsDict, vertLabels, edgeColors )
+        
     return
 
     
+    """
     subsets = {}
     pset1 = list( powerset( fullRegSet ) )
     pset = []
@@ -163,51 +178,63 @@ def drawLattice( pinSets, minPinSets, fullRegSet ):
                 rels.append([j,i])
 
     L = LatticePoset((subsets, rels))
-    pinSetDict = {}
+    #pinSetDict = {}
     minPinSetDict = {}
-    for elt in pinSets:
-        pinSetDict[pset.index( elt )] = elt
+    #for elt in pinSets:
+    #    pinSetDict[pset.index( elt )] = elt
     for elt in minPinSets:
         minPinSetDict[pset.index(elt)] = elt
 
-    print( "Finished creating full poset lattice." )
+    print( "Finished creating full subset lattice." )
     M = L.subjoinsemilattice(minPinSetDict)
-    print( "Finished creating minimal subjoinsemilattice containing minimal pinning sets." )
-    P = L.sublattice(minPinSetDict) #sublattice is extremely slow for 9-crossing link
-    print( "Finished creating full sublattice generated by pinnings sets." )
-    print( P )
-    return
-    
-   
+    # A faster way to do this would be to compute unions manually
+    # Then construct using JoinSemiLattice
+    print( "Finished creating the smallest join semilattice containing the minimal pinning sets." )
+    #P = L.sublattice(minPinSetDict) #sublattice is extremely slow for 9-crossing link
+    #print( "Finished creating full sublattice generated by pinnings sets." )
+    print( M )
 
+    
+    
     def printData( functions ):
+        nonlocal M
         for function in functions:
-            print( str( function ).split()[2], function() )
-        
-        """print( "P.is_planar():", P.is_planar() )
-        print( "P.join_matrix()", P.join_matrix() )
-        print( "P.breadth():", P.breadth() )
-        print( "P.is_join_pseudocomplemented()", P.is_join_pseudocomplemented()
-        print( "P.is_planar()
-        is_supersolvable
+            try:
+                func = eval( "M."+function )
+                print( str( func ).split()[2], func() )
+            except AttributeError:
+                print( traceback.print_exc() )
+ 
+    functions = ["is_planar", "breadth", "is_join_pseudocomplemented",\
+                "is_supersolvable", "skeleton",\
+                "center", "vertical_decomposition", "subdirect_decomposition"]
+    
+    #printData( functions )
+    #frattini_sublattice()
 
-        frattini_sublattice()
-        skeleton()
-        center()
-        vertical_decomposition()
-        subdirect_decomposition()"""
-        
-    printData( [P.is_planar, P.breadth, P.is_join_pseudocomplemented,\
-                P.is_supersolvable, P.skeleton,\
-                P.center, P.vertical_decomposition, P.subdirect_decomposition] )
+    #print( M.hasse_diagram )
+    #print( M.list() )
+    heightsDict = {}
+    for elt in M.list():
+        try:
+            heightsDict[len( subsets[elt] )].append( elt )
+        except KeyError:
+            heightsDict[len( subsets[elt] )] = [elt]
+    #print( heightsDict )
+    colorsDict = {"green":[]}
+    for elt in M.list():
+        if subsets[elt] in minPinSets:
+            colorsDict["green"].append( elt )
+    vertLabels = {}
+    for elt in M.list():
+        vertLabels[elt]=str( len( subsets[elt] ) )
+    posetPlot( Graph( M.hasse_diagram() ), heightsDict, colorsDict, vertLabels )
     
 
-    sageplot( M )
     
-    return
-    
-    
-    
+    return"""
+    """
+    # What's below was plotting the Join Semi Lattice from ALL pinning sets
         
     #elms = pinSets
     pinSetDict = {}
@@ -238,33 +265,77 @@ def drawLattice( pinSets, minPinSets, fullRegSet ):
     #L = M.subjoinsemilattice(minPinSetDict)
     #L = sage.combinat.posets.lattices.FiniteJoinSemilattice( M )
     #L = L.sublattice(minPinSetDict)
-    #sageplot( L )
+    #sageplot( L )"""
+
+def minJoinSemilatticeContaining( subsets ):
+    """This function takes a set of subsets and computes unions
+    to find the minimal join semilattice containing it"""
+
+    fullUnion = set()
+    for elt in subsets:
+        fullUnion = fullUnion.union( elt )
+    #fullIntersection = fullUnion.copy()
+    #for elt in subsets:
+    #    fullIntersection = fullIntersection.intersection( elt )    
+
+    #print( fullUnion )
+    #print( fullIntersection )
+    #rels = []
+
+    #def downSets( sets, atoms ):
+        #print( "downsets sets:", sets )
+    #    if sets == [fullIntersection]:
+    #        return None
+    #    else:
+    #        setsD = []
+    #        for elt1 in sets:
+    #            for elt2 in atoms:
+    #                cap = elt1.intersection( elt2 )
+    #                if cap not in setsD:
+    #                    setsD.append( cap )
+    #        if setsD == sets:
+    #            return None
+    #        else:
+    #            return setsD
+
+    def upSets( sets, atoms ):
+        if sets == [fullUnion]:
+            return None
+        else:
+            setsU = []
+            for elt1 in sets:
+                for elt2 in atoms:
+                    cup = elt1.union( elt2 )
+                    if cup not in setsU:
+                        setsU.append( cup )
+            if setsU == sets:
+                return None
+            else:
+                return setsU
+
+    allsets = subsets.copy()
+    #nextD = subsets
+    nextU = subsets
+    while True:        
+        #if not (nextD is None):            
+        #    for elt in nextD:
+        #        if not elt in allsets:
+        #            allsets.append( elt )
+        #    nextD = downSets( nextD, subsets )
+        if not (nextU is None):            
+            for elt in nextU:
+                if not elt in allsets:
+                    allsets.append( elt )
+            nextU = upSets( nextU, subsets )
+        else:
+            break
+
+    return allsets
 
 def test11():
-    """Drawing a semilattice for the 8 crossing knot with no embedded monorbigons"""
+    """Drawing the minimal join semilattice for a loop's pinning sets"""
 
-    og = [{1,2},{2,3},{4}]
-    elts = minimalSubsetLatticeContaining(og)
-    print( og )
-    print( elts )
-    for elt1 in elts:
-        for elt2 in elts:
-            if not elt1.union( elt2 ) in elts:
-                print( elt1, elt2, "Union:", elt1.union( elt2 ) )
-            if not elt1.intersection( elt2 ) in elts:
-                print( elt1, elt2, "Intersection:", elt1.intersection( elt2 ) )
-    return
-    #return
-    
-    #8 crossing loop with no embedded monorbigons
-    link = [(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), \
-            (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
-
-    # a 9 crossing example; cycle 0, 1 and 4 times to see small discrepancy
-    #link = [(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11),\
-    #        (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16),\
-    #        (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
-
+    link = monalisa
     drawnpd = plinkPD( link )
     pinsets, naivePinSets, minPinSets, fullRegSet = getPinSets( drawnpd, debug=False )
     print( "Minimal pinning sets:" )
@@ -279,31 +350,9 @@ def test11():
     print( "Number of total pinning sets:", len( pinsets ) )
     print( "Pinning number:", minlen )
 
-    #pinsets = pinSets( drawnpd, minOnly = False )
-    #print( len( pinsets[0] ) )
-
     #plinkFromPD( link )
     drawLattice( pinsets, minPinSets, fullRegSet )
-    
 
-    #print( pinsets[0] )
-    #M = JoinSemilattice([{1},{2},{2,3},{1,2,3}])
-    
-    #print( M )
-    #sageplot( M )
-
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-def sageplot( sageObject ):
-    """A workaround function for getting a sage object to show via matplotlib
-    since sageObject.plot() does not produce visible output when run from script"""
-    p = sageObject.plot()# vertex_labels=False)
-    filename = getUnusedFileName( "png" )
-    p.save( filename )
-    img = mpimg.imread( filename )
-    plt.imshow(img)
-    plt.show()
-    os.remove(filename)
 
 def getUnusedFileName( ext ):
     """Gets a filename in the current folder that is not in use with the extension str"""
