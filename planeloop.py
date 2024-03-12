@@ -79,8 +79,7 @@ def main():
     
     test11()
 
-def texPinSet(outputStr, plinkImg, posetImg):
-    """Generating and viewing a TeX file illustrating pinning sets"""
+def makeTex( loopStrings, imageFilesToDelete ):
     filename = "tex/pinSets"
     try:
         os.remove(filename+".tex")
@@ -101,31 +100,60 @@ def texPinSet(outputStr, plinkImg, posetImg):
                "\\usetikzlibrary{arrows,shapes}\n"+\
                "\\usepackage[matrix,arrow,curve,cmtip]{xy}\n"+\
                "\\usepackage{svg}\n"+\
+               "\\usepackage{multicol}\n"+\
+               "\\usepackage{float}\n"+\
                "\\geometry{tmargin=1cm,lmargin=1cm}%\n"+\
                "%\n%\n%\n"
-    doc = preamble + "\\begin{document}%\n\\large\n\n"#note the font size change
-    doc+= outputStr
+    doc = preamble + "\\begin{document}%\n\\small\n\n"#note the font size change
+    
+    for loopString in loopStrings:
+        doc += loopString
+
+    doc += "\n\\end{document}"
+    f.write( doc )
+    f.close()
+    call(['pdflatex', '--shell-escape', '-halt-on-error', '-output-directory', filename.split("/")[0], filename+".tex"])
+    try:
+        os.remove(filename+".aux")
+        os.remove(filename+".log")
+        for file in imageFilesToDelete:
+            os.remove(file)
+        shutil.rmtree( "svg-inkscape/" )
+    except FileNotFoundError:
+        pass
+    return    
+
+def texPinSet(col1, col2, plinkImg, posetImg):
+    """Generating and viewing a TeX file illustrating pinning sets"""
+    
+
+    doc = "\\begin{multicols}{2}\n"
+    doc += col1+"\n"
+    doc += "\\columnbreak\n\n"
+    doc += col2+"\n"
+    doc += "\\end{multicols}\n\n"
+    
     #from sage.misc.latex import latex_examples     
     #foo = latex_examples.diagram()
     #doc += "\n\n"+latex( foo )
     #doc += "\\begin{sdfj}" #deal with a compilation error
     #doc += "\\includesvg[width=30pt]{"+plinkImg+"}\n\n"
-    
-    doc += "\\begin{figure}[h]\n"+\
+
+    doc += "\\begin{multicols}{2}\n"
+    doc += "\\begin{figure}[H]\n"+\
            "\\centering\n"+\
-           "\\includesvg[width=180pt]{"+plinkImg+"}\n"+\
+           "\\includesvg[width=250pt]{"+plinkImg+"}\n"+\
+           "\\caption{Snappy loop plot.}\n"+\
+           "\\label{fig:"+plinkImg+"}\n\\end{figure}"
+    doc += "\\columnbreak\n\n"
+    doc += "\\begin{figure}[H]\n"+\
+           "\\centering\n"+\
            "\\includegraphics[scale=1]{"+posetImg+"}\n"+\
-           "\\caption{The loop and its minimal join semilattice of pinning sets.}\n"+\
-           "\\label{fig:"+posetImg+"}\n\end{figure}"
-    doc += "\n\\end{document}"
-    f.write( doc )
-    f.close()
-    call(['pdflatex', '--shell-escape', '-halt-on-error', '-output-directory', filename.split("/")[0], filename+".tex"])
-    os.remove(filename+".aux")
-    os.remove(filename+".log")
-    os.remove(posetImg)
-    os.remove(plinkImg)
-    return
+           "\\caption{Minimal join semilattice of pinning sets.}\n"+\
+           "\\label{fig:"+posetImg+"}\n\\end{figure}"
+    doc += "\\end{multicols}\\newpage"
+
+    return doc    
     
     """#geometry_options = {"tmargin": "1cm", "lmargin": "1cm"}
     #texFileName = 
@@ -417,26 +445,38 @@ def minJoinSemilatticeContaining( subsets ):
 def test11():
     """Drawing the minimal join semilattice for a loop's pinning sets"""
 
-    link = link8
-    drawnpd = plinkPD( link )
-    outputStr = "Input PD code or string to snappy (use to reproduce the drawing):\n\n\t"+ str( link )+"\n\n"
-    outputStr += "Output PD code drawn by snappy:\n\n\t"+str( drawnpd )+"\n\n\n"
-    pinsets, naivePinSets, minPinSets, fullRegSet = getPinSets( drawnpd, debug=False )
-    outputStr += "Minimal pinning sets:\n\n"
-    minlen = len( minPinSets )
-    for elt in minPinSets:
-        outputStr +=  "\\{"+str(elt) + "\\}\n\n"
-        if len( elt ) < minlen:
-            minlen = len( elt )
-    outputStr += "\n\n"
- 
-    outputStr += "Number of minimal pinning sets: "+str( len( minPinSets ) )+"\n\n"
-    outputStr += "Number of total pinning sets: "+str( len( pinsets ) )+"\n\n"
-    outputStr += "Pinning number: "+str( minlen )+"\n\n"
+    loops = [link8, link9, monalisa]
+    loopStrings = []
+    toDelete = []
+    for link in loops:
+        drawnpd = plinkPD( link )
+        col1 = "\\textbf{Input PD code or string to snappy (use to reproduce the drawing):}\n\n\t"+ str( link )+"\n\n"
+        col1 += "\\textbf{Output PD code drawn by snappy:}\n\n\t"+str( drawnpd )+"\n\n\n"
+        pinsets, naivePinSets, minPinSets, fullRegSet, loopData = getPinSets( drawnpd, debug=False )
+        col1 += "\\textbf{Arcs composing region <-----> Region key}\n\n"
+        col1 += loopData
+        col2 = "\\textbf{Minimal pinning sets:}\n\n"
+        minlen = len( minPinSets )
+        for elt in minPinSets:
+            col2 +=  "\\{"+str(elt) + "\\}\n\n"
+            if len( elt ) < minlen:
+                minlen = len( elt )
+        col2 += "\n\n"
+     
+        col2 += "\\textbf{Number of minimal pinning sets:} "+str( len( minPinSets ) )+"\n\n"
+        col2 += "\\textbf{Number of total pinning sets:} "+str( len( pinsets ) )+"\n\n"
+        col2 += "\\textbf{Pinning number:} "+str( minlen )+"\n\n"
+        plinkFile = plinkImgFile( link )
+        posetFile = drawLattice( pinsets, minPinSets, fullRegSet )
+        toDelete.append( plinkFile )
+        toDelete.append( posetFile )
+        loopStrings.append( texPinSet(col1, col2, plinkFile, posetFile ) )
 
-    print( outputStr )
-
-    texPinSet(outputStr, plinkImgFile( link ), drawLattice( pinsets, minPinSets, fullRegSet ) )
+    makeTex( loopStrings, toDelete )
+    #print( outputStr )
+    #print( loopData )
+    
+    
 
 def getUnusedFileName( ext ):
     """Gets a filename in the current folder that is not in use with the extension str"""
@@ -474,8 +514,7 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
     if type( link ) == list:
         G = SurfaceGraphFromPD( link )
     else:
-        G = SurfaceGraphFromPD( plinkPD( link ) )       
-
+        G = SurfaceGraphFromPD( plinkPD( link ) )    
     
     T = G.spanningTree( baseRegion = treeBase )
     T.createCyclicGenOrder()
@@ -655,7 +694,7 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
     #if debug:# and not minOnly:
     #    return pinSets, naivePinSets, minPinSets
 
-    return pinSets, naivePinSets, minPinSets, fullRegSet
+    return pinSets, naivePinSets, minPinSets, fullRegSet, G.regionInfo()
     
 
 ####################### DATA STRUCTURES ####################################
@@ -922,6 +961,13 @@ class SurfaceGraph:
         dfsHelper( self, curVert, {curVert:None}, {}, spanningTree )
 
         return pairList
+
+    def regionInfo( self ):
+        toRet = ""
+        for key in self.wordDict:
+            toRet += "\\{"+str( binSet(key) )+ "\\} <-----> "+str(key)+"\n\n"
+        return toRet
+        
 
     def __str__( self ):
         
