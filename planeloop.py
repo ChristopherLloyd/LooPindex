@@ -1,26 +1,25 @@
 """
-Title: planeloop.py
-Authors: Christopher-Lloyd Simon and Ben Stucky
-Description: Computes pinning sets of loops in the plane and sphere
-Github: https://github.com/ChristopherLloyd/LooPin
+ Title: planeloop.py
+ Authors: Christopher-Lloyd Simon and Ben Stucky
+ Description: Computes pinning sets of loops in the plane and sphere
+ Github: https://github.com/ChristopherLloyd/LooPin
 
-Important info for other users:
+ Important info for other users:
 
- THIS PROGRAM IS INTENDED TO BE LOADED/RUN FROM WITHIN SAGEMATH
- VIA THE COMMAND
+ This program is intended to be loaded/run from within sage
+ using the command:
 
-load( 'planeloop.py' )
+ load( 'planeloop.py' )
 
- IT WILL NOT WORK AS A STANDALONE PYTHON SCRIPT,
- EXCEPT FROM THE PYTHON ENVIRONMENT BUNDLED WITH SAGE
- TO OVERRIDE THIS (FOR EXAMPLE IF ONLY INTERESTED IN USING
- FUNCTIONS WHICH USE SNAPPY FUNCTIONALITY),
- UNCOMMENT THE FOLLOWING LINE"""
+ It will not work as a standalone python script,
+ except from the python environment bundled with sage.
+ to override this (for example if only using functions
+ which use snappy), uncomment the line below."""
 
 from sage.all import *
 
-"""All imported packages must be installed in the python environment that sage uses
- For instance you need to run:
+"""All imported python packages must be installed in the python environment
+ that sage uses. For instance you need to run:
 
  sage -pip install snappy
 
@@ -33,19 +32,27 @@ from sage.all import *
 
  sage -pip install --upgrade snappy"""
 
+# Get the needed imports
+
+from random import *
+import traceback #used for warnings/debugging
+import warnings #used for warnings/debugging
+import snappy #used for plotting knots and links
+import os #used for removing temp files
+import shutil #used for removing temp files
+from subprocess import call #used for running external scripts
+#import pylatex as p
+
 # Currently unused imports:
+
 #import lightrdf
 #import gzip
 #import rdflib
 #import re
 #from math import sqrt
+#import timeit
 
-from random import *
-import traceback
-import warnings
-import snappy
-import os
-import timeit
+# Global constants
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"*5 # generator alphabet, used for readable output only. Inverses are upper case
 
@@ -65,10 +72,87 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
         (6, 14, 7, 13), (2, 17, 3, 18), (8, 15, 9, 16), \
         (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
         (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
-    
+
+# Main
+
 def main():
     
     test11()
+
+def texPinSet(outputStr, plinkImg, posetImg):
+    """Generating and viewing a TeX file illustrating pinning sets"""
+    filename = "tex/pinSets"
+    try:
+        os.remove(filename+".tex")
+        os.remove(filename+".pdf")
+    except FileNotFoundError:
+        pass
+    f = open( filename+".tex", 'w' )
+    preamble = "\\documentclass{article}%\n"+\
+               "\\usepackage[T1]{fontenc}%\n"+\
+               "\\usepackage[utf8]{inputenc}%\n"+\
+               "\\usepackage{lmodern}%\n"+\
+               "\\usepackage{textcomp}%\n"+\
+               "\\usepackage{lastpage}%\n"+\
+               "\\usepackage{geometry}%\n"+\
+               "\\usepackage{tikz}\n"+\
+               "\\usepackage{tkz-graph}\n"+\
+               "\\usepackage{tkz-berge}\n"+\
+               "\\usetikzlibrary{arrows,shapes}\n"+\
+               "\\usepackage[matrix,arrow,curve,cmtip]{xy}\n"+\
+               "\\usepackage{svg}\n"+\
+               "\\geometry{tmargin=1cm,lmargin=1cm}%\n"+\
+               "%\n%\n%\n"
+    doc = preamble + "\\begin{document}%\n\\large\n\n"#note the font size change
+    doc+= outputStr
+    #from sage.misc.latex import latex_examples     
+    #foo = latex_examples.diagram()
+    #doc += "\n\n"+latex( foo )
+    #doc += "\\begin{sdfj}" #deal with a compilation error
+    #doc += "\\includesvg[width=30pt]{"+plinkImg+"}\n\n"
+    
+    doc += "\\begin{figure}[h]\n"+\
+           "\\centering\n"+\
+           "\\includesvg[width=180pt]{"+plinkImg+"}\n"+\
+           "\\includegraphics[scale=1]{"+posetImg+"}\n"+\
+           "\\caption{The loop and its minimal join semilattice of pinning sets.}\n"+\
+           "\\label{fig:"+posetImg+"}\n\end{figure}"
+    doc += "\n\\end{document}"
+    f.write( doc )
+    f.close()
+    call(['pdflatex', '--shell-escape', '-halt-on-error', '-output-directory', filename.split("/")[0], filename+".tex"])
+    os.remove(filename+".aux")
+    os.remove(filename+".log")
+    os.remove(posetImg)
+    os.remove(plinkImg)
+    return
+    
+    """#geometry_options = {"tmargin": "1cm", "lmargin": "1cm"}
+    #texFileName = 
+    #doc = p.Document(geometry_options=geometry_options)
+    #doc.packages.append(p.Package('tikz'))
+    #doc.packages.append(p.Package('tkz-graph'))
+    #doc.packages.append(p.Package('tkz-berge'))
+    #doc.packages.append(p.Package('tikz'))
+    #doc.packages.append(p.Package('xy'))
+    with doc.create(p.Section('A section')):
+        doc.append("Hi")
+        #print( latex(
+        tex = latex(  )
+        print( tex )
+        doc.append(str( tex ))
+    #doc.generate_tex()
+    doc.generate_pdf('full', clean_tex=False,compiler="pdflatex")
+    return
+    from sage.misc.latex import latex_examples
+     
+    foo = latex_examples.diagram()
+    latex.extra_preamble('\\usepackage{tikz}\n\\usepackage{tkz-graph}\n'\
+                     '\\usepackage{tkz-berge}\n\\usetikzlibrary{arrows,shapes}')
+    latex.add_to_preamble("\\usepackage[matrix,arrow,curve,cmtip]{xy}")
+    latex.engine('pdflatex')
+    print( latex( foo ) ) # the latex code for the example
+    view( foo ) # view the output in a pdf viewer"""
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -81,10 +165,11 @@ def posetPlot( sageObject, heights, colors, vertlabels, edgeColors ):
                          edge_colors = edgeColors)
     filename = getUnusedFileName( "png" )
     p.save( filename )
-    img = mpimg.imread( filename )
-    plt.imshow(img)
-    plt.show()
-    os.remove(filename)
+    #img = mpimg.imread( filename )
+    #plt.imshow(img)
+    #plt.show()
+    #os.remove(filename)
+    return filename
 
 def drawLattice( pinSets, minPinSets, fullRegSet ):
     elts = minJoinSemilatticeContaining( minPinSets )
@@ -155,10 +240,7 @@ def drawLattice( pinSets, minPinSets, fullRegSet ):
 
     G = Graph( G )
                
-        
-    posetPlot( G, heightsDict, vertColorsDict, vertLabels, edgeColors )
-        
-    return
+    return posetPlot( G, heightsDict, vertColorsDict, vertLabels, edgeColors )
 
     
     """
@@ -335,24 +417,26 @@ def minJoinSemilatticeContaining( subsets ):
 def test11():
     """Drawing the minimal join semilattice for a loop's pinning sets"""
 
-    link = monalisa
+    link = link8
     drawnpd = plinkPD( link )
+    outputStr = "Input PD code or string to snappy (use to reproduce the drawing):\n\n\t"+ str( link )+"\n\n"
+    outputStr += "Output PD code drawn by snappy:\n\n\t"+str( drawnpd )+"\n\n\n"
     pinsets, naivePinSets, minPinSets, fullRegSet = getPinSets( drawnpd, debug=False )
-    print( "Minimal pinning sets:" )
+    outputStr += "Minimal pinning sets:\n\n"
     minlen = len( minPinSets )
     for elt in minPinSets:
-        print( elt )
+        outputStr +=  "\\{"+str(elt) + "\\}\n\n"
         if len( elt ) < minlen:
             minlen = len( elt )
-    print()
+    outputStr += "\n\n"
  
-    print( "Number of minimal pinning sets:", len( minPinSets ) )
-    print( "Number of total pinning sets:", len( pinsets ) )
-    print( "Pinning number:", minlen )
+    outputStr += "Number of minimal pinning sets: "+str( len( minPinSets ) )+"\n\n"
+    outputStr += "Number of total pinning sets: "+str( len( pinsets ) )+"\n\n"
+    outputStr += "Pinning number: "+str( minlen )+"\n\n"
 
-    #plinkFromPD( link )
-    drawLattice( pinsets, minPinSets, fullRegSet )
+    print( outputStr )
 
+    texPinSet(outputStr, plinkImgFile( link ), drawLattice( pinsets, minPinSets, fullRegSet ) )
 
 def getUnusedFileName( ext ):
     """Gets a filename in the current folder that is not in use with the extension str"""
@@ -1245,7 +1329,6 @@ def plinkPDtoRawPD( link ):
         pd_out.append( cycle )
     return pd_out
 
-from subprocess import call
 def plinkPD( link ):
     """This function is a workaround to get the output PD code when plotting links
     with snappy from an input PD code. The reason it does external scripting
@@ -1286,7 +1369,12 @@ def plinkFromStr( link ):
 
 def plinkFromPD( link ):
     assert( type( link ) == list )
-    snappy.Link( link ).view()    
+    snappy.Link( link ).view()
+
+def plinkImgFile( link ):
+    filename = getUnusedFileName( "svg" )
+    call(['python3', 'saveLoop.py', str(link), filename])
+    return filename    
 
 # Experimenting with drawing a loop and getting a PD code
 # Silly multithreading nonsense makes what's below not work as intended
