@@ -79,9 +79,10 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 def main():
     
     #test11()
-    plotLoopWithLabeledRegions( link8 )
+    plotLoopWithLabeledRegions( monalisa )
 
 def plotLoopWithLabeledRegions( link ):
+    G = SurfaceGraphFromPD( plinkPD( link ) )
     LE = snappy.Link( link ).view()
     LE.style_var.set('pl')
     LE.set_style()
@@ -97,26 +98,43 @@ def plotLoopWithLabeledRegions( link ):
         strandCount = len( LE.Crossings )*2
         hit1 = abs( crs.hit1 )
         hit2 = abs( crs.hit2 )
-        next1 = (crs.hit1-1)%strandCount
+        #print( hit1, hit2 )
+        next1 = (hit1-1)%strandCount
         if next1 == 0:
             next1 = strandCount
-        next2 = (crs.hit2-1)%strandCount
+        next2 = (hit2-1)%strandCount
         if next2 == 0:
             next2 = strandCount
+
+        regs = set()
+        adjStrands = {hit1,hit2,next1,next2}
         
-        crosses[(crs.x,crs.y)]={"strands":{hit1,hit2,next1,next2}, "segs":None }
+        for strand in adjStrands:
+            regs.add( G.adjDict[strand][0] )
+            regs.add( G.adjDict[strand][1] )
+
+
+        assert( len( regs ) == 4 )
+        #if True:#len( regs ) != 4:
+        #    print( "len(regs)", len( regs ) )
+        #    print( adjStrands )
+        #    print( regs )
+        #    print( G.adjDict )
+        #    print()
+
+        crosses[(crs.x,crs.y)]={"strands":{hit1,hit2,next1,next2}, "segs":None, "regs":regs }
         #print( crs.hit1, crs.hit2 )
         crossCoordDict[ abs( crs.hit1 ) ] = (crs.x, crs.y)
         crossCoordDict[ abs( crs.hit2 ) ] = (crs.x, crs.y)
-        c.create_text(crs.x,crs.y,text="x", fill="black", font=('Helvetica 15 bold'))
+        #c.create_text(crs.x,crs.y,text="x", fill="black", font=('Helvetica 15 bold'))
     for a in LE.Arrows:
-        #a.expose()
+        a.expose()
         #print( a.start, a.end )
         segs = a.find_segments( LE.Crossings, include_overcrossings=True )
-        if a == LE.Arrows[8]:
-            print( segs )
-            print()
-            a.make_faint()
+        #if a == LE.Arrows[8]:
+        #    print( segs )
+        #    print()
+        #    a.make_faint()
         #fill in gaps in segments
         toAdd = []
         for i in range( len( segs )-1 ):
@@ -134,35 +152,37 @@ def plotLoopWithLabeledRegions( link ):
         #        pass
 
         for seg in segs:
-            #closeData = 
-            if not closeTo(seg[0],seg[1],crosses)[0]:
+            closeData = closeTo(seg[0],seg[1],crosses)
+            if not closeData[0]:
                 if (seg[0],seg[1]) not in corners:
-                    corners[(seg[0],seg[1])] = {0:seg,1:None,"strand":None}
+                    corners[(seg[0],seg[1])] = {0:seg,1:None,"strand":None,"regs":None}
                 else:
                     corners[(seg[0],seg[1])][1]=seg
-            if (seg[0],seg[1]) in crosses:
-                if crosses[(seg[0],seg[1])]["segs"] is None:
-                    crosses[(seg[0],seg[1])]["segs"] = [seg]
+            else: #if (seg[0],seg[1]) in crosses:
+                if crosses[closeData[1]]["segs"] is None:
+                    crosses[closeData[1]]["segs"] = [seg]
                 else:
-                    crosses[(seg[0],seg[1])]["segs"].append( seg )
-            if not closeTo(seg[2],seg[3],crosses)[0]:
+                    crosses[closeData[1]]["segs"].append( seg )
+            closeData = closeTo(seg[2],seg[3],crosses)
+            if not closeData[0]:
                 if (seg[2],seg[3]) not in corners:
-                    corners[(seg[2],seg[3])] = {0:seg,1:None,"strand":None}
+                    corners[(seg[2],seg[3])] = {0:seg,1:None,"strand":None,"regs":None}
                 else:
                     corners[(seg[2],seg[3])][1]=seg
-            if (seg[2],seg[3]) in crosses:
-                if crosses[(seg[2],seg[3])]["segs"] is None:
-                    crosses[(seg[2],seg[3])]["segs"] = [seg]
+            else: #if (seg[2],seg[3]) in crosses:
+                if crosses[closeData[1]]["segs"] is None:
+                    crosses[closeData[1]]["segs"] = [seg]
                 else:
-                    crosses[(seg[2],seg[3])]["segs"].append( seg )
+                    crosses[closeData[1]]["segs"].append( seg )
 
     
 
     i = 0
     for (x,y) in crosses:
-        print( "Crossing", (x,y), crosses[(x,y)] )
-        if len( crosses[(x,y)]['segs'] ) == 2:
-            c.create_text(x,y,text="O", fill="black", font=('Helvetica 15 bold'))
+        #print( "Crossing", (x,y), crosses[(x,y)] )
+        #if len( crosses[(x,y)]['segs'] ) == 2:
+        #    c.create_text(x,y,text="O", fill="black", font=('Helvetica 15 bold'))
+        assert( len( crosses[(x,y)]['segs'] ) == 4 )
             
         
         for segOut in crosses[(x,y)]['segs']:
@@ -226,22 +246,131 @@ def plotLoopWithLabeledRegions( link ):
                 #c.create_text(corner[0],corner[1],text=i, fill="black", font=('Helvetica 15 bold'))
                 #i+=1
                 corners[corner]['strand'] = strandNum
-                c.create_text(corner[0],corner[1],text=strandNum, fill="black", font=('Helvetica 15 bold'))
+                corners[corner]['regs'] = set( G.adjDict[strandNum] )
+                #c.create_text(corner[0],corner[1],text=strandNum, fill="black", font=('Helvetica 15 bold'))
         
 
     for (x,y) in corners:
-        print( corners[(x,y)])
-        if corners[(x,y)][1] is None:
-            c.create_text(x,y,text="unexpected", fill="black", font=('Helvetica 15 bold'))
+        
+        assert( corners[(x,y)][1] is not None )
+        #if corners[(x,y)][1] is None:
+        #    c.create_text(x,y,text="unexpected", fill="black", font=('Helvetica 15 bold'))
 
+
+    # associate boundary coordinates to regions
+    regBoundaries = {}
+    randomCorner = getKey(corners)
+    minX = randomCorner[0]
+    maxX = randomCorner[0]
+    minY = randomCorner[1]
+    maxY = randomCorner[1]
+
+    
+
+    for dct in [corners,crosses]:
+        for coord in dct:
+            #print( corner, corners[corner]['regs'])
+            #c.create_text(corner[0],corner[1],text=corners[corner]['regs'], fill="black", font=('Helvetica 15 bold'))
+            for reg in dct[coord]['regs']:
+                if reg not in regBoundaries:
+                    regBoundaries[reg] = {"coords":[coord],"topLeft":None, "bottomLeft":None,"infRegion":False}
+                else:
+                    regBoundaries[reg]["coords"].append( coord )
+            if coord[0] < minX:
+                minX = coord[0]
+            if coord[0] > maxX:
+                maxX = coord[0]
+            if coord[1] < minY:
+                minY = coord[1]
+            if coord[1] > maxY:
+                maxY = coord[1]
+
+    #c.create_text(minX,minY,text="o", fill="black", font=('Helvetica 15 bold'))
+    #c.create_text(maxX,maxY,text="x", fill="black", font=('Helvetica 15 bold'))
+    
     #print()
+    #for cross in crosses:
+        #print( cross, crosses[cross]['regs'])
+        
+    #    for reg in crosses[cross]['regs']:
+    #        if reg not in regBoundaries:
+    #            regBoundaries[reg] = {"coords":[cross],"topLeft":None}
+    #        else:
+    #            regBoundaries[reg]["coords"].append( cross )
 
-    #for (x,y) in corners:
-    #    print( corners[(x,y)])
-    #    if corners[(x,y)][1] is None:
-    #        c.create_text(x,y,text="w", fill="black", font=('Helvetica 15 bold'))
-        #for seg in crossSegs[(x,y)]:
-        #    if (seg[0],seg[1]) = (x,y):
+    #j = 0
+    tolerance = 0.000001
+    
+
+    j = 0
+    for reg in regBoundaries:
+        #print( reg )
+        debugReg = 557314
+            
+        topLeft = regBoundaries[reg]["coords"][0]
+        bottomLeft = regBoundaries[reg]["coords"][0]
+        regMinX = topLeft[0]
+        regMaxX = topLeft[0]
+        regMinY = topLeft[1]
+        regMaxY = topLeft[1]
+        #if reg == debugReg:
+        #    print( "curTopLeft", topLeft )
+        for point in regBoundaries[reg]["coords"]:
+            if point[0] < regMinX:
+                regMinX = point[0]
+            if point[0] > regMaxX:
+                regMaxX = point[0]
+            if point[1] < regMinY:
+                regMinY = point[1]
+            if point[1] > regMaxY:
+                regMaxY = point[1]
+            #if reg == debugReg:
+            #    c.create_text(point[0],point[1],text='o', fill="black", font=('Helvetica 15 bold'))
+            #    pass
+            if point[0] < topLeft[0] - tolerance or ( abs( point[0]-topLeft[0] ) < tolerance and point[1] < topLeft[1] ):
+                
+                topLeft = point
+
+            if point[0] < bottomLeft[0] - tolerance or ( abs( point[0]-bottomLeft[0] ) < tolerance and point[1] > bottomLeft[1] ):
+                
+                bottomLeft = point
+
+            
+                #if reg == debugReg:
+                    #print( "curTopLeft", topLeft )
+                #    c.create_text(topLeft[0],topLeft[1],text=j, fill="black", font=('Helvetica 15 bold'))
+                #    j += 1
+        regBoundaries[reg]["topLeft"] = [topLeft]
+        regBoundaries[reg]["bottomLeft"] = [bottomLeft]
+
+        #if reg == debugReg:
+            #c.create_text(regMinX,regMinY,text="O", fill="black", font=('Helvetica 15 bold'))
+            #c.create_text(regMaxX,regMaxY,text="X", fill="black", font=('Helvetica 15 bold'))
+            #print( regMinX,regMinY,minX,minY )
+            #print( regMaxX,regMaxY,maxX,maxY )
+        
+
+        if abs( minX-regMinX ) < tolerance and abs( minY-regMinY ) < tolerance \
+           and abs( maxX-regMaxX ) < tolerance and abs( maxY-regMaxY )<tolerance:
+            #print( "hi" )
+            regBoundaries[reg]["infRegion"] = True
+
+        #if reg == debugReg:
+        if not regBoundaries[reg]["infRegion"]:
+            c.create_text(topLeft[0]+10,topLeft[1]+20,text=reg, fill="black", anchor="w", font=('Helvetica 10 bold'))
+        else:
+            c.create_text(bottomLeft[0]+10,bottomLeft[1]+20,text=reg, fill="black", anchor="w", font=('Helvetica 10 bold'))
+        #j += 1
+        
+            
+        
+    #print( G.adjDict )
+    regDict = {} # keys are strands, vals are regions containing that strand
+   
+
+    
+
+    
                 
     return
 
