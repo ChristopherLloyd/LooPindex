@@ -28,6 +28,7 @@ from sage.all import *
  sage -pip install snappy_15_knots  # Larger version of HTLinkExteriors
 
  to be able to use snappy.
+ 
  If you previously installed SnapPy into SageMath and want to upgrade SnapPy to the latest version, do:
 
  sage -pip install --upgrade snappy"""
@@ -77,7 +78,216 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 
 def main():
     
-    test11()
+    #test11()
+    plotLoopWithLabeledRegions( link8 )
+
+def plotLoopWithLabeledRegions( link ):
+    LE = snappy.Link( link ).view()
+    LE.style_var.set('pl')
+    LE.set_style()
+    c = LE.canvas
+    corners = {}
+    crossCoordDict = {}
+    crosses = {}
+    #crossStrands = {}
+    LE.info_var.set(1)
+    LE.update_info()
+    for crs in LE.Crossings:
+        crs.locate()
+        strandCount = len( LE.Crossings )*2
+        hit1 = abs( crs.hit1 )
+        hit2 = abs( crs.hit2 )
+        next1 = (crs.hit1-1)%strandCount
+        if next1 == 0:
+            next1 = strandCount
+        next2 = (crs.hit2-1)%strandCount
+        if next2 == 0:
+            next2 = strandCount
+        
+        crosses[(crs.x,crs.y)]={"strands":{hit1,hit2,next1,next2}, "segs":None }
+        #print( crs.hit1, crs.hit2 )
+        crossCoordDict[ abs( crs.hit1 ) ] = (crs.x, crs.y)
+        crossCoordDict[ abs( crs.hit2 ) ] = (crs.x, crs.y)
+        c.create_text(crs.x,crs.y,text="x", fill="black", font=('Helvetica 15 bold'))
+    for a in LE.Arrows:
+        #a.expose()
+        #print( a.start, a.end )
+        segs = a.find_segments( LE.Crossings, include_overcrossings=True )
+        if a == LE.Arrows[8]:
+            print( segs )
+            print()
+            a.make_faint()
+        #fill in gaps in segments
+        toAdd = []
+        for i in range( len( segs )-1 ):
+            if (segs[i][2],segs[i][3]) != (segs[i+1][0],segs[i+1][1]):
+                midx = (segs[i][2]+segs[i+1][0])/2
+                midy = (segs[i][3]+segs[i+1][1])/2
+                toAdd.append( [segs[i][2],segs[i][3],midx,midy] )
+                toAdd.append( [midx,midy,segs[i+1][0],segs[i+1][1]] )
+        segs += toAdd
+            
+        #(curx,cury) = 
+        #while (curx,cury) != (segs[-1][2],segs[-1][3])
+        #    (nextx,nexty) = None
+        #    for seg in segs:
+        #        pass
+
+        for seg in segs:
+            #closeData = 
+            if not closeTo(seg[0],seg[1],crosses)[0]:
+                if (seg[0],seg[1]) not in corners:
+                    corners[(seg[0],seg[1])] = {0:seg,1:None,"strand":None}
+                else:
+                    corners[(seg[0],seg[1])][1]=seg
+            if (seg[0],seg[1]) in crosses:
+                if crosses[(seg[0],seg[1])]["segs"] is None:
+                    crosses[(seg[0],seg[1])]["segs"] = [seg]
+                else:
+                    crosses[(seg[0],seg[1])]["segs"].append( seg )
+            if not closeTo(seg[2],seg[3],crosses)[0]:
+                if (seg[2],seg[3]) not in corners:
+                    corners[(seg[2],seg[3])] = {0:seg,1:None,"strand":None}
+                else:
+                    corners[(seg[2],seg[3])][1]=seg
+            if (seg[2],seg[3]) in crosses:
+                if crosses[(seg[2],seg[3])]["segs"] is None:
+                    crosses[(seg[2],seg[3])]["segs"] = [seg]
+                else:
+                    crosses[(seg[2],seg[3])]["segs"].append( seg )
+
+    
+
+    i = 0
+    for (x,y) in crosses:
+        print( "Crossing", (x,y), crosses[(x,y)] )
+        if len( crosses[(x,y)]['segs'] ) == 2:
+            c.create_text(x,y,text="O", fill="black", font=('Helvetica 15 bold'))
+            
+        
+        for segOut in crosses[(x,y)]['segs']:
+            hitCorners = set()
+            (curx, cury) = (x,y)
+            curSeg = segOut
+            if (segOut[0],segOut[1])==(curx,cury):
+                (nextx,nexty) = (segOut[2],segOut[3])
+            else:
+                (nextx,nexty) = (segOut[0],segOut[1])
+            #if i == 18:
+            #    print( corners )
+            #    c.create_text(nextx,nexty,text="P", fill="black", font=('Helvetica 15 bold'))
+            if (nextx,nexty) not in corners or corners[(nextx,nexty)]['strand'] is not None:
+                continue
+            while True:
+                closeData = closeTo(nextx,nexty,crosses)
+                if closeData[0]:
+                    (nextx,nexty)=closeData[1]
+                    break
+                
+                i+=1
+                hitCorners.add((nextx,nexty))
+                #if i == 5:
+                #    for j in {0,1}:
+                #        seg1 = corners[(nextx,nexty)][j]
+                #        c.create_text(seg1[0],seg1[1],text="p", fill="black", font=('Helvetica 15 bold'))
+                #        c.create_text(seg1[2],seg1[3],text="p", fill="black", font=('Helvetica 15 bold'))
+                #    print("before")
+                #    print( "curx", curx, "cury", cury )
+                #    print( "nextx", nextx, "nexty", nexty )
+                #    print( corners[(nextx,nexty)] )
+                #    print( "corners:", corners[(nextx,nexty)] )
+                seg1 = corners[(nextx,nexty)][0]
+                seg2 = corners[(nextx,nexty)][1]
+                inFirst = False
+                #inSecond = False
+                if (curx,cury) == (seg1[0],seg1[1]) or (curx,cury) == (seg1[2],seg1[3]):
+                    inFirst = True
+                #if (curx,cury) == (seg2[0],seg2[1]) or (curx,cury) == (seg2[2],seg2[3]):
+                #  inSecond = True
+                if inFirst: # and inSecond:# if curx in corners[(nextx,nexty)][0] and cury in corners[(nextx,nexty)][0]:
+                    curSeg = corners[(nextx,nexty)][1]
+                else:
+                    curSeg = corners[(nextx,nexty)][0]
+                (curx,cury) = (nextx,nexty)
+                if (curSeg[0],curSeg[1]) == (curx,cury):
+                    (nextx,nexty) = (curSeg[2],curSeg[3])
+                else:
+                    (nextx,nexty) = (curSeg[0],curSeg[1])
+                #if i == 5:
+                #    print( "after:" )
+                #    print( "curx", curx, "cury", cury )
+                #    print( "nextx", nextx, "nexty", nexty )
+                #hitCorners.add((nextx,nexty))
+            strandNum = None
+            for label in crosses[(x,y)]['strands']:
+                if label in crosses[(nextx,nexty)]['strands']:
+                    strandNum = label
+            for corner in hitCorners:
+                #c.create_text(corner[0],corner[1],text=i, fill="black", font=('Helvetica 15 bold'))
+                #i+=1
+                corners[corner]['strand'] = strandNum
+                c.create_text(corner[0],corner[1],text=strandNum, fill="black", font=('Helvetica 15 bold'))
+        
+
+    for (x,y) in corners:
+        print( corners[(x,y)])
+        if corners[(x,y)][1] is None:
+            c.create_text(x,y,text="unexpected", fill="black", font=('Helvetica 15 bold'))
+
+    #print()
+
+    #for (x,y) in corners:
+    #    print( corners[(x,y)])
+    #    if corners[(x,y)][1] is None:
+    #        c.create_text(x,y,text="w", fill="black", font=('Helvetica 15 bold'))
+        #for seg in crossSegs[(x,y)]:
+        #    if (seg[0],seg[1]) = (x,y):
+                
+    return
+
+    for corner in corners:
+        c.create_text(corner[0],corner[1],text="O", fill="black", font=('Helvetica 15 bold'))
+    
+    
+
+    
+    
+   
+
+    strandCoordDict = {}
+    for key in crossCoordDict:
+        x1, y1 = crossCoordDict[key]
+        nxtKey = (key+1)%len(crossCoordDict)
+        if nxtKey == 0:
+            nxtKey = len(crossCoordDict)
+        x2, y2 = crossCoordDict[nxtKey]
+        strandCoordDict[ key ] = ((x1+x2)/2,(y1+y2)/2)
+
+    G = SurfaceGraphFromPD( plinkPD( link ) )
+    comDict = {}
+    for key in G.wordDict:
+        #print( key, G.wordDict[key].seq )
+        x = 0
+        y = 0
+        for strand in G.wordDict[key].seq:
+            x += strandCoordDict[ abs( strand ) ][0]
+            y += strandCoordDict[ abs( strand ) ][1]
+        x /= len( G.wordDict[key] )
+        y /= len( G.wordDict[key] )
+        c.create_text(x,y,text=str(key), fill="black", font=('Helvetica 15 bold')) 
+     
+    
+def closeTo( x0, y0, pointDict, tolerance = 0.00000001 ):
+    point1 = getKey( pointDict )
+    mindist = abs( x0 - point1[0] )+abs( y0 - point1[1] )
+    closestPoint = (point1[0], point1[1])
+    for point in pointDict:
+        nextd = abs( x0 - point[0] )+abs( y0 - point[1] )
+        if nextd < mindist:
+            mindist = nextd
+            closestPoint = (point[0], point[1])
+    return mindist < tolerance, closestPoint
+    
 
 def makeTex( loopStrings, imageFilesToDelete ):
     filename = "tex/pinSets"
