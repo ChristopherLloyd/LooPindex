@@ -78,27 +78,31 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 
 def main():
     
-    #test11()
-    plotLoopWithLabeledRegions( monalisa )
+    createCatalog()
+    #plotLoopWithLabeledRegions( link8 )
 
-def plotLoopWithLabeledRegions( link ):
+"""def plotLoopWithLabeledRegions( link, adjDict, minPinSets ):
+
+    # Create the loop drawing and tweak parameters
+    drawnPD = plinkPD( link )
+    print( "PD code:", drawnPD )
     G = SurfaceGraphFromPD( plinkPD( link ) )
+    print( G )
     LE = snappy.Link( link ).view()
     LE.style_var.set('pl')
     LE.set_style()
     c = LE.canvas
     corners = {}
-    crossCoordDict = {}
     crosses = {}
-    #crossStrands = {}
     LE.info_var.set(1)
     LE.update_info()
+
+    # store coordinates of all crossings
     for crs in LE.Crossings:
         crs.locate()
         strandCount = len( LE.Crossings )*2
         hit1 = abs( crs.hit1 )
         hit2 = abs( crs.hit2 )
-        #print( hit1, hit2 )
         next1 = (hit1-1)%strandCount
         if next1 == 0:
             next1 = strandCount
@@ -113,29 +117,14 @@ def plotLoopWithLabeledRegions( link ):
             regs.add( G.adjDict[strand][0] )
             regs.add( G.adjDict[strand][1] )
 
-
-        assert( len( regs ) == 4 )
-        #if True:#len( regs ) != 4:
-        #    print( "len(regs)", len( regs ) )
-        #    print( adjStrands )
-        #    print( regs )
-        #    print( G.adjDict )
-        #    print()
-
         crosses[(crs.x,crs.y)]={"strands":{hit1,hit2,next1,next2}, "segs":None, "regs":regs }
-        #print( crs.hit1, crs.hit2 )
-        crossCoordDict[ abs( crs.hit1 ) ] = (crs.x, crs.y)
-        crossCoordDict[ abs( crs.hit2 ) ] = (crs.x, crs.y)
-        #c.create_text(crs.x,crs.y,text="x", fill="black", font=('Helvetica 15 bold'))
+        #crossCoordDict[ abs( crs.hit1 ) ] = (crs.x, crs.y)
+        #crossCoordDict[ abs( crs.hit2 ) ] = (crs.x, crs.y)
+
+    # store coordinates of all corners and the segments that crosses and corners belong to
     for a in LE.Arrows:
         a.expose()
-        #print( a.start, a.end )
         segs = a.find_segments( LE.Crossings, include_overcrossings=True )
-        #if a == LE.Arrows[8]:
-        #    print( segs )
-        #    print()
-        #    a.make_faint()
-        #fill in gaps in segments
         toAdd = []
         for i in range( len( segs )-1 ):
             if (segs[i][2],segs[i][3]) != (segs[i+1][0],segs[i+1][1]):
@@ -145,12 +134,6 @@ def plotLoopWithLabeledRegions( link ):
                 toAdd.append( [midx,midy,segs[i+1][0],segs[i+1][1]] )
         segs += toAdd
             
-        #(curx,cury) = 
-        #while (curx,cury) != (segs[-1][2],segs[-1][3])
-        #    (nextx,nexty) = None
-        #    for seg in segs:
-        #        pass
-
         for seg in segs:
             closeData = closeTo(seg[0],seg[1],crosses)
             if not closeData[0]:
@@ -158,7 +141,7 @@ def plotLoopWithLabeledRegions( link ):
                     corners[(seg[0],seg[1])] = {0:seg,1:None,"strand":None,"regs":None}
                 else:
                     corners[(seg[0],seg[1])][1]=seg
-            else: #if (seg[0],seg[1]) in crosses:
+            else:
                 if crosses[closeData[1]]["segs"] is None:
                     crosses[closeData[1]]["segs"] = [seg]
                 else:
@@ -169,22 +152,16 @@ def plotLoopWithLabeledRegions( link ):
                     corners[(seg[2],seg[3])] = {0:seg,1:None,"strand":None,"regs":None}
                 else:
                     corners[(seg[2],seg[3])][1]=seg
-            else: #if (seg[2],seg[3]) in crosses:
+            else:
                 if crosses[closeData[1]]["segs"] is None:
                     crosses[closeData[1]]["segs"] = [seg]
                 else:
                     crosses[closeData[1]]["segs"].append( seg )
 
-    
 
-    i = 0
+    # compute the strands adjacent to each cross and corner
     for (x,y) in crosses:
-        #print( "Crossing", (x,y), crosses[(x,y)] )
-        #if len( crosses[(x,y)]['segs'] ) == 2:
-        #    c.create_text(x,y,text="O", fill="black", font=('Helvetica 15 bold'))
-        assert( len( crosses[(x,y)]['segs'] ) == 4 )
-            
-        
+        #assert( len( crosses[(x,y)]['segs'] ) == 4 )       
         for segOut in crosses[(x,y)]['segs']:
             hitCorners = set()
             (curx, cury) = (x,y)
@@ -193,9 +170,6 @@ def plotLoopWithLabeledRegions( link ):
                 (nextx,nexty) = (segOut[2],segOut[3])
             else:
                 (nextx,nexty) = (segOut[0],segOut[1])
-            #if i == 18:
-            #    print( corners )
-            #    c.create_text(nextx,nexty,text="P", fill="black", font=('Helvetica 15 bold'))
             if (nextx,nexty) not in corners or corners[(nextx,nexty)]['strand'] is not None:
                 continue
             while True:
@@ -203,28 +177,13 @@ def plotLoopWithLabeledRegions( link ):
                 if closeData[0]:
                     (nextx,nexty)=closeData[1]
                     break
-                
-                i+=1
                 hitCorners.add((nextx,nexty))
-                #if i == 5:
-                #    for j in {0,1}:
-                #        seg1 = corners[(nextx,nexty)][j]
-                #        c.create_text(seg1[0],seg1[1],text="p", fill="black", font=('Helvetica 15 bold'))
-                #        c.create_text(seg1[2],seg1[3],text="p", fill="black", font=('Helvetica 15 bold'))
-                #    print("before")
-                #    print( "curx", curx, "cury", cury )
-                #    print( "nextx", nextx, "nexty", nexty )
-                #    print( corners[(nextx,nexty)] )
-                #    print( "corners:", corners[(nextx,nexty)] )
                 seg1 = corners[(nextx,nexty)][0]
                 seg2 = corners[(nextx,nexty)][1]
                 inFirst = False
-                #inSecond = False
                 if (curx,cury) == (seg1[0],seg1[1]) or (curx,cury) == (seg1[2],seg1[3]):
                     inFirst = True
-                #if (curx,cury) == (seg2[0],seg2[1]) or (curx,cury) == (seg2[2],seg2[3]):
-                #  inSecond = True
-                if inFirst: # and inSecond:# if curx in corners[(nextx,nexty)][0] and cury in corners[(nextx,nexty)][0]:
+                if inFirst:
                     curSeg = corners[(nextx,nexty)][1]
                 else:
                     curSeg = corners[(nextx,nexty)][0]
@@ -233,28 +192,18 @@ def plotLoopWithLabeledRegions( link ):
                     (nextx,nexty) = (curSeg[2],curSeg[3])
                 else:
                     (nextx,nexty) = (curSeg[0],curSeg[1])
-                #if i == 5:
-                #    print( "after:" )
-                #    print( "curx", curx, "cury", cury )
-                #    print( "nextx", nextx, "nexty", nexty )
-                #hitCorners.add((nextx,nexty))
             strandNum = None
             for label in crosses[(x,y)]['strands']:
                 if label in crosses[(nextx,nexty)]['strands']:
                     strandNum = label
             for corner in hitCorners:
-                #c.create_text(corner[0],corner[1],text=i, fill="black", font=('Helvetica 15 bold'))
-                #i+=1
                 corners[corner]['strand'] = strandNum
                 corners[corner]['regs'] = set( G.adjDict[strandNum] )
-                #c.create_text(corner[0],corner[1],text=strandNum, fill="black", font=('Helvetica 15 bold'))
+
         
 
-    for (x,y) in corners:
-        
-        assert( corners[(x,y)][1] is not None )
-        #if corners[(x,y)][1] is None:
-        #    c.create_text(x,y,text="unexpected", fill="black", font=('Helvetica 15 bold'))
+    #for (x,y) in corners:        
+    #    assert( corners[(x,y)][1] is not None )
 
 
     # associate boundary coordinates to regions
@@ -264,13 +213,8 @@ def plotLoopWithLabeledRegions( link ):
     maxX = randomCorner[0]
     minY = randomCorner[1]
     maxY = randomCorner[1]
-
-    
-
     for dct in [corners,crosses]:
         for coord in dct:
-            #print( corner, corners[corner]['regs'])
-            #c.create_text(corner[0],corner[1],text=corners[corner]['regs'], fill="black", font=('Helvetica 15 bold'))
             for reg in dct[coord]['regs']:
                 if reg not in regBoundaries:
                     regBoundaries[reg] = {"coords":[coord],"topLeft":None, "bottomLeft":None,"infRegion":False}
@@ -285,36 +229,17 @@ def plotLoopWithLabeledRegions( link ):
             if coord[1] > maxY:
                 maxY = coord[1]
 
-    #c.create_text(minX,minY,text="o", fill="black", font=('Helvetica 15 bold'))
-    #c.create_text(maxX,maxY,text="x", fill="black", font=('Helvetica 15 bold'))
-    
-    #print()
-    #for cross in crosses:
-        #print( cross, crosses[cross]['regs'])
-        
-    #    for reg in crosses[cross]['regs']:
-    #        if reg not in regBoundaries:
-    #            regBoundaries[reg] = {"coords":[cross],"topLeft":None}
-    #        else:
-    #            regBoundaries[reg]["coords"].append( cross )
 
-    #j = 0
+    # compute anchor points for labels and label regions
     tolerance = 0.000001
-    
-
-    j = 0
     for reg in regBoundaries:
-        #print( reg )
-        debugReg = 557314
-            
+        debugReg = None            
         topLeft = regBoundaries[reg]["coords"][0]
         bottomLeft = regBoundaries[reg]["coords"][0]
         regMinX = topLeft[0]
         regMaxX = topLeft[0]
         regMinY = topLeft[1]
         regMaxY = topLeft[1]
-        #if reg == debugReg:
-        #    print( "curTopLeft", topLeft )
         for point in regBoundaries[reg]["coords"]:
             if point[0] < regMinX:
                 regMinX = point[0]
@@ -326,7 +251,6 @@ def plotLoopWithLabeledRegions( link ):
                 regMaxY = point[1]
             #if reg == debugReg:
             #    c.create_text(point[0],point[1],text='o', fill="black", font=('Helvetica 15 bold'))
-            #    pass
             if point[0] < topLeft[0] - tolerance or ( abs( point[0]-topLeft[0] ) < tolerance and point[1] < topLeft[1] ):
                 
                 topLeft = point
@@ -334,76 +258,19 @@ def plotLoopWithLabeledRegions( link ):
             if point[0] < bottomLeft[0] - tolerance or ( abs( point[0]-bottomLeft[0] ) < tolerance and point[1] > bottomLeft[1] ):
                 
                 bottomLeft = point
-
-            
-                #if reg == debugReg:
-                    #print( "curTopLeft", topLeft )
-                #    c.create_text(topLeft[0],topLeft[1],text=j, fill="black", font=('Helvetica 15 bold'))
-                #    j += 1
         regBoundaries[reg]["topLeft"] = [topLeft]
-        regBoundaries[reg]["bottomLeft"] = [bottomLeft]
-
-        #if reg == debugReg:
-            #c.create_text(regMinX,regMinY,text="O", fill="black", font=('Helvetica 15 bold'))
-            #c.create_text(regMaxX,regMaxY,text="X", fill="black", font=('Helvetica 15 bold'))
-            #print( regMinX,regMinY,minX,minY )
-            #print( regMaxX,regMaxY,maxX,maxY )
-        
+        regBoundaries[reg]["bottomLeft"] = [bottomLeft]        
 
         if abs( minX-regMinX ) < tolerance and abs( minY-regMinY ) < tolerance \
            and abs( maxX-regMaxX ) < tolerance and abs( maxY-regMaxY )<tolerance:
-            #print( "hi" )
             regBoundaries[reg]["infRegion"] = True
 
-        #if reg == debugReg:
         if not regBoundaries[reg]["infRegion"]:
             c.create_text(topLeft[0]+10,topLeft[1]+20,text=reg, fill="black", anchor="w", font=('Helvetica 10 bold'))
         else:
             c.create_text(bottomLeft[0]+10,bottomLeft[1]+20,text=reg, fill="black", anchor="w", font=('Helvetica 10 bold'))
-        #j += 1
         
-            
-        
-    #print( G.adjDict )
-    regDict = {} # keys are strands, vals are regions containing that strand
-   
-
-    
-
-    
-                
     return
-
-    for corner in corners:
-        c.create_text(corner[0],corner[1],text="O", fill="black", font=('Helvetica 15 bold'))
-    
-    
-
-    
-    
-   
-
-    strandCoordDict = {}
-    for key in crossCoordDict:
-        x1, y1 = crossCoordDict[key]
-        nxtKey = (key+1)%len(crossCoordDict)
-        if nxtKey == 0:
-            nxtKey = len(crossCoordDict)
-        x2, y2 = crossCoordDict[nxtKey]
-        strandCoordDict[ key ] = ((x1+x2)/2,(y1+y2)/2)
-
-    G = SurfaceGraphFromPD( plinkPD( link ) )
-    comDict = {}
-    for key in G.wordDict:
-        #print( key, G.wordDict[key].seq )
-        x = 0
-        y = 0
-        for strand in G.wordDict[key].seq:
-            x += strandCoordDict[ abs( strand ) ][0]
-            y += strandCoordDict[ abs( strand ) ][1]
-        x /= len( G.wordDict[key] )
-        y /= len( G.wordDict[key] )
-        c.create_text(x,y,text=str(key), fill="black", font=('Helvetica 15 bold')) 
      
     
 def closeTo( x0, y0, pointDict, tolerance = 0.00000001 ):
@@ -415,7 +282,7 @@ def closeTo( x0, y0, pointDict, tolerance = 0.00000001 ):
         if nextd < mindist:
             mindist = nextd
             closestPoint = (point[0], point[1])
-    return mindist < tolerance, closestPoint
+    return mindist < tolerance, closestPoint"""
     
 
 def makeTex( loopStrings, imageFilesToDelete ):
@@ -494,33 +361,6 @@ def texPinSet(col1, col2, plinkImg, posetImg):
 
     return doc    
     
-    """#geometry_options = {"tmargin": "1cm", "lmargin": "1cm"}
-    #texFileName = 
-    #doc = p.Document(geometry_options=geometry_options)
-    #doc.packages.append(p.Package('tikz'))
-    #doc.packages.append(p.Package('tkz-graph'))
-    #doc.packages.append(p.Package('tkz-berge'))
-    #doc.packages.append(p.Package('tikz'))
-    #doc.packages.append(p.Package('xy'))
-    with doc.create(p.Section('A section')):
-        doc.append("Hi")
-        #print( latex(
-        tex = latex(  )
-        print( tex )
-        doc.append(str( tex ))
-    #doc.generate_tex()
-    doc.generate_pdf('full', clean_tex=False,compiler="pdflatex")
-    return
-    from sage.misc.latex import latex_examples
-     
-    foo = latex_examples.diagram()
-    latex.extra_preamble('\\usepackage{tikz}\n\\usepackage{tkz-graph}\n'\
-                     '\\usepackage{tkz-berge}\n\\usetikzlibrary{arrows,shapes}')
-    latex.add_to_preamble("\\usepackage[matrix,arrow,curve,cmtip]{xy}")
-    latex.engine('pdflatex')
-    print( latex( foo ) ) # the latex code for the example
-    view( foo ) # view the output in a pdf viewer"""
-
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 def posetPlot( sageObject, heights, colors, vertlabels, edgeColors ):
@@ -577,7 +417,7 @@ def drawLattice( pinSets, minPinSets, fullRegSet ):
     edgeColors = {}
     #A dictionary specifying edge colors:
     #    each key is a color recognized by matplotlib, and each corresponding value is a list of edges.
-    diffs = set()
+    diffs = {0}
     
     for edge in G.edges():
         diff = len( eltsDict[edge[1]] )-len( eltsDict[edge[0]] )
@@ -781,41 +621,44 @@ def minJoinSemilatticeContaining( subsets ):
 
     return allsets
 
-def test11():
-    """Drawing the minimal join semilattice for a loop's pinning sets"""
+def createCatalog():
+    """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
 
-    loops = [link8, link9, monalisa]
+    loops = ['3_1']#,'4_1', link8]# '5_1', '8_3', link8, link9]#, monalisa] # the loops to go in the catalog
     loopStrings = []
     toDelete = []
     for link in loops:
         drawnpd = plinkPD( link )
-        col1 = "\\textbf{Input PD code or string to snappy (use to reproduce the drawing):}\n\n\t"+ str( link )+"\n\n"
+        optionaldollarsign = ""
+        if type( link ) == str:
+            optionaldollarsign = "$"
+        col1 = "\\textbf{Input PD code or string to snappy (use to reproduce the drawing):}\n\n\t" \
+             +optionaldollarsign + str( link )+optionaldollarsign+"\n\n"
         col1 += "\\textbf{Output PD code drawn by snappy:}\n\n\t"+str( drawnpd )+"\n\n\n"
-        pinsets, naivePinSets, minPinSets, fullRegSet, loopData = getPinSets( drawnpd, debug=False )
+        data = getPinSets( drawnpd, debug=False )
         col1 += "\\textbf{Arcs composing region <-----> Region key}\n\n"
-        col1 += loopData
+        col1 += data["regInfo"]
         col2 = "\\textbf{Minimal pinning sets:}\n\n"
-        minlen = len( minPinSets )
-        for elt in minPinSets:
+        minlen = len( data["minPinSets"] )
+        for elt in data["minPinSets"]:
             col2 +=  "\\{"+str(elt) + "\\}\n\n"
             if len( elt ) < minlen:
                 minlen = len( elt )
         col2 += "\n\n"
      
-        col2 += "\\textbf{Number of minimal pinning sets:} "+str( len( minPinSets ) )+"\n\n"
-        col2 += "\\textbf{Number of total pinning sets:} "+str( len( pinsets ) )+"\n\n"
+        col2 += "\\textbf{Number of minimal pinning sets:} "+str( len( data["minPinSets"] ) )+"\n\n"
+        col2 += "\\textbf{Number of total pinning sets:} "+str( len( data["pinSets"] ) )+"\n\n"
         col2 += "\\textbf{Pinning number:} "+str( minlen )+"\n\n"
-        plinkFile = plinkImgFile( link )
-        posetFile = drawLattice( pinsets, minPinSets, fullRegSet )
+        tolerance = 0.0000001
+        plinkFile = plinkImgFile( link, drawnpd, data["G"].adjDict, data["minPinSets"], tolerance )
+        posetFile = drawLattice( data["pinSets"], data["minPinSets"], data["fullRegSet"] )
         toDelete.append( plinkFile )
         toDelete.append( posetFile )
         loopStrings.append( texPinSet(col1, col2, plinkFile, posetFile ) )
 
     makeTex( loopStrings, toDelete )
     #print( outputStr )
-    #print( loopData )
-    
-    
+    #print( loopData )    
 
 def getUnusedFileName( ext ):
     """Gets a filename in the current folder that is not in use with the extension str"""
@@ -1033,7 +876,9 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
     #if debug:# and not minOnly:
     #    return pinSets, naivePinSets, minPinSets
 
-    return pinSets, naivePinSets, minPinSets, fullRegSet, G.regionInfo()
+    return {"pinSets":pinSets, "naivePinSets":naivePinSets,\
+            "minPinSets":minPinSets, "fullRegSet":fullRegSet,\
+            "regInfo":G.regionInfo(), "G":G }
     
 
 ####################### DATA STRUCTURES ####################################
@@ -1756,9 +1601,9 @@ def plinkFromPD( link ):
     assert( type( link ) == list )
     snappy.Link( link ).view()
 
-def plinkImgFile( link ):
+def plinkImgFile( link, drawnpd, adjDict, minPinSets, tolerance ):
     filename = getUnusedFileName( "svg" )
-    call(['python3', 'saveLoop.py', str(link), filename])
+    call(['python3', 'saveLoop.py', str(link), str(drawnpd), str(adjDict), str(minPinSets), str(tolerance), filename])
     return filename    
 
 # Experimenting with drawing a loop and getting a PD code
