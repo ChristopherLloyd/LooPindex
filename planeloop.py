@@ -79,213 +79,167 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 def main():
     
     createCatalog()
-    #plotLoopWithLabeledRegions( link8 )
 
-"""def plotLoopWithLabeledRegions( link, adjDict, minPinSets ):
+def createCatalog():
+    """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
 
-    # Create the loop drawing and tweak parameters
-    drawnPD = plinkPD( link )
-    print( "PD code:", drawnPD )
-    G = SurfaceGraphFromPD( plinkPD( link ) )
-    print( G )
-    LE = snappy.Link( link ).view()
-    LE.style_var.set('pl')
-    LE.set_style()
-    c = LE.canvas
-    corners = {}
-    crosses = {}
-    LE.info_var.set(1)
-    LE.update_info()
+    loops = [ link9, '8_3', '3_1', link8, monalisa, '4_1', '5_1', '9_24']  # the loops to go in the catalog
+    loopStrings = []
+    toDelete = []
 
-    # store coordinates of all crossings
-    for crs in LE.Crossings:
-        crs.locate()
-        strandCount = len( LE.Crossings )*2
-        hit1 = abs( crs.hit1 )
-        hit2 = abs( crs.hit2 )
-        next1 = (hit1-1)%strandCount
-        if next1 == 0:
-            next1 = strandCount
-        next2 = (hit2-1)%strandCount
-        if next2 == 0:
-            next2 = strandCount
 
-        regs = set()
-        adjStrands = {hit1,hit2,next1,next2}
-        
-        for strand in adjStrands:
-            regs.add( G.adjDict[strand][0] )
-            regs.add( G.adjDict[strand][1] )
+    data = {}
+    numOptimals = set()
+    numMinimals = set()
 
-        crosses[(crs.x,crs.y)]={"strands":{hit1,hit2,next1,next2}, "segs":None, "regs":regs }
-        #crossCoordDict[ abs( crs.hit1 ) ] = (crs.x, crs.y)
-        #crossCoordDict[ abs( crs.hit2 ) ] = (crs.x, crs.y)
-
-    # store coordinates of all corners and the segments that crosses and corners belong to
-    for a in LE.Arrows:
-        a.expose()
-        segs = a.find_segments( LE.Crossings, include_overcrossings=True )
-        toAdd = []
-        for i in range( len( segs )-1 ):
-            if (segs[i][2],segs[i][3]) != (segs[i+1][0],segs[i+1][1]):
-                midx = (segs[i][2]+segs[i+1][0])/2
-                midy = (segs[i][3]+segs[i+1][1])/2
-                toAdd.append( [segs[i][2],segs[i][3],midx,midy] )
-                toAdd.append( [midx,midy,segs[i+1][0],segs[i+1][1]] )
-        segs += toAdd
-            
-        for seg in segs:
-            closeData = closeTo(seg[0],seg[1],crosses)
-            if not closeData[0]:
-                if (seg[0],seg[1]) not in corners:
-                    corners[(seg[0],seg[1])] = {0:seg,1:None,"strand":None,"regs":None}
-                else:
-                    corners[(seg[0],seg[1])][1]=seg
+    for link in loops:
+        drawnpd = plinkPD( link )
+        data[str(link)] = getPinSets( drawnpd, debug=False )
+        minDict = {}
+        for elt in data[str(link)]["minPinSets"]:
+            if len( elt ) not in minDict:
+                minDict[len(elt)] = [elt]
             else:
-                if crosses[closeData[1]]["segs"] is None:
-                    crosses[closeData[1]]["segs"] = [seg]
-                else:
-                    crosses[closeData[1]]["segs"].append( seg )
-            closeData = closeTo(seg[2],seg[3],crosses)
-            if not closeData[0]:
-                if (seg[2],seg[3]) not in corners:
-                    corners[(seg[2],seg[3])] = {0:seg,1:None,"strand":None,"regs":None}
-                else:
-                    corners[(seg[2],seg[3])][1]=seg
-            else:
-                if crosses[closeData[1]]["segs"] is None:
-                    crosses[closeData[1]]["segs"] = [seg]
-                else:
-                    crosses[closeData[1]]["segs"].append( seg )
+                minDict[len(elt)].append( elt )
+            #if len( elt ) < minlen:
+            #    minlen = len( elt )
+        data[str(link)]["minDict"] = minDict
+        minlen = min( minDict )
+        numOptimal = len( minDict[minlen] )
+        numOptimals.add( numOptimal  )
+        numMinimals.add( len( data[str(link)]["minPinSets"] ) - numOptimal )
 
+    #compute the colors needed for labeling pinning sets
+    pinSetColors = computeRGBColors( max( numOptimals ), max( numMinimals ) )
 
-    # compute the strands adjacent to each cross and corner
-    for (x,y) in crosses:
-        #assert( len( crosses[(x,y)]['segs'] ) == 4 )       
-        for segOut in crosses[(x,y)]['segs']:
-            hitCorners = set()
-            (curx, cury) = (x,y)
-            curSeg = segOut
-            if (segOut[0],segOut[1])==(curx,cury):
-                (nextx,nexty) = (segOut[2],segOut[3])
-            else:
-                (nextx,nexty) = (segOut[0],segOut[1])
-            if (nextx,nexty) not in corners or corners[(nextx,nexty)]['strand'] is not None:
-                continue
-            while True:
-                closeData = closeTo(nextx,nexty,crosses)
-                if closeData[0]:
-                    (nextx,nexty)=closeData[1]
-                    break
-                hitCorners.add((nextx,nexty))
-                seg1 = corners[(nextx,nexty)][0]
-                seg2 = corners[(nextx,nexty)][1]
-                inFirst = False
-                if (curx,cury) == (seg1[0],seg1[1]) or (curx,cury) == (seg1[2],seg1[3]):
-                    inFirst = True
-                if inFirst:
-                    curSeg = corners[(nextx,nexty)][1]
-                else:
-                    curSeg = corners[(nextx,nexty)][0]
-                (curx,cury) = (nextx,nexty)
-                if (curSeg[0],curSeg[1]) == (curx,cury):
-                    (nextx,nexty) = (curSeg[2],curSeg[3])
-                else:
-                    (nextx,nexty) = (curSeg[0],curSeg[1])
-            strandNum = None
-            for label in crosses[(x,y)]['strands']:
-                if label in crosses[(nextx,nexty)]['strands']:
-                    strandNum = label
-            for corner in hitCorners:
-                corners[corner]['strand'] = strandNum
-                corners[corner]['regs'] = set( G.adjDict[strandNum] )
-
-        
-
-    #for (x,y) in corners:        
-    #    assert( corners[(x,y)][1] is not None )
-
-
-    # associate boundary coordinates to regions
-    regBoundaries = {}
-    randomCorner = getKey(corners)
-    minX = randomCorner[0]
-    maxX = randomCorner[0]
-    minY = randomCorner[1]
-    maxY = randomCorner[1]
-    for dct in [corners,crosses]:
-        for coord in dct:
-            for reg in dct[coord]['regs']:
-                if reg not in regBoundaries:
-                    regBoundaries[reg] = {"coords":[coord],"topLeft":None, "bottomLeft":None,"infRegion":False}
-                else:
-                    regBoundaries[reg]["coords"].append( coord )
-            if coord[0] < minX:
-                minX = coord[0]
-            if coord[0] > maxX:
-                maxX = coord[0]
-            if coord[1] < minY:
-                minY = coord[1]
-            if coord[1] > maxY:
-                maxY = coord[1]
-
-
-    # compute anchor points for labels and label regions
-    tolerance = 0.000001
-    for reg in regBoundaries:
-        debugReg = None            
-        topLeft = regBoundaries[reg]["coords"][0]
-        bottomLeft = regBoundaries[reg]["coords"][0]
-        regMinX = topLeft[0]
-        regMaxX = topLeft[0]
-        regMinY = topLeft[1]
-        regMaxY = topLeft[1]
-        for point in regBoundaries[reg]["coords"]:
-            if point[0] < regMinX:
-                regMinX = point[0]
-            if point[0] > regMaxX:
-                regMaxX = point[0]
-            if point[1] < regMinY:
-                regMinY = point[1]
-            if point[1] > regMaxY:
-                regMaxY = point[1]
-            #if reg == debugReg:
-            #    c.create_text(point[0],point[1],text='o', fill="black", font=('Helvetica 15 bold'))
-            if point[0] < topLeft[0] - tolerance or ( abs( point[0]-topLeft[0] ) < tolerance and point[1] < topLeft[1] ):
-                
-                topLeft = point
-
-            if point[0] < bottomLeft[0] - tolerance or ( abs( point[0]-bottomLeft[0] ) < tolerance and point[1] > bottomLeft[1] ):
-                
-                bottomLeft = point
-        regBoundaries[reg]["topLeft"] = [topLeft]
-        regBoundaries[reg]["bottomLeft"] = [bottomLeft]        
-
-        if abs( minX-regMinX ) < tolerance and abs( minY-regMinY ) < tolerance \
-           and abs( maxX-regMaxX ) < tolerance and abs( maxY-regMaxY )<tolerance:
-            regBoundaries[reg]["infRegion"] = True
-
-        if not regBoundaries[reg]["infRegion"]:
-            c.create_text(topLeft[0]+10,topLeft[1]+20,text=reg, fill="black", anchor="w", font=('Helvetica 10 bold'))
+    
+    for link in data:
+        #drawnpd = plinkPD( link )
+        optionaldollarsign = ""
+        if not "[" in link:
+            optionaldollarsign = "$"
+            linkstr = ""
+            for char in link:
+                if char == "_":
+                    linkstr += "\\"
+                linkstr += char
         else:
-            c.create_text(bottomLeft[0]+10,bottomLeft[1]+20,text=reg, fill="black", anchor="w", font=('Helvetica 10 bold'))
+            linkstr = link
+        col1 = "\\textbf{Input PD code or string to snappy (use to reproduce the drawing):}\n\n\t" \
+             +optionaldollarsign + str( link )+optionaldollarsign+"\n\n"
+        col1 += "\\textbf{Output PD code drawn by snappy:}\n\n\t"+str( drawnpd )+"\n\n\n"
+        #data = getPinSets( drawnpd, debug=False )
+        col1 += "\\textbf{Arcs composing region <-----> Region key}\n\n"
+        col1 += data[link]["regInfo"]
         
-    return
-     
-    
-def closeTo( x0, y0, pointDict, tolerance = 0.00000001 ):
-    point1 = getKey( pointDict )
-    mindist = abs( x0 - point1[0] )+abs( y0 - point1[1] )
-    closestPoint = (point1[0], point1[1])
-    for point in pointDict:
-        nextd = abs( x0 - point[0] )+abs( y0 - point[1] )
-        if nextd < mindist:
-            mindist = nextd
-            closestPoint = (point[0], point[1])
-    return mindist < tolerance, closestPoint"""
-    
+        col2 = "\\noindent\\textbf{Input PD code or string to snappy (use to reproduce the drawing):}\n\n\t" \
+             +optionaldollarsign + linkstr +optionaldollarsign+"\n\n"
+        col2 += "\\noindent\\textbf{Optimal pinning sets:}\n\n"
+        minlen = min( data[link]["minDict"] )#len( data[link]["minPinSets"][0] )
+        #print( data["minPinSets"] )
 
-def makeTex( loopStrings, imageFilesToDelete ):
+        #print( pinSetColors["opts"] )
+        #print( pinSetColors["mins"] )
+
+        #print( data[link]["minPinSets"] )
+        minPinSetDict = {}
+        label = 1
+        for pinset in data[link]["minPinSets"]:
+            minPinSetDict[str(pinset)] = {}
+
+
+        regionLabels = {}
+        regList = list( data[link]["fullRegSet"].copy() )
+        regList.sort()
+        print( regList )
+        for i in range( len( regList ) ):
+            regionLabels[regList[i]] =  i+1         
+
+        j = 0
+        col2 +=  "\\begin{enumerate}[A)]\n"
+        firstTime = True
+        for key in data[link]["minDict"]:
+            for i in range( len( data[link]["minDict"][key] ) ):
+                elt = data[link]["minDict"][key][i]
+                #print( elt )
+                if key == minlen:
+                    dictkey = "opts"
+                    var = i
+                else:
+                    dictkey = "mins"
+                    if firstTime:
+                        col2 += "\\end{enumerate}\n"
+                        col2 += "\\textbf{Minimal pinning sets:}\n\n"
+                        col2 += "\\begin{enumerate}[a)]\n"
+                    firstTime = False
+                    var = j
+                    #elt = data[link]["minPinSets"][i]
+                minPinSetDict[str(elt)]["label"] = label
+                label += 1
+                minPinSetDict[str(elt)]["color"] = pinSetColors[dictkey][var]["rgb"]  
+                col2 +=  "\\item{\\Huge\\textcolor{"+pinSetColors[dictkey][var]["label"]+\
+                        "}{\\textbullet}}$\\{"
+
+                for reg in elt:
+                    col2 += str( regionLabels[reg] ) +","
+
+                col2 = col2[:-1]
+
+                col2 += "\\}$\n\n"
+                #else:
+                #    minPinSetDict[str(elt)]["label"] = label
+                #    label += 1
+                #    minPinSetDict[str(elt)]["color"] = pinSetColors["mins"][j]["rgb"]  
+                #    #print( "curminlabel", pinSetColors["mins"][j]["label"] )
+                #    col2 +=  "\\item\\textcolor{"+pinSetColors["mins"][j]["label"]+\
+                #            "}{\\{"+str(elt) + "\\}}\n\n"
+                if key != minlen:
+                    j+=1
+        col2 +=  "\\end{enumerate}\n"
+
+        #for key in minPinSetDict:
+        #    print( key, minPinSetDict[key] )
+            
+        #for i in range( len( data[link]["minPinSets"] ) ):
+            #for elt in data[str(link)]["minPinSets"]:
+        #    elt = data[link]["minPinSets"][i]
+        #   col2 +=  "\\textcolor{}{\\{"+str(elt) + "\\}}\n\n"        
+        col2 += "\n\n"
+        col2 += "\\noindent\\textbf{Number of minimal pinning sets:} "+str( len( data[link]["minPinSets"] ) )+"\n\n"
+        col2 += "\\noindent\\textbf{Number of total pinning sets:} "+str( len( data[link]["pinSets"] ) )+"\n\n"
+        col2 += "\\noindent\\textbf{Pinning number:} "+str( minlen )+"\n\n"
+        tolerance = 0.0000001
+        plinkFile = plinkImgFile( link, data[link]["drawnpd"], data[link]["G"].adjDict,\
+                                  data[link]["minPinSets"], tolerance, minPinSetDict, regionLabels )
+        posetFile = drawLattice( data[link]["pinSets"], data[link]["minPinSets"], data[link]["fullRegSet"] )
+        #print( "finished one" )
+        toDelete.append( plinkFile )
+        toDelete.append( posetFile )
+        # replaced col1 with empty string because it's not needed
+        loopStrings.append( texPinSet("", col2, plinkFile, posetFile ) )
+
+   
+
+    makeTex( loopStrings, toDelete, pinSetColors )
+    #print( outputStr )
+    #print( loopData )
+
+def computeRGBColors( range1, range2 ):
+
+    colors = {"opts":{},"mins":{}}
+
+    startHue = 0.5
+    endHue = 1
+    step1 = (endHue-startHue)/(range1-1)
+    step2 = (endHue-startHue)/(range2-1)
+    
+    for i in range( 0,range1 ):
+        colors["opts"][i] = {"label": "green"+str(i),"rgb":(0,startHue+i*step1,0)}
+    for i in range( 0,range2 ):
+        colors["mins"][i] = {"label": "blue"+str(i), "rgb":(0,0,startHue+i*step2)}
+    return colors    
+
+def makeTex( loopStrings, imageFilesToDelete, colors ):
     filename = "tex/pinSets"
     try:
         os.remove(filename+".tex")
@@ -300,6 +254,7 @@ def makeTex( loopStrings, imageFilesToDelete ):
                "\\usepackage{textcomp}%\n"+\
                "\\usepackage{lastpage}%\n"+\
                "\\usepackage{geometry}%\n"+\
+               "\\usepackage[dvipsnames]{xcolor}\n"+\
                "\\usepackage{tikz}\n"+\
                "\\usepackage{tkz-graph}\n"+\
                "\\usepackage{tkz-berge}\n"+\
@@ -308,8 +263,16 @@ def makeTex( loopStrings, imageFilesToDelete ):
                "\\usepackage{svg}\n"+\
                "\\usepackage{multicol}\n"+\
                "\\usepackage{float}\n"+\
+               "\\usepackage[shortlabels]{enumitem}\n"+\
                "\\geometry{tmargin=1cm,lmargin=1cm}%\n"+\
                "%\n%\n%\n"
+    for color in colors:
+        for key in colors[color]:
+            preamble += "\\definecolor{"+colors[color][key]["label"]+"}{rgb}{"\
+                        +str( colors[color][key]["rgb"][0] ) +\
+                        ","+str( colors[color][key]["rgb"][1] )+","+\
+                        str( colors[color][key]["rgb"][2] )+"}\n"
+    preamble += "%\n%\n%\n"
     doc = preamble + "\\begin{document}%\n\\small\n\n"#note the font size change
     
     for loopString in loopStrings:
@@ -379,17 +342,28 @@ def posetPlot( sageObject, heights, colors, vertlabels, edgeColors ):
     return filename
 
 def drawLattice( pinSets, minPinSets, fullRegSet ):
-    elts = minJoinSemilatticeContaining( minPinSets )
-    eltsDict = {}
+    elts, top = minJoinSemilatticeContaining( minPinSets )
+    numElts = len( elts )
+    #topInd = None
+    fullIncluded = ( top == fullRegSet )
+    if not fullIncluded:
+        eltsDict = {numElts:fullRegSet}
+    else:
+        eltsDict = {}
     rels = []
     for subset in elts:
-        eltsDict[elts.index( subset )] = subset
-    for i in range( len( elts )-1):
-        for j in range( i+1, len( elts ) ):
+        ind = elts.index( subset )
+        eltsDict[ind] = subset
+        if subset == top and not fullIncluded:
+            rels.append([ind,numElts])
+    for i in range( numElts-1):
+        for j in range( i+1, numElts ):
             if eltsDict[i].issubset( eltsDict[j] ):
                 rels.append([i,j])
             if eltsDict[j].issubset( eltsDict[i] ):
                 rels.append([j,i])
+
+    #print( eltsDict, rels )
 
     M = JoinSemilattice((eltsDict, rels))
     print( M )
@@ -409,8 +383,8 @@ def drawLattice( pinSets, minPinSets, fullRegSet ):
     for elt in M.list():
         vertLabels[elt]=str( len( eltsDict[elt] ) )
     edgeColorsDict = {}
-    for rel in rels:
-        pass
+    #for rel in rels:
+    #    pass
     #print( M.hasse_diagram() )
     G = DiGraph( M.hasse_diagram() )
 
@@ -448,113 +422,6 @@ def drawLattice( pinSets, minPinSets, fullRegSet ):
     G = Graph( G )
                
     return posetPlot( G, heightsDict, vertColorsDict, vertLabels, edgeColors )
-
-    
-    """
-    subsets = {}
-    pset1 = list( powerset( fullRegSet ) )
-    pset = []
-    for elt in pset1:
-        pset.append( set( elt ) )
-    rels = []
-    for subset in pset:
-        subsets[pset.index( subset )] = set( subset )
-    for i in range( len( pset )-1):
-        for j in range( i+1, len( pset ) ):
-            if subsets[i].issubset( subsets[j] ):
-                rels.append([i,j])
-            if subsets[j].issubset( subsets[i] ):
-                rels.append([j,i])
-
-    L = LatticePoset((subsets, rels))
-    #pinSetDict = {}
-    minPinSetDict = {}
-    #for elt in pinSets:
-    #    pinSetDict[pset.index( elt )] = elt
-    for elt in minPinSets:
-        minPinSetDict[pset.index(elt)] = elt
-
-    print( "Finished creating full subset lattice." )
-    M = L.subjoinsemilattice(minPinSetDict)
-    # A faster way to do this would be to compute unions manually
-    # Then construct using JoinSemiLattice
-    print( "Finished creating the smallest join semilattice containing the minimal pinning sets." )
-    #P = L.sublattice(minPinSetDict) #sublattice is extremely slow for 9-crossing link
-    #print( "Finished creating full sublattice generated by pinnings sets." )
-    print( M )
-
-    
-    
-    def printData( functions ):
-        nonlocal M
-        for function in functions:
-            try:
-                func = eval( "M."+function )
-                print( str( func ).split()[2], func() )
-            except AttributeError:
-                print( traceback.print_exc() )
- 
-    functions = ["is_planar", "breadth", "is_join_pseudocomplemented",\
-                "is_supersolvable", "skeleton",\
-                "center", "vertical_decomposition", "subdirect_decomposition"]
-    
-    #printData( functions )
-    #frattini_sublattice()
-
-    #print( M.hasse_diagram )
-    #print( M.list() )
-    heightsDict = {}
-    for elt in M.list():
-        try:
-            heightsDict[len( subsets[elt] )].append( elt )
-        except KeyError:
-            heightsDict[len( subsets[elt] )] = [elt]
-    #print( heightsDict )
-    colorsDict = {"green":[]}
-    for elt in M.list():
-        if subsets[elt] in minPinSets:
-            colorsDict["green"].append( elt )
-    vertLabels = {}
-    for elt in M.list():
-        vertLabels[elt]=str( len( subsets[elt] ) )
-    posetPlot( Graph( M.hasse_diagram() ), heightsDict, colorsDict, vertLabels )
-    
-
-    
-    return"""
-    """
-    # What's below was plotting the Join Semi Lattice from ALL pinning sets
-        
-    #elms = pinSets
-    pinSetDict = {}
-    minPinSetDict = {}
-    # set of vertices needs to be hashable
-    for elt in pinSets:
-        pinSetDict[pset.index( elt )] = elt
-    for elt in minPinSets:
-        minPinSetDict[pset.index(elt)] = elt
-    
-    #print( pinSets )
-    rels = []
-    # it seems you have to give sage the relations between elements manually
-    for i in range( len( pinSets )-1):
-        for j in range( i+1, len( pinSets ) ):
-            if pinSetDict[i].issubset( pinSetDict[j] ):
-                rels.append([i,j])
-            if pinSetDict[j].issubset( pinSetDict[i] ):
-                rels.append([j,i])
-    M = JoinSemilattice((pinSetDict, rels))
-    #L = LatticePoset( M )
-    
-    #print( "M.is_planar():", L.is_planar() )
-    #print( "M.join_matrix()", L.join_matrix() )
-    
-    sageplot( M )
-    # Trying to get subjoinsemilattice generated by minimal pinning sets, having issues
-    #L = M.subjoinsemilattice(minPinSetDict)
-    #L = sage.combinat.posets.lattices.FiniteJoinSemilattice( M )
-    #L = L.sublattice(minPinSetDict)
-    #sageplot( L )"""
 
 def minJoinSemilatticeContaining( subsets ):
     """This function takes a set of subsets and computes unions
@@ -619,46 +486,7 @@ def minJoinSemilatticeContaining( subsets ):
         else:
             break
 
-    return allsets
-
-def createCatalog():
-    """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
-
-    loops = ['8_3', '3_1', '4_1', '5_1', '8_3', '9_24', link8, link9, monalisa] # the loops to go in the catalog
-    loopStrings = []
-    toDelete = []
-    for link in loops:
-        drawnpd = plinkPD( link )
-        optionaldollarsign = ""
-        if type( link ) == str:
-            optionaldollarsign = "$"
-        col1 = "\\textbf{Input PD code or string to snappy (use to reproduce the drawing):}\n\n\t" \
-             +optionaldollarsign + str( link )+optionaldollarsign+"\n\n"
-        col1 += "\\textbf{Output PD code drawn by snappy:}\n\n\t"+str( drawnpd )+"\n\n\n"
-        data = getPinSets( drawnpd, debug=False )
-        col1 += "\\textbf{Arcs composing region <-----> Region key}\n\n"
-        col1 += data["regInfo"]
-        col2 = "\\textbf{Minimal pinning sets:}\n\n"
-        minlen = len( data["minPinSets"] )
-        for elt in data["minPinSets"]:
-            col2 +=  "\\{"+str(elt) + "\\}\n\n"
-            if len( elt ) < minlen:
-                minlen = len( elt )
-        col2 += "\n\n"
-     
-        col2 += "\\textbf{Number of minimal pinning sets:} "+str( len( data["minPinSets"] ) )+"\n\n"
-        col2 += "\\textbf{Number of total pinning sets:} "+str( len( data["pinSets"] ) )+"\n\n"
-        col2 += "\\textbf{Pinning number:} "+str( minlen )+"\n\n"
-        tolerance = 0.0000001
-        plinkFile = plinkImgFile( link, drawnpd, data["G"].adjDict, data["minPinSets"], tolerance )
-        posetFile = drawLattice( data["pinSets"], data["minPinSets"], data["fullRegSet"] )
-        toDelete.append( plinkFile )
-        toDelete.append( posetFile )
-        loopStrings.append( texPinSet(col1, col2, plinkFile, posetFile ) )
-
-    makeTex( loopStrings, toDelete )
-    #print( outputStr )
-    #print( loopData )    
+    return allsets, fullUnion
 
 def getUnusedFileName( ext ):
     """Gets a filename in the current folder that is not in use with the extension str"""
@@ -695,8 +523,10 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
     """Returns the minimal pinning sets of a link"""
     if type( link ) == list:
         G = SurfaceGraphFromPD( link )
+        pd = link
     else:
-        G = SurfaceGraphFromPD( plinkPD( link ) )    
+        pd = plinkPD( link )
+        G = SurfaceGraphFromPD( pd )    
     
     T = G.spanningTree( baseRegion = treeBase )
     T.createCyclicGenOrder()
@@ -878,7 +708,7 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
 
     return {"pinSets":pinSets, "naivePinSets":naivePinSets,\
             "minPinSets":minPinSets, "fullRegSet":fullRegSet,\
-            "regInfo":G.regionInfo(), "G":G }
+            "regInfo":G.regionInfo(), "G":G, "drawnpd":pd }
     
 
 ####################### DATA STRUCTURES ####################################
@@ -1601,9 +1431,10 @@ def plinkFromPD( link ):
     assert( type( link ) == list )
     snappy.Link( link ).view()
 
-def plinkImgFile( link, drawnpd, adjDict, minPinSets, tolerance ):
+def plinkImgFile( link, drawnpd, adjDict, minPinSets, tolerance, minPinSetDict, regionLabels ):
     filename = getUnusedFileName( "svg" )
-    call(['python3', 'saveLoop.py', str(link), str(drawnpd), str(adjDict), str(minPinSets), str(tolerance), filename])
+    call(['python3', 'saveLoop.py', str(link), str(drawnpd), str(adjDict), str(minPinSets),\
+          str(tolerance), str(minPinSetDict), str( regionLabels), filename])
     return filename    
 
 # Experimenting with drawing a loop and getting a PD code

@@ -1,5 +1,6 @@
 import snappy
 import sys
+from tkinter import font
 
 # get args from command line
 link = sys.argv[1]
@@ -9,8 +10,11 @@ drawnpd = eval( sys.argv[2] )
 adjDict = eval( sys.argv[3] )
 minPinSets = eval( sys.argv[4] )
 tolerance = eval( sys.argv[5] )
-filename = sys.argv[6]
+minPinSetDict = eval( sys.argv[6] )
+regLabels = eval( sys.argv[7] )
+filename = sys.argv[8]
 
+# necessary for floating point nonsense
 def closeTo( x0, y0, pointDict ):
     #nonlocal tolerance
     for key in pointDict:
@@ -26,17 +30,13 @@ def closeTo( x0, y0, pointDict ):
             closestPoint = (point[0], point[1])
     return mindist < tolerance, closestPoint
 
-#LE.info_var.set(1)
-#LE.update_info()
+def tkColorfromRgb(rgb):
+    """translates an rgb tuple of int to a tkinter friendly color code"""
+    r, g, b = round( rgb[0]*255 ),round( rgb[1]*255 ),round( rgb[2]*255 )
+    return f'#{r:02x}{g:02x}{b:02x}'
 
-
-#LE.done()
 
 # Create the loop drawing and tweak parameters
-#drawnPD = plinkPD( link )
-print( "PD code:", drawnpd )
-#G = SurfaceGraphFromPD( plinkPD( link ) )
-#print( G )
 LE = snappy.Link( link ).view()
 LE.style_var.set('pl')
 LE.set_style()
@@ -46,6 +46,8 @@ crosses = {}
 LE.info_var.set(1)
 LE.update_info()
 #LE.show_DT()
+
+print( "minPinSetDict", minPinSetDict )
 
 # store coordinates of all crossings
 for crs in LE.Crossings:
@@ -114,13 +116,15 @@ for a in LE.Arrows:
             else:
                 crosses[closeData[1]]["segs"].append( seg )
 
-curLabel = 1
+#curLabel = 1
 #i = 0
 
 (curx, cury) = startCross
 #j = 0
 #dirDict = {0:"right",1:"up",2:"left",3:"down" }
 for segOut in crosses[(curx,cury)]['segs']:
+    # for each possible direction from the first crossing, we proceed with labeling along the
+    # link until we finish, or encounter a PD code discrepancy, in which case we start over
     curSeg = segOut
     
     if closeTo( segOut[0],segOut[1],{(curx,cury)})[0]:
@@ -146,20 +150,14 @@ for segOut in crosses[(curx,cury)]['segs']:
             curJump = {nextx-curx:0,curx-nextx:2,nexty-cury:3,cury-nexty:1}
             direction = curJump[max(curJump)]
 
-            #if crosses[(nextx,nexty)]["testStrands"] is None:
-            #    crosses[(nextx,nexty)]["testStrands"] = [curLabel,None,curLabel+1,None]
-            #else:
-                # PICK UP HERE switch these according to dirs
-            #    crosses[(nextx,nexty)]["testStrands"][1] = curLabel
-            #    crosses[(nextx,nexty)]["testStrands"][3] = curLabel+1              
+            # add the label at this crossing in the appropriate direction
 
-            if crosses[(nextx,nexty)]["dirs"] is None:
+            if crosses[(nextx,nexty)]["dirs"] is None: # first encounter
                 crosses[(nextx,nexty)]["dirs"] = {curLabel:direction}
-            else:
+            else: # second encounter, check for PD code discrepancy, if none, then continue
                 crosses[(nextx,nexty)]["dirs"][curLabel] = direction
-                if len( crosses[(nextx,nexty)]["dirs"] ) != 2:
-                    pass
-                    #print( "too many labels in", crosses[(nextx,nexty)]["dirs"] )
+                assert( len( crosses[(nextx,nexty)]["dirs"] ) == 2 )
+                #print( "too many labels in", crosses[(nextx,nexty)]["dirs"] )
                 label0, label1 = tuple( crosses[(nextx,nexty)]["dirs"].keys() )
                 label0plus = (label0+1)%strandCount
                 if label0plus == 0:
@@ -176,18 +174,16 @@ for segOut in crosses[(curx,cury)]['segs']:
                     possibleLabels.append( crosses[(nextx,nexty)]["testStrands"][i:]+crosses[(nextx,nexty)]["testStrands"][:i] )
                 if not crosses[(nextx,nexty)]["strands"] in possibleLabels:
                     # this labeling doesn't match the PD code; reset and try again
-                    #print( crosses[(nextx,nexty)]["strands"] )
-                    #print( possibleLabels )
-                    #print()
                     break
                 
                 #print( crosses[(nextx,nexty)]["dirs"] )
                 
             #print( direction )
             #print( crosses[(nextx,nexty)]['segs'] )
+                
+            # determine which direction you were going and continue in that direction
+            # after increasing the label
             for seg in crosses[(nextx,nexty)]['segs']:
-                
-                
                 #curSeg = segOut
                 if closeTo( seg[0],seg[1],{(nextx,nexty)})[0]:
                     #if (seg[0],seg[1])==(nextx,nexty) or (seg[0],seg[1]) == (closenextx,closenexty):
@@ -208,7 +204,7 @@ for segOut in crosses[(curx,cury)]['segs']:
             #print( "current label:", curLabel, "current direction:", dirDict[direction] )
             #print( "(curx,cury):", (curx,cury), "(nextx,nexty)", (nextx,nexty) )
             (nextx,nexty)
-        else: # you are at a corner
+        else: # you are at a corner, add the appropriate label and continue
             
             #ids.append( c.create_text(nextx,nexty,text=curLabel, fill="black", font=('Helvetica 15 bold')) )
             corners[(nextx,nexty)]['strand'] = curLabel
@@ -230,7 +226,7 @@ for segOut in crosses[(curx,cury)]['segs']:
             #break
         if curLabel == strandCount + 1:
             happy = True
-    if happy:
+    if happy: # you're back where you started and the labels are consistent with the PD code
         #print( "HAPPY" )
         #for cross in crosses:
         #    pass
@@ -238,7 +234,7 @@ for segOut in crosses[(curx,cury)]['segs']:
         #    print( corners[corner]['strand'] )
         # c.create_text(corner[0],corner[1],text=corners[corner]['strand'], fill="blue", font=('Helvetica 15 bold'))
         break
-    else:
+    else: #start over in a new direction
         # reset all labels
         for cross in crosses:
             crosses[cross]["testStrands"] = None
@@ -251,92 +247,8 @@ for segOut in crosses[(curx,cury)]['segs']:
                 #c.delete(iD)
         (curx, cury) = startCross
     #j+=1
-
-#for corner in corners:
     
-
-#print( "file:", filename)
-#LE.save_as_svg(filename)
-#LE.done()
-#assert( False )
-            
-                
-                
-                
-                
-
-                
-                
-            #corners[(curx,cury)]['strand'] = curLabel
-            #hitCorners.add((nextx,nexty))
-            #seg1 = corners[(nextx,nexty)][0]
-            #seg2 = corners[(nextx,nexty)][1]
-            #inFirst = False
-            #if (curx,cury) == (seg1[0],seg1[1]) or (curx,cury) == (seg1[2],seg1[3]):
-            #    inFirst = True
-            #if inFirst:
-            #    curSeg = corners[(nextx,nexty)][1]
-            #else:
-            #    curSeg = corners[(nextx,nexty)][0]
-            #(curx,cury) = (nextx,nexty)
-            #if (curSeg[0],curSeg[1]) == (curx,cury):
-            #    (nextx,nexty) = (curSeg[2],curSeg[3])
-            #else:
-            #    (nextx,nexty) = (curSeg[0],curSeg[1])
-        #strandNum = None
-        #for label in crosses[(x,y)]['strands']:
-        #    if label in crosses[(nextx,nexty)]['strands']:
-        #        strandNum = label
-        #for corner in hitCorners:
-        #    corners[corner]['strand'] = strandNum
-        #    c.create_text(corner[0],corner[1],text=strandNum, fill="black", font=('Helvetica 15 bold'))
-        #    corners[corner]['regs'] = set( adjDict[strandNum] )
-    
-
-# compute the strands adjacent to each cross and corner
-"""for (x,y) in crosses:
-    assert( len( crosses[(x,y)]['segs'] ) == 4 )       
-    for segOut in crosses[(x,y)]['segs']:
-        hitCorners = set()
-        (curx, cury) = (x,y)
-        curSeg = segOut
-        if (segOut[0],segOut[1])==(curx,cury):
-            (nextx,nexty) = (segOut[2],segOut[3])
-        else:
-            (nextx,nexty) = (segOut[0],segOut[1])
-        if (nextx,nexty) not in corners or corners[(nextx,nexty)]['strand'] is not None:
-            continue
-        while True:
-            closeData = closeTo(nextx,nexty,crosses)
-            if closeData[0]:
-                (nextx,nexty)=closeData[1]
-                break
-            hitCorners.add((nextx,nexty))
-            seg1 = corners[(nextx,nexty)][0]
-            seg2 = corners[(nextx,nexty)][1]
-            inFirst = False
-            if (curx,cury) == (seg1[0],seg1[1]) or (curx,cury) == (seg1[2],seg1[3]):
-                inFirst = True
-            if inFirst:
-                curSeg = corners[(nextx,nexty)][1]
-            else:
-                curSeg = corners[(nextx,nexty)][0]
-            (curx,cury) = (nextx,nexty)
-            if (curSeg[0],curSeg[1]) == (curx,cury):
-                (nextx,nexty) = (curSeg[2],curSeg[3])
-            else:
-                (nextx,nexty) = (curSeg[0],curSeg[1])
-        strandNum = None
-        for label in crosses[(x,y)]['strands']:
-            if label in crosses[(nextx,nexty)]['strands']:
-                strandNum = label
-        for corner in hitCorners:
-            corners[corner]['strand'] = strandNum
-            c.create_text(corner[0],corner[1],text=strandNum, fill="black", font=('Helvetica 15 bold'))
-            corners[corner]['regs'] = set( adjDict[strandNum] )"""
-
-    
-
+# make sure every corner is labeled
 for (x,y) in corners:        
     assert( corners[(x,y)][1] is not None )
 
@@ -368,6 +280,7 @@ for dct in [corners,crosses]:
             maxY = coord[1]
 
 # compute anchor points for labels and label regions
+
 for reg in regBoundaries:
     #dReg1 = 42
     #dReg2 = 84
@@ -402,10 +315,55 @@ for reg in regBoundaries:
        and abs( maxX-regMaxX ) < tolerance and abs( maxY-regMaxY )<tolerance:
         regBoundaries[reg]["infRegion"] = True
 
+
+    # compute matrix of colored dots for this region corresponding to the pinning sets it belongs to
+    dotDict = {}
+    for key in minPinSetDict:
+        pinSet = eval( key )
+        if reg in eval(key):
+            dotDict[ minPinSetDict[key]["label"] ] = tkColorfromRgb( minPinSetDict[key]["color"] )   
+
+    i = 0
+    j = 0
+    k = 0
+    spacing = 14
+    labelsPerLine = 4
+    diam = 8
+    leftbuffer = 10
+    downbuffer = 30
+    #j = 0
+    
     if not regBoundaries[reg]["infRegion"]:
-        c.create_text(topLeft[0]+10,topLeft[1]+20,text=reg, fill="black", anchor="w", font=('Helvetica 10 bold'))
+        anchor1 = topLeft
     else:
-        c.create_text(bottomLeft[0]+10,bottomLeft[1]+20,text=reg, fill="black", anchor="w", font=('Helvetica 10 bold'))
+        anchor1 = bottomLeft
+        
+    c.create_text(anchor1[0]+leftbuffer,anchor1[1]+leftbuffer*5/3,text=regLabels[reg], fill="black", anchor="w", font = ("Helvetica", 12, "bold" ))
+    #font.families()[0], 36, "bold") )#, font="Arial 10 bold")
+    
+    for key in dotDict:
+        # can label circles with key after you figure out how to change font size
+        c.create_oval( anchor1[0]+leftbuffer + i*spacing, anchor1[1]+downbuffer+k*spacing,\
+                       anchor1[0]+leftbuffer + i*spacing+diam, anchor1[1]+downbuffer+k*spacing+diam,\
+                       outline = dotDict[key], fill = dotDict[key], width = 4 )
+        #c.create_text(topLeft[0]+10 + i*spacing,topLeft[1]+40+k*spacing,text="•", fill=dotDict[key], anchor="w" ) #font=('Arial',30, "bold italic" ), 
+        i+=1
+        j += 1
+        if j == labelsPerLine:
+            i = 0
+            j = 0
+            k += 1
+    #else:
+    #    c.create_text(bottomLeft[0]+10,bottomLeft[1]+20,text=reg, fill="black", anchor="w") #font=('Terminal 10 bold')
+        
+    #    for key in dotDict:
+            #c.create_text(bottomLeft[0]+10 + i*spacing,bottomLeft[1]+40,text="•", fill=dotDict[key], anchor="w") # font=('Terminal','30','bold')
+    #        c.create_oval( bottomLeft[0]+leftbuffer + i*spacing, bottomLeft[1]+downbuffer+k*spacing,\
+    #                       bottomLeft[0]+leftbuffer + i*spacing+diam, bottomLeft[1]+downbuffer+k*spacing+diam,\
+    #                       outline = dotDict[key], fill = dotDict[key], width = 2 )
+    #        i+=1
+    #c.pack()
+    
 
 # save file
 LE.save_as_svg(filename)
