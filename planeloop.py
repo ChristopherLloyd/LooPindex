@@ -624,7 +624,7 @@ def minJoinSemilatticeContaining( subsets ):
 def createCatalog():
     """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
 
-    loops = ['3_1']#,'4_1', link8]# '5_1', '8_3', link8, link9]#, monalisa] # the loops to go in the catalog
+    loops = ['8_3', '3_1', '4_1', '5_1', '8_3', '9_24', link8, link9, monalisa] # the loops to go in the catalog
     loopStrings = []
     toDelete = []
     for link in loops:
