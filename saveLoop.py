@@ -340,8 +340,10 @@ for reg in regBoundaries:
         
     c.create_text(anchor1[0]+leftbuffer,anchor1[1]+leftbuffer*5/3,text=regLabels[reg], fill="black", anchor="w", font = ("Helvetica", 12, "bold" ))
     #font.families()[0], 36, "bold") )#, font="Arial 10 bold")
-    
-    for key in dotDict:
+
+    sortedkeys = list( dotDict.keys() )
+    sortedkeys.sort()
+    for key in sortedkeys:
         # can label circles with key after you figure out how to change font size
         c.create_oval( anchor1[0]+leftbuffer + i*spacing, anchor1[1]+downbuffer+k*spacing,\
                        anchor1[0]+leftbuffer + i*spacing+diam, anchor1[1]+downbuffer+k*spacing+diam,\

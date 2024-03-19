@@ -154,8 +154,11 @@ def createCatalog():
         print( regList )
         for i in range( len( regList ) ):
             regionLabels[regList[i]] =  i+1         
-
         j = 0
+        
+        minlen = min( data[link]["minDict"] )
+        numOptimal = len( data[link]["minDict"][minlen] )
+        numMinimal = len( data[str(link)]["minPinSets"] ) - numOptimal
         col2 +=  "\\begin{enumerate}[A)]\n"
         firstTime = True
         for key in data[link]["minDict"]:
@@ -164,23 +167,31 @@ def createCatalog():
                 #print( elt )
                 if key == minlen:
                     dictkey = "opts"
-                    var = i
+                    colorvar = i
+                    numColors = numOptimal                   
                 else:
                     dictkey = "mins"
                     if firstTime:
                         col2 += "\\end{enumerate}\n"
-                        col2 += "\\textbf{Minimal pinning sets:}\n\n"
+                        col2 += "\\textbf{Minimal (suboptimal) pinning sets:}\n\n"
                         col2 += "\\begin{enumerate}[a)]\n"
                     firstTime = False
-                    var = j
-                    #elt = data[link]["minPinSets"][i]
+                    colorvar = j
+                    numColors = numMinimal
+                    #elt = data[link]["minPinSets"][i]                
+
+                numTotalColors = len( pinSetColors[dictkey] )    
+                colorIndex = int( colorvar*(numTotalColors/numColors) ) 
+                                        
                 minPinSetDict[str(elt)]["label"] = label
                 label += 1
-                minPinSetDict[str(elt)]["color"] = pinSetColors[dictkey][var]["rgb"]  
-                col2 +=  "\\item{\\Huge\\textcolor{"+pinSetColors[dictkey][var]["label"]+\
+                minPinSetDict[str(elt)]["color"] = pinSetColors[dictkey][colorIndex]["rgb"]  
+                col2 +=  "\\item{\\Huge\\textcolor{"+pinSetColors[dictkey][colorIndex]["label"]+\
                         "}{\\textbullet}}$\\{"
 
-                for reg in elt:
+                regSort = list( elt )
+                regSort.sort()
+                for reg in regSort:
                     col2 += str( regionLabels[reg] ) +","
 
                 col2 = col2[:-1]
@@ -211,7 +222,8 @@ def createCatalog():
         tolerance = 0.0000001
         plinkFile = plinkImgFile( link, data[link]["drawnpd"], data[link]["G"].adjDict,\
                                   data[link]["minPinSets"], tolerance, minPinSetDict, regionLabels )
-        posetFile = drawLattice( data[link]["pinSets"], data[link]["minPinSets"], data[link]["fullRegSet"] )
+        posetFile = drawLattice( data[link]["pinSets"], data[link]["minPinSets"],\
+                                 data[link]["fullRegSet"], minPinSetDict )
         #print( "finished one" )
         toDelete.append( plinkFile )
         toDelete.append( posetFile )
@@ -228,15 +240,16 @@ def computeRGBColors( range1, range2 ):
 
     colors = {"opts":{},"mins":{}}
 
-    startHue = 0.5
-    endHue = 1
+    startHue = 1
+    endHue = 0.2
     step1 = (endHue-startHue)/(range1-1)
     step2 = (endHue-startHue)/(range2-1)
+    lightness = 0 # 0 lightest, 1 darkest
     
     for i in range( 0,range1 ):
-        colors["opts"][i] = {"label": "green"+str(i),"rgb":(0,startHue+i*step1,0)}
+        colors["opts"][i] = {"label": "red"+str(i),"rgb":(startHue+i*step1,lightness,lightness)}
     for i in range( 0,range2 ):
-        colors["mins"][i] = {"label": "blue"+str(i), "rgb":(0,0,startHue+i*step2)}
+        colors["mins"][i] = {"label": "green"+str(i), "rgb":(lightness,startHue+i*step2,lightness)}
     return colors    
 
 def makeTex( loopStrings, imageFilesToDelete, colors ):
@@ -341,7 +354,7 @@ def posetPlot( sageObject, heights, colors, vertlabels, edgeColors ):
     #os.remove(filename)
     return filename
 
-def drawLattice( pinSets, minPinSets, fullRegSet ):
+def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict ):
     elts, top = minJoinSemilatticeContaining( minPinSets )
     numElts = len( elts )
     #topInd = None
@@ -374,14 +387,28 @@ def drawLattice( pinSets, minPinSets, fullRegSet ):
             heightsDict[len( eltsDict[elt] )].append( elt )
         except KeyError:
             heightsDict[len( eltsDict[elt] )] = [elt]
-    minColor = (0,1,0)
-    vertColorsDict = {minColor:[]}
+    defaultColor = (0.7,0.7,1)
+    vertColorsDict = {defaultColor:[]}
     for elt in M.list():
         if eltsDict[elt] in minPinSets:
-            vertColorsDict[minColor].append( elt )
+            if minPinSetDict[str(eltsDict[elt])]["color"] not in vertColorsDict:
+                vertColorsDict[minPinSetDict[str(eltsDict[elt])]["color"]] = [ elt ]
+            else:
+                vertColorsDict[minPinSetDict[str(eltsDict[elt])]["color"]].append( elt )
+            #vertColorsDict[minColor].append( elt )
+        else:
+            vertColorsDict[defaultColor].append( elt )
+        
     vertLabels = {}
-    for elt in M.list():
-        vertLabels[elt]=str( len( eltsDict[elt] ) )
+    lengthsEncountered = set()
+    revList = M.list() # reversing to print the cardinality on the rightmost vertex
+    revList.reverse()
+    for elt in revList:
+        leng = len( eltsDict[elt] )
+        if leng not in lengthsEncountered:
+            vertLabels[elt]=str( leng )
+            lengthsEncountered.add( leng )
+        
     edgeColorsDict = {}
     #for rel in rels:
     #    pass
@@ -407,10 +434,14 @@ def drawLattice( pinSets, minPinSets, fullRegSet ):
         diff = len( eltsDict[edge[1]] )-len( eltsDict[edge[0]] )
         #print( edge, eltsDict[edge[1]], eltsDict[edge[0]], diff )
         #print( diff, maxdiff )
+        hue = 1-diff/maxdiff
+        rgb = (hue,hue,hue)
+        if rgb == (1,1,1):
+            raise( "White is a bad color for edges" )
         try:
-            edgeColors[(0,0,diff/maxdiff)].append( edge )
+            edgeColors[rgb].append( edge )
         except KeyError:
-            edgeColors[(0,0,diff/maxdiff)] = [edge]
+            edgeColors[rgb] = [edge]
         
         
         #G.set_edge_label(edge[0], edge[1], "green")
