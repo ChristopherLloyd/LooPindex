@@ -47,7 +47,7 @@ LE.info_var.set(1)
 LE.update_info()
 #LE.show_DT()
 
-print( "minPinSetDict", minPinSetDict )
+#print( "minPinSetDict", minPinSetDict )
 
 # store coordinates of all crossings
 for crs in LE.Crossings:
