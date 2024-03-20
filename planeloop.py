@@ -82,28 +82,10 @@ def main():
 
 def tableString( rows = None, caption = None, num_headers = 1 ):
     
-    if rows is None and caption is None:
-        rows = [["Item", "Guitar", "Piano", "Flute", "Ukelele", "Mic"],
-            ["Setup", "A", "B", "A", "B", "A", "B", "A", "B", "A", "B"],
-            ["Uniform w/ replacement", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0"],
-            ["", "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$"],
-            ["Uniform w/o replacement", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0"],
-            ["", "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$"],
-            ["S-NeRF", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0"],
-            ["", "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$"],
-            ["RFE", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0"],
-            ["", "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$"],
-            ["RFE+", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0"],
-            ["", "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$",  "$^{\\pm 0.5}$"]]
-        multi_column_size = [1,2,2,2,2,2]
-        caption = "advanced latextable-lite example"
-        c_line = True
-        num_headers = 2
-    else:
-        multi_column_size = []
-        c_line = False
-        caption = caption
-        num_headers = num_headers
+    multi_column_size = []
+    c_line = False
+    caption = caption
+    num_headers = num_headers
     caption_above = True        
     
     return utils.draw_latex(rows, 
@@ -135,11 +117,11 @@ def createCatalog():
     #print( loops )
     
     loopStrings = []
-    toDelete = []
+    #toDelete = []
 
     loops = []
     loops += [monalisa]
-    #loops = [ "7_6" ] #link9 , link8 ] #'8_3', '3_1', link8, monalisa, '4_1', '5_1', '9_24']  # the loops to go in the catalog
+    loops = [ "7_6",link9 , link8 ] #'8_3', '3_1', link8, monalisa, '4_1', '5_1', '9_24']  # the loops to go in the catalog
 
     data = {}
     numOptimals = set()
@@ -188,7 +170,7 @@ def createCatalog():
             for reg in regs:
                 gonalities.append( regToGonality[reg] )
             isMinimal = ( elt in data[str(link)]["minPinSets"] )
-            gonalityDict[str(elt)]={"gons":gonalities,"min":isMinimal}
+            gonalityDict[frozenset(elt)]={"gons":gonalities,"min":isMinimal}
         data[str(link)]["gonalityDict"] = gonalityDict       
 
         #for key in pinDict:
@@ -253,7 +235,7 @@ def createCatalog():
         minPinSetDict = {}
         label = 1
         for pinset in data[link]["minPinSets"]:
-            minPinSetDict[str(pinset)] = {}
+            minPinSetDict[frozenset(pinset)] = {}
 
 
         # build table of pinning sets and average gonality by cardinal
@@ -302,7 +284,7 @@ def createCatalog():
         cardDict = {}
         tot = 0
         for elt in data[str(link)]["gonalityDict"]:
-            leng = len( eval( elt ) )
+            leng = len( elt  )
             if leng not in cardDict:
                 cardDict[leng] = [data[str(link)]["gonalityDict"][elt]]
             else:
@@ -362,7 +344,7 @@ def createCatalog():
         for key in sortedKeys:
             for i in range( len( data[link]["minDict"][key] ) ):
                 row = []
-                elt = data[link]["minDict"][key][i]
+                elt = frozenset( data[link]["minDict"][key][i] )
                 #print( elt )
                 if key == minlen:
                     dictkey = "opts"
@@ -387,9 +369,9 @@ def createCatalog():
                 numTotalColors = len( pinSetColors[dictkey] )    
                 colorIndex = int( colorvar*(numTotalColors/numColors) ) 
                                         
-                minPinSetDict[str(elt)]["label"] = label
+                minPinSetDict[elt]["label"] = label
                 label += 1
-                minPinSetDict[str(elt)]["color"] = pinSetColors[dictkey][colorIndex]["rgb"]  
+                minPinSetDict[elt]["color"] = pinSetColors[dictkey][colorIndex]["rgb"]  
                 col3 +=  "\\item{\\Huge\\textcolor{"+pinSetColors[dictkey][colorIndex]["label"]+\
                         "}{\\textbullet}}$\\{"
 
@@ -408,9 +390,9 @@ def createCatalog():
                 regStr = regStr[:-1]+"\\}$"
                 row.append( regStr )
                 row.append( str( len( regSort ) ) )
-                row.append( str( data[str(link)]["gonalityDict"][str(elt)]["gons"] ) )
-                avgGonality = sum( data[str(link)]["gonalityDict"][str(elt)]["gons"] )/\
-                              len( data[str(link)]["gonalityDict"][str(elt)]["gons"] )
+                row.append( str( data[str(link)]["gonalityDict"][elt]["gons"] ) )
+                avgGonality = sum( data[str(link)]["gonalityDict"][elt]["gons"] )/\
+                              len( data[str(link)]["gonalityDict"][elt]["gons"] )
                 row.append( str( round( avgGonality, 2 ) ) )
                 
                 #for i in range( 3 ):
@@ -450,13 +432,13 @@ def createCatalog():
         posetFile = drawLattice( data[link]["pinSets"], data[link]["minPinSets"],\
                                  data[link]["fullRegSet"], minPinSetDict )
         #print( "finished one" )
-        toDelete.append( plinkFile )
-        toDelete.append( posetFile )
+        #toDelete.append( plinkFile )
+        #toDelete.append( posetFile )
         # replaced col1 with empty string because it's not needed
         loopStrings.append( texPinSet(col1, col2, tablestrings, plinkFile,\
                                       posetFile, sideBySide = True, imSepPage = True ) )
 
-    makeTex( loopStrings, toDelete, pinSetColors )
+    makeTex( loopStrings, pinSetColors )
     #print( outputStr )
     #print( loopData )
 
@@ -477,11 +459,13 @@ def computeRGBColors( range1, range2 ):
         colors["mins"][i] = {"label": "green"+str(i), "rgb":(lightness,startHue+i*step2,lightness)}
     return colors    
 
-def makeTex( loopStrings, imageFilesToDelete, colors ):
+def makeTex( loopStrings, colors ):
     filename = "tex/pinSets"
-    try:
+    try: # delete old files and images
         os.remove(filename+".tex")
         os.remove(filename+".pdf")
+        shutil.rmtree( "tex/img/" )
+        os.makedirs("tex/img/")
     except FileNotFoundError:
         pass
     f = open( filename+".tex", 'w' )
@@ -525,8 +509,8 @@ def makeTex( loopStrings, imageFilesToDelete, colors ):
     try:
         os.remove(filename+".aux")
         os.remove(filename+".log")
-        for file in imageFilesToDelete:
-            os.remove(file)
+        #for file in imageFilesToDelete:
+        #    os.remove(file)
         shutil.rmtree( "svg-inkscape/" )
     except FileNotFoundError:
         pass
@@ -583,7 +567,7 @@ def posetPlot( sageObject, heights, colors, vertlabels, edgeColors ):
                          vertex_colors = colors, edge_thickness = 2,
                          edge_style = "-", heights = heights, vertex_labels = vertlabels,
                          edge_colors = edgeColors)
-    filename = getUnusedFileName( "png" )
+    filename = getUnusedFileName( "png", "tex/img/" )
     p.save( filename )
     #img = mpimg.imread( filename )
     #plt.imshow(img)
@@ -603,7 +587,7 @@ def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict ):
     rels = []
     for subset in elts:
         ind = elts.index( subset )
-        eltsDict[ind] = subset
+        eltsDict[ind] = frozenset(subset)
         if subset == top and not fullIncluded:
             rels.append([ind,numElts])
     for i in range( numElts-1):
@@ -628,10 +612,10 @@ def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict ):
     vertColorsDict = {defaultColor:[]}
     for elt in M.list():
         if eltsDict[elt] in minPinSets:
-            if minPinSetDict[str(eltsDict[elt])]["color"] not in vertColorsDict:
-                vertColorsDict[minPinSetDict[str(eltsDict[elt])]["color"]] = [ elt ]
+            if minPinSetDict[eltsDict[elt]]["color"] not in vertColorsDict:
+                vertColorsDict[minPinSetDict[eltsDict[elt]]["color"]] = [ elt ]
             else:
-                vertColorsDict[minPinSetDict[str(eltsDict[elt])]["color"]].append( elt )
+                vertColorsDict[minPinSetDict[eltsDict[elt]]["color"]].append( elt )
             #vertColorsDict[minColor].append( elt )
         else:
             vertColorsDict[defaultColor].append( elt )
@@ -756,11 +740,13 @@ def minJoinSemilatticeContaining( subsets ):
 
     return allsets, fullUnion
 
-def getUnusedFileName( ext ):
-    """Gets a filename in the current folder that is not in use with the extension str"""
+def getUnusedFileName( ext, directory = "./" ):
+    """Gets a filename in the specified directory (current directory by default)
+    that is not in use with the extension ext"""
     assert( type( ext ) == str )
+    assert( type( directory ) == str and directory[-1]=="/" )
     while True:
-        filename = str( random() )+"temp."+ext
+        filename = directory+str( random() )+"temp."+ext
         try:
             f = open( filename, 'r' )
             f.close()
@@ -1700,7 +1686,7 @@ def plinkFromPD( link ):
     snappy.Link( link ).view()
 
 def plinkImgFile( link, drawnpd, adjDict, minPinSets, tolerance, minPinSetDict, regionLabels ):
-    filename = getUnusedFileName( "svg" )
+    filename = getUnusedFileName( "svg", "tex/img/" )
     call(['python3', 'saveLoop.py', str(link), str(drawnpd), str(adjDict), str(minPinSets),\
           str(tolerance), str(minPinSetDict), str( regionLabels), filename])
     return filename    

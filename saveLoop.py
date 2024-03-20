@@ -319,8 +319,8 @@ for reg in regBoundaries:
     # compute matrix of colored dots for this region corresponding to the pinning sets it belongs to
     dotDict = {}
     for key in minPinSetDict:
-        pinSet = eval( key )
-        if reg in eval(key):
+        pinSet = key
+        if reg in key:
             dotDict[ minPinSetDict[key]["label"] ] = tkColorfromRgb( minPinSetDict[key]["color"] )   
 
     i = 0
