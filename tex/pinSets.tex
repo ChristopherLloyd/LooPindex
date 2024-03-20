@@ -16,8 +16,9 @@
 \usepackage{svg}
 \usepackage{multicol}
 \usepackage{float}
+\usepackage{graphicx}
 \usepackage[shortlabels]{enumitem}
-\geometry{tmargin=1cm,lmargin=1cm}%
+\geometry{tmargin=2cm,lmargin=2cm,rmargin=2cm,bmargin=2cm}%
 %
 %
 %
@@ -45,18 +46,18 @@
 %
 %
 %
+\title{Test dataset}
+
+\author{Christopher-Lloyd Simon and Ben Stucky}
+
 \begin{document}%
+\maketitle
 \small
 
+\section{$7\_6$}
+
 \begin{multicols}{2}
-\noindent\textbf{Input PD code or string to snappy (use to reproduce the drawing):}
-
-	$7\_6$
-
-
-\columnbreak
-
-\noindent\textbf{Total optimal pinning sets:} 1
+{\normalsize \noindent\textbf{Total optimal pinning sets:} 1
 
 \noindent\textbf{Total minimal pinning sets:} 3
 
@@ -64,13 +65,16 @@
 
 \noindent\textbf{Pinning number:} 4
 
-\noindent\textbf{Average optimal gonality:} 2.25
+}
+\columnbreak
+
+{\normalsize \noindent\textbf{Average optimal gonality:} 2.25
 
 \noindent\textbf{Average minimal gonality:} 2.42
 
 \noindent\textbf{Average overall gonality:} 2.82
 
-
+}
 \end{multicols}
 
 \begin{table}[ht]
@@ -109,31 +113,27 @@
 \begin{multicols}{2}
 \begin{figure}[H]
 \centering
-\includesvg[width=250pt]{tex/img/0.2786945118638071temp.svg}
+\def\svgscale{0.7}
+\includesvg{tex/img/7_6.svg}
 \caption{Snappy loop plot.}
-\label{fig:tex/img/0.2786945118638071temp.svg}
+\label{fig:tex/img/7_6.svg}
 \end{figure}
 \columnbreak
 
 \begin{figure}[H]
 \centering
-\includegraphics[scale=1]{tex/img/0.3052143818764821temp.png}
+\includegraphics[scale=.9]{tex/img/7_6.png}
 \caption{Minimal join semilattice of pinning sets.}
-\label{fig:tex/img/0.3052143818764821temp.png}
+\label{fig:tex/img/7_6.png}
 \end{figure}
 \end{multicols}
 
 \newpage
 
+\section{[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]}
+
 \begin{multicols}{2}
-\noindent\textbf{Input PD code or string to snappy (use to reproduce the drawing):}
-
-	[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]
-
-
-\columnbreak
-
-\noindent\textbf{Total optimal pinning sets:} 2
+{\normalsize \noindent\textbf{Total optimal pinning sets:} 2
 
 \noindent\textbf{Total minimal pinning sets:} 13
 
@@ -141,13 +141,16 @@
 
 \noindent\textbf{Pinning number:} 4
 
-\noindent\textbf{Average optimal gonality:} 3.0
+}
+\columnbreak
+
+{\normalsize \noindent\textbf{Average optimal gonality:} 3.0
 
 \noindent\textbf{Average minimal gonality:} 3.25
 
 \noindent\textbf{Average overall gonality:} 3.23
 
-
+}
 \end{multicols}
 
 \begin{table}[ht]
@@ -196,31 +199,27 @@
 \begin{multicols}{2}
 \begin{figure}[H]
 \centering
-\includesvg[width=250pt]{tex/img/0.8358571447039065temp.svg}
+\def\svgscale{0.7}
+\includesvg{tex/img/[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)].svg}
 \caption{Snappy loop plot.}
-\label{fig:tex/img/0.8358571447039065temp.svg}
+\label{fig:tex/img/[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)].svg}
 \end{figure}
 \columnbreak
 
 \begin{figure}[H]
 \centering
-\includegraphics[scale=1]{tex/img/0.07766198802550195temp.png}
+\includegraphics[scale=.9]{tex/img/[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)].png}
 \caption{Minimal join semilattice of pinning sets.}
-\label{fig:tex/img/0.07766198802550195temp.png}
+\label{fig:tex/img/[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)].png}
 \end{figure}
 \end{multicols}
 
 \newpage
 
+\section{[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]}
+
 \begin{multicols}{2}
-\noindent\textbf{Input PD code or string to snappy (use to reproduce the drawing):}
-
-	[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]
-
-
-\columnbreak
-
-\noindent\textbf{Total optimal pinning sets:} 10
+{\normalsize \noindent\textbf{Total optimal pinning sets:} 10
 
 \noindent\textbf{Total minimal pinning sets:} 10
 
@@ -228,13 +227,16 @@
 
 \noindent\textbf{Pinning number:} 5
 
-\noindent\textbf{Average optimal gonality:} 3.04
+}
+\columnbreak
+
+{\normalsize \noindent\textbf{Average optimal gonality:} 3.04
 
 \noindent\textbf{Average minimal gonality:} 3.04
 
 \noindent\textbf{Average overall gonality:} 3.15
 
-
+}
 \end{multicols}
 
 \begin{table}[ht]
@@ -280,17 +282,18 @@
 \begin{multicols}{2}
 \begin{figure}[H]
 \centering
-\includesvg[width=250pt]{tex/img/0.24784845675760891temp.svg}
+\def\svgscale{0.7}
+\includesvg{tex/img/[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)].svg}
 \caption{Snappy loop plot.}
-\label{fig:tex/img/0.24784845675760891temp.svg}
+\label{fig:tex/img/[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)].svg}
 \end{figure}
 \columnbreak
 
 \begin{figure}[H]
 \centering
-\includegraphics[scale=1]{tex/img/0.820264856833571temp.png}
+\includegraphics[scale=.9]{tex/img/[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)].png}
 \caption{Minimal join semilattice of pinning sets.}
-\label{fig:tex/img/0.820264856833571temp.png}
+\label{fig:tex/img/[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)].png}
 \end{figure}
 \end{multicols}
 

@@ -78,28 +78,10 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 # Main
 
 def main():
-    createCatalog()
+    test12()
 
-def tableString( rows = None, caption = None, num_headers = 1 ):
-    
-    multi_column_size = []
-    c_line = False
-    caption = caption
-    num_headers = num_headers
-    caption_above = True        
-    
-    return utils.draw_latex(rows, 
-                num_headers=num_headers,
-                multi_column_size=multi_column_size,
-                caption=caption,
-                caption_above=caption_above,
-                c_line=c_line)
-    
 
-def createCatalog():
-    """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
-
-    
+def test12():
 
     numKnots = 100
     loops = []
@@ -116,20 +98,32 @@ def createCatalog():
 
     #print( loops )
     
-    loopStrings = []
+ 
     #toDelete = []
 
     loops = []
-    loops += [monalisa]
+    #loops += [monalisa]
     loops = [ "7_6",link9 , link8 ] #'8_3', '3_1', link8, monalisa, '4_1', '5_1', '9_24']  # the loops to go in the catalog
+
+    skipped = createCatalog( "Test dataset", loops )
+    print( "Skipped", skipped, "total knots out of", len(loops), ".")
+
+
+####################### CREATING PINNING SET CATALOG ####################################
+
+    
+
+def createCatalog( title, links ):
+    """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
 
     data = {}
     numOptimals = set()
     numMinimals = set()
 
     skipped = 0
+    loopStrings = []
 
-    for link in loops:
+    for link in links:
         drawnpd = plinkPD( link )
         toAdd = getPinSets( drawnpd, debug=False )
         if len( toAdd["minPinSets"] ) == 1:
@@ -143,8 +137,6 @@ def createCatalog():
                 minDict[len(elt)] = [elt]
             else:
                 minDict[len(elt)].append( elt )
-            #if len( elt ) < minlen:
-            #    minlen = len( elt )
         data[str(link)]["minDict"] = minDict
         minlen = min( minDict )
         numOptimal = len( minDict[minlen] )
@@ -172,66 +164,44 @@ def createCatalog():
             isMinimal = ( elt in data[str(link)]["minPinSets"] )
             gonalityDict[frozenset(elt)]={"gons":gonalities,"min":isMinimal}
         data[str(link)]["gonalityDict"] = gonalityDict       
-
-        #for key in pinDict:
-        #    print( key, len( pinDict[key] ) )
-
-
-        #for key in data[str(link)]:
-        #    print( data[str(link)][key] )
-
-    print( "Skipped", skipped, "total knots out of", len(loops), ".")
             
 
     #compute the colors needed for labeling pinning sets
-    #print( numOptimals, numMinimals )
     pinSetColors = computeRGBColors( max( numOptimals ), max( numMinimals ) )
 
+
+    # delete old image files
+    imDir = "tex/img/" # BE CAREFUL, YOU ARE DELETING THIS FOLDER
+    shutil.rmtree( imDir )
+    os.makedirs( imDir )
     
     for link in data:
-        #drawnpd = plinkPD( link )
+ 
         # build the intro which describes this loop and gives overall stats
-        optionaldollarsign = ""
+
         if not "[" in link:
-            optionaldollarsign = "$"
-            linkstr = ""
+            linkstr = "$"
             for char in link:
                 if char == "_":
                     linkstr += "\\"
                 linkstr += char
+            linkstr += "$"
         else:
             linkstr = link
         col1 = ""
-        
-        col1 += "\\noindent\\textbf{Input PD code or string to snappy (use to reproduce the drawing):}\n\n\t" \
-             +optionaldollarsign + linkstr +optionaldollarsign+"\n\n"
 
         minlen = min( data[link]["minDict"] )
         numOptimal = len( data[link]["minDict"][minlen] )
         numMinimal = len( data[str(link)]["minPinSets"] ) - numOptimal
 
         col2 = ""
-        col2 += "\\noindent\\textbf{Total optimal pinning sets:} "+str(numOptimal) +"\n\n"
-        col2 += "\\noindent\\textbf{Total minimal pinning sets:} "+str(numOptimal+numMinimal) +"\n\n"
-        col2 += "\\noindent\\textbf{Total pinning sets:} "+str( len( data[link]["pinSets"] ) )+"\n\n"
-        
-        #col1 += "\\textbf{Output PD code drawn by snappy:}\n\n\t"+str( drawnpd )+"\n\n\n"
-        #data = getPinSets( drawnpd, debug=False )
-        #col1 += "\\textbf{Arcs composing region <-----> Region key}\n\n"
-        #col1 += data[link]["regInfo"]
-        
-        #col1 =
+        col1 += "\\noindent\\textbf{Total optimal pinning sets:} "+str(numOptimal) +"\n\n"
+        col1 += "\\noindent\\textbf{Total minimal pinning sets:} "+str(numOptimal+numMinimal) +"\n\n"
+        col1 += "\\noindent\\textbf{Total pinning sets:} "+str( len( data[link]["pinSets"] ) )+"\n\n"
         
         
-        col2 += "\\noindent\\textbf{Pinning number:} "+str( minlen )+"\n\n"
+        col1 += "\\noindent\\textbf{Pinning number:} "+str( minlen )+"\n\n"
         
-        #minlen = min( data[link]["minDict"] )#len( data[link]["minPinSets"][0] )
-        #print( data["minPinSets"] )        
-
-        #print( pinSetColors["opts"] )
-        #print( pinSetColors["mins"] )
-
-        #print( data[link]["minPinSets"] )
         minPinSetDict = {}
         label = 1
         for pinset in data[link]["minPinSets"]:
@@ -243,7 +213,7 @@ def createCatalog():
         caption = "Pinning sets/average gonality by cardinal"
         rows[0].append( "Cardinal" )
         numRegions = len( data[link]["fullRegSet"] )
-        #print( "HIIIIIIII", numRegions )
+
         for i in range( minlen, numRegions + 1):
             rows[0].append( str( i ) )
         rows[0].append( "Total" )
@@ -267,7 +237,7 @@ def createCatalog():
 
         rows[3].append( "Nonminimal pinning sets" )
         tot = 0
-        #print( "keys", pinDict.keys() )
+
         for i in range( minlen, numRegions+1 ):
             if i in data[link]["minDict"]:
                 add = len( data[link]["pinDict"][i] ) - len( data[link]["minDict"][i] )
@@ -289,8 +259,7 @@ def createCatalog():
                 cardDict[leng] = [data[str(link)]["gonalityDict"][elt]]
             else:
                 cardDict[leng].append(data[str(link)]["gonalityDict"][elt] )
-        #print( cardDict )
-        #print()
+
         totSum = 0
         minSum = 0
         minCount = 0
@@ -305,19 +274,16 @@ def createCatalog():
             if i == minlen:
                 avgOptimalGonality = add
             totSum += avgSum
-            #if i in data[link]["minDict"] and data[str(link)]["gonalityDict"][elt]["gons"]:
-            #    minSum += avgSum
+
             rows[4].append( str( round( add, 2 ) ) )
         avgOverallGonality = totSum/len( data[link]["pinSets"] )
         rows[4].append( "" )
         avgMinGonality = minSum/len( data[str(link)]["minPinSets"] )
-        #print( "minCount", minCount )
+
 
         col2 += "\\noindent\\textbf{Average optimal gonality:} "+str( round( avgOptimalGonality, 2 ))+"\n\n"
         col2 += "\\noindent\\textbf{Average minimal gonality:} "+str( round( avgMinGonality, 2 ))+"\n\n"
         col2 += "\\noindent\\textbf{Average overall gonality:} "+str( round( avgOverallGonality, 2 ))+"\n\n"
-
-        #print( rows )
         
         tablestrings = [tableString(rows=rows,caption=caption)]
 
@@ -330,7 +296,6 @@ def createCatalog():
         regionLabels = {}
         regList = list( data[link]["fullRegSet"].copy() )
         regList.sort()
-        #print( regList )
         for i in range( len( regList ) ):
             regionLabels[regList[i]] =  i+1         
         j = 0
@@ -395,52 +360,46 @@ def createCatalog():
                               len( data[str(link)]["gonalityDict"][elt]["gons"] )
                 row.append( str( round( avgGonality, 2 ) ) )
                 
-                #for i in range( 3 ):
-                #    row.append( "" )
+
 
                 col3 += "\\}$\n\n"
-                #else:
-                #    minPinSetDict[str(elt)]["label"] = label
-                #    label += 1
-                #    minPinSetDict[str(elt)]["color"] = pinSetColors["mins"][j]["rgb"]  
-                #    #print( "curminlabel", pinSetColors["mins"][j]["label"] )
-                #    col2 +=  "\\item\\textcolor{"+pinSetColors["mins"][j]["label"]+\
-                #            "}{\\{"+str(elt) + "\\}}\n\n"
+  
                 if key != minlen:
                     j+=1
-                #print( letterLabel )
                 letterLabel = chr(ord(letterLabel) + 1)
                 rows.append( row )
         col3 +=  "\\end{enumerate}\n"
 
         tablestrings.append( tableString(rows=rows,caption=caption ) )
-
-        #for key in minPinSetDict:
-        #    print( key, minPinSetDict[key] )
-            
-        #for i in range( len( data[link]["minPinSets"] ) ):
-            #for elt in data[str(link)]["minPinSets"]:
-        #    elt = data[link]["minPinSets"][i]
-        #   col2 +=  "\\textcolor{}{\\{"+str(elt) + "\\}}\n\n"        
-        #col2 += "\n\n"
-        #col2 += "\\noindent\\textbf{Number of minimal pinning sets:} "+str( len( data[link]["minPinSets"] ) )+"\n\n"
-        
+       
         
         tolerance = 0.0000001
         plinkFile = plinkImgFile( link, data[link]["drawnpd"], data[link]["G"].adjDict,\
-                                  data[link]["minPinSets"], tolerance, minPinSetDict, regionLabels )
+                                  data[link]["minPinSets"], tolerance, minPinSetDict, regionLabels, filename = link )
         posetFile = drawLattice( data[link]["pinSets"], data[link]["minPinSets"],\
-                                 data[link]["fullRegSet"], minPinSetDict )
-        #print( "finished one" )
-        #toDelete.append( plinkFile )
-        #toDelete.append( posetFile )
-        # replaced col1 with empty string because it's not needed
-        loopStrings.append( texPinSet(col1, col2, tablestrings, plinkFile,\
+                                 data[link]["fullRegSet"], minPinSetDict, filename = link )
+
+        loopStrings.append( texPinSet(linkstr, col1, col2, tablestrings, plinkFile,\
                                       posetFile, sideBySide = True, imSepPage = True ) )
 
-    makeTex( loopStrings, pinSetColors )
-    #print( outputStr )
-    #print( loopData )
+    makeTex( title, loopStrings, pinSetColors )
+
+    return skipped
+
+def tableString( rows = None, caption = None, num_headers = 1 ):
+    
+    multi_column_size = []
+    c_line = False
+    caption = caption
+    num_headers = num_headers
+    caption_above = True        
+    
+    return utils.draw_latex(rows, 
+                num_headers=num_headers,
+                multi_column_size=multi_column_size,
+                caption=caption,
+                caption_above=caption_above,
+                c_line=c_line)
 
 def computeRGBColors( range1, range2 ):
 
@@ -459,13 +418,11 @@ def computeRGBColors( range1, range2 ):
         colors["mins"][i] = {"label": "green"+str(i), "rgb":(lightness,startHue+i*step2,lightness)}
     return colors    
 
-def makeTex( loopStrings, colors ):
+def makeTex( title, loopStrings, colors ):
     filename = "tex/pinSets"
-    try: # delete old files and images
+    try: # delete old files 
         os.remove(filename+".tex")
         os.remove(filename+".pdf")
-        shutil.rmtree( "tex/img/" )
-        os.makedirs("tex/img/")
     except FileNotFoundError:
         pass
     f = open( filename+".tex", 'w' )
@@ -487,8 +444,9 @@ def makeTex( loopStrings, colors ):
                "\\usepackage{svg}\n"+\
                "\\usepackage{multicol}\n"+\
                "\\usepackage{float}\n"+\
+               "\\usepackage{graphicx}\n"+\
                "\\usepackage[shortlabels]{enumitem}\n"+\
-               "\\geometry{tmargin=1cm,lmargin=1cm}%\n"+\
+               "\\geometry{tmargin=2cm,lmargin=2cm,rmargin=2cm,bmargin=2cm}%\n"+\
                "%\n%\n%\n"
     for color in colors:
         for key in colors[color]:
@@ -497,7 +455,9 @@ def makeTex( loopStrings, colors ):
                         ","+str( colors[color][key]["rgb"][1] )+","+\
                         str( colors[color][key]["rgb"][2] )+"}\n"
     preamble += "%\n%\n%\n"
-    doc = preamble + "\\begin{document}%\n\\small\n\n"#note the font size change
+    preamble += "\\title{"+title+"}\n\n"
+    preamble += "\\author{Christopher-Lloyd Simon and Ben Stucky}\n\n"
+    doc = preamble + "\\begin{document}%\n\\maketitle\n\\small\n\n"#note the font size change
     
     for loopString in loopStrings:
         doc += loopString
@@ -509,21 +469,21 @@ def makeTex( loopStrings, colors ):
     try:
         os.remove(filename+".aux")
         os.remove(filename+".log")
-        #for file in imageFilesToDelete:
-        #    os.remove(file)
         shutil.rmtree( "svg-inkscape/" )
     except FileNotFoundError:
         pass
     return    
 
-def texPinSet(col1, col2, tableStrings, plinkImg, posetImg, sideBySide = True, imSepPage = True):
+def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide = True, imSepPage = True):
     """Generating and viewing a TeX file illustrating pinning sets"""
     
 
-    doc = "\\begin{multicols}{2}\n"
-    doc += col1+"\n"
+    doc = "\\section{"+linkstr+"}\n\n"
+
+    doc += "\\begin{multicols}{2}\n"
+    doc += "{\\normalsize "+col1+"}\n"
     doc += "\\columnbreak\n\n"
-    doc += col2+"\n"
+    doc += "{\\normalsize "+col2+"}\n"
     doc += "\\end{multicols}\n\n"
 
     for tablestr in tableStrings:
@@ -537,37 +497,58 @@ def texPinSet(col1, col2, tableStrings, plinkImg, posetImg, sideBySide = True, i
 
     if imSepPage:
         doc += "\\newpage\n\n"
-
+    #[width=250pt]
     if sideBySide:
         doc += "\\begin{multicols}{2}\n"
     doc += "\\begin{figure}[H]\n"+\
            "\\centering\n"+\
-           "\\includesvg[width=250pt]{"+plinkImg+"}\n"+\
+           "\\def\\svgscale{0.7}\n"+\
+           "\\includesvg{"+plinkImg+"}\n"+\
            "\\caption{Snappy loop plot.}\n"+\
            "\\label{fig:"+plinkImg+"}\n\\end{figure}\n"
     if sideBySide:
         doc += "\\columnbreak\n\n"
     doc += "\\begin{figure}[H]\n"+\
            "\\centering\n"+\
-           "\\includegraphics[scale=1]{"+posetImg+"}\n"+\
+           "\\includegraphics[scale=.9]{"+posetImg+"}\n"+\
            "\\caption{Minimal join semilattice of pinning sets.}\n"+\
            "\\label{fig:"+posetImg+"}\n\\end{figure}\n"
     if sideBySide:
         doc += "\\end{multicols}\n\n"
     doc += "\\newpage\n\n"
 
-    return doc    
+    return doc
+
+def getUnusedFileName( ext, directory = "./" ):
+    """Gets a filename in the specified directory (current directory by default)
+    that is not in use with the extension ext"""
+    assert( type( ext ) == str )
+    assert( type( directory ) == str and directory[-1]=="/" )
+    while True:
+        filename = directory+str( random() )+"temp."+ext
+        try:
+            f = open( filename, 'r' )
+            f.close()
+        except FileNotFoundError:
+            break
+    return filename
+
+####################### CREATING PINNING POSET WITH SAGE ####################################
     
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-def posetPlot( sageObject, heights, colors, vertlabels, edgeColors ):
+def posetPlot( sageObject, heights, colors, vertlabels, edgeColors, filename ):
     """A workaround function for getting a sage object to show via matplotlib
     since sageObject.plot() does not produce visible output when run from script"""
     p = sageObject.plot( layout = "ranked",\
                          vertex_colors = colors, edge_thickness = 2,
                          edge_style = "-", heights = heights, vertex_labels = vertlabels,
                          edge_colors = edgeColors)
-    filename = getUnusedFileName( "png", "tex/img/" )
+    if filename is None:
+        filename = getUnusedFileName( "png", "tex/img/" )
+    else:
+        filename = "tex/img/"+filename+".png"
+    #print( filename )
     p.save( filename )
     #img = mpimg.imread( filename )
     #plt.imshow(img)
@@ -575,7 +556,7 @@ def posetPlot( sageObject, heights, colors, vertlabels, edgeColors ):
     #os.remove(filename)
     return filename
 
-def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict ):
+def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, filename = None ):
     elts, top = minJoinSemilatticeContaining( minPinSets )
     numElts = len( elts )
     #topInd = None
@@ -673,7 +654,7 @@ def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict ):
 
     G = Graph( G )
                
-    return posetPlot( G, heightsDict, vertColorsDict, vertLabels, edgeColors )
+    return posetPlot( G, heightsDict, vertColorsDict, vertLabels, edgeColors, filename=filename )
 
 def minJoinSemilatticeContaining( subsets ):
     """This function takes a set of subsets and computes unions
@@ -739,20 +720,6 @@ def minJoinSemilatticeContaining( subsets ):
             break
 
     return allsets, fullUnion
-
-def getUnusedFileName( ext, directory = "./" ):
-    """Gets a filename in the specified directory (current directory by default)
-    that is not in use with the extension ext"""
-    assert( type( ext ) == str )
-    assert( type( directory ) == str and directory[-1]=="/" )
-    while True:
-        filename = directory+str( random() )+"temp."+ext
-        try:
-            f = open( filename, 'r' )
-            f.close()
-        except FileNotFoundError:
-            break
-    return filename    
     
 ####################### COMPUTING PINSETS ####################################
 def testSi( link, pinSet, treeBase = 0, rewriteFrom = 0, verbose = False):
@@ -1685,11 +1652,14 @@ def plinkFromPD( link ):
     assert( type( link ) == list )
     snappy.Link( link ).view()
 
-def plinkImgFile( link, drawnpd, adjDict, minPinSets, tolerance, minPinSetDict, regionLabels ):
-    filename = getUnusedFileName( "svg", "tex/img/" )
+def plinkImgFile( link, drawnpd, adjDict, minPinSets, tolerance, minPinSetDict, regionLabels, filename = None ):
+    if filename is None:
+        filename = getUnusedFileName( "svg", "tex/img/" )
+    else:
+        filename = "tex/img/"+filename +".svg"
     call(['python3', 'saveLoop.py', str(link), str(drawnpd), str(adjDict), str(minPinSets),\
           str(tolerance), str(minPinSetDict), str( regionLabels), filename])
-    return filename    
+    return filename
 
 # Experimenting with drawing a loop and getting a PD code
 # Silly multithreading nonsense makes what's below not work as intended
