@@ -78,11 +78,347 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 # Main
 
 def main():
-    test12()
+    #test14()
+
+    codes = planarPDcodes( n=3 )
+    for i in range( len( codes ) ):
+        if i in []:
+            L = snappy.Link( codes[i] )
+            L.view()
+            print( codes[i] )
+
+    print( len( codes ) )
+
+    createCatalog( "$n=3$", codes, skipTrivial = False )
+
+def test14():
+    n = 8
+    for k in range( 1, n ):
+        planarPDcodes( n=k )
 
 
+    return
+    
+    for k in range( 1, n ):
+        numPerfectMatchings = 1
+        for i in range( 3, 2*k, 2 ):
+            numPerfectMatchings *= i
+        #print( numPerfectMatchings )
+        num =  2**(k-1)*numPerfectMatchings
+        denom = k
+        assert( num%denom == 0 )
+        #print( "num", num, "denom", denom )
+        numpd= 2**(k-1)*numPerfectMatchings//k
+        print( numpd )
+
+def planarPDcodes( n=7, debug = False ):
+    """Returns an exhaustive list of planar PD codes corresponding to
+    loops with n crossings,
+    each giving a distinct isotopy class. This computation is expensive.
+    The computation of orbits under the dihedral group action
+    becomes prohibitively slow at n = 7 (~1 minute)"""
+    cyclicPerm = Permutation( list( range( 2, 2*n+1, 1 ) )+[1] )
+    reflection = Permutation( list( range( 2*n, 0, -1 ) ) )
+    D = PermutationGroup([cyclicPerm,reflection])
+    #for elt in D:
+    #    print( elt )
+    #    print( Permutation( elt ).to_cycles() )
+    #    print()
+
+    # every perfect match of the complete graph on 2n vertices
+    # gives rise to a sigma type
+    # match <---> pair of consecutive strands forming a crossing
+    # these types are equivalent up to action of the dihedral group on the entries
+    # which corresponds to strand relabelings
+    orbits = set()
+    for match in PerfectMatchings( 2*n ): #matches are sorted lexographically
+        # compute the orbit of this match by removing parenthesis,
+        # applying the action of the dihedral group
+        # adding back parentheses and then resorting
+        #print( list( match ) )
+        #matchlist = list( match )
+        matchlist = []
+        matchtuple = []
+        for pair in list( match ):
+            sortedPair = list( pair )
+            sortedPair.sort()
+            matchlist += sortedPair
+            matchtuple.append( tuple( pair ) )
+        matchtuple = tuple( matchtuple )
+
+        orbit = set()
+
+        #print( "Analyzing match:", matchtuple )
+        #print( "matchlist:", matchlist )
+        #print( "match:",  )
+        
+        for elt in D:
+            perm = Permutation( elt )
+            #print( perm )
+            #actedOn = perm.action( matchlist )
+            actedOn = []
+            for item in matchlist:
+                actedOn.append( perm( item ) )
+            #print( perm.to_cycles(), actedOn )
+            actedMatch = []
+            for i in range( 0, 2*n, 2 ):
+                pairToAdd = actedOn[i:i+2]
+                pairToAdd.sort()
+                actedMatch.append( tuple( pairToAdd ) )
+
+            
+                pass#actedMatch.a
+
+            actedMatch.sort()
+            #if tuple( actedMatch ) not in orbit:
+            #    pass
+            orbit.add( tuple( actedMatch ) )
+
+        orbit = list( orbit )
+        orbit.sort()
+        orbit = tuple( orbit )
+
+        #if orbit in orbits:
+        #    print( "ORBIT FOUND ALREADY, SKIPPING!" )
+        orbits.add( orbit )
+ 
+            #assert( False )
+
+        #if tuple( matchlist ) == (frozenset({1, 2}), frozenset({3, 4}), frozenset({5, 6})) or \
+        #   tuple( matchlist ) == (frozenset({5, 6}), frozenset({1, 2}), frozenset({3, 4})):
+
+       
+        #print( "orbit:" )
+        #for elt in orbit:          
+        #    print( elt, "eq:", elt == matchtuple )
+        #print()
+
+        #print( matchlist )
+        #print( type( matchlist ) )
+        #print( type( matchlist[0] ) )
+        
+        #print( match )
+        #print( type( match[0] ) )
+        #print( type( match ) )
+        #print()
+        #print( cyclicPerm.action( match ) )
+
+    #for orbit in orbitClasses:
+        #print( orbit )
+    elts = 0
+    reps = []
+    #choose one representative from each orbit
+    for orbit in orbits:
+        #print( "Orbit:" )
+        for elt in orbit:
+            reps.append( elt )
+            #print( elt )
+            break
+            #print( elt )
+        #print()
+        elts += len( orbit )
+    if debug:
+        print( "Crossings (n) =", n )
+        print( "Total distinct orbits", len( reps ) )
+        print( "Number of elts", elts )
+        print( "Expected sigma/PD codes", len( reps )*2**n )
+
+    pddict = {}
+    # each rep gives rise to 2**n sigma by choosing the framing at each crossing
+
+    eps = ""
+    for i in range( 2*n ):
+        eps += str((i+1,4*n-i))
+    epsilon = Permutation(eps)
+                
+    for rep in reps:
+        #print( "HI" )
+        
+        #print()
+        codes = []
+        for binRep in range( 2**n ):
+            pdcode = []
+            #binStr = bin( binRep )
+            #digits = len( binStr[2:] )
+            #binRep = list( bin( binRep )[2:]) +['0']*(n-digits)
+            #print( binRep )
+            #print( bin( binRep ), end = " " )
+            for i in range( n ):
+                #print( binRep >> i, end=" " )
+                pair=rep[i]
+                pair0plus = (pair[0]+1)%(2*n)
+                if pair0plus == 0:
+                    pair0plus = 2*n
+                pair1plus = (pair[1]+1)%(2*n)
+                if pair1plus == 0:
+                    pair1plus = 2*n
+                if (binRep >> i)%2 == 0:                    
+                    pdcode.append((pair[0],pair[1],pair0plus,pair1plus))
+                else:
+                    pdcode.append((pair[0],pair1plus,pair0plus,pair[1]))
+
+            if pdcode in codes:
+                #print( pdcode, "at index", codes.index( pdcode ) )
+                #print( codes )
+                assert( False )
+
+            codes.append( pdcode )
+
+            
+            # now compute the ones which have euler characteristic 0 to get a list of all planar sigma
+
+            coordsDict = {}
+            for i in range( n ):
+                for j in range( 4 ):
+                    if pdcode[i][j] not in coordsDict:
+                        coordsDict[ pdcode[i][j] ] = [(i,j)]
+                    else:
+                        coordsDict[ pdcode[i][j] ].append((i,j))
+
+            curCoords = (0,0)
+
+            sig = []
+            for entry in pdcode:
+                sig.append( list( entry ) )
+
+            #print( "pd:",pdcode )
+
+            while True:
+                editCoords = (curCoords[0],(curCoords[1]+2)%4)
+                nextEntry = abs( sig[editCoords[0]][editCoords[1]] )
+                sig[editCoords[0]][editCoords[1]] *= -1
+                if coordsDict[nextEntry][0] == editCoords:           
+                    curCoords = coordsDict[nextEntry][1]
+                else:
+                    curCoords = coordsDict[nextEntry][0]
+                #print( nextEntry, curCoords )
+                if curCoords == (0,0):
+                    break
+                #print( sigma )
+                #input()
+            
+            #print( "sig:", sig )
+
+            sigstr = ""
+
+            for i in range( n ):
+                toAdd = []
+                for j in range( 4 ):
+                    if sig[i][j] > 0:
+                        toAdd.append( sig[i][j] )
+                        
+                    else:
+                        toAdd.append( sig[i][j]%(4*n)+1 )                        
+                sigstr += str(tuple(toAdd))                
+
+
+            #print( "sigma:",sigma )
+            #print( "epsilon:", eps )
+
+            sigma = Permutation(sigstr)
+            
+
+            #sigma = Permutation('(9,12,5,2)(7,10,1,4)(11,8,3,6)' )
+            #epsilon = Permutation('(1,12)(2,11)(3,10)(4,9)(5,8)(6,7)' )
+            phi = ( epsilon*sigma ).inverse()
+            chi = len( sigma.to_cycles() ) - len( epsilon.to_cycles() ) + len( phi.to_cycles() )
+
+            error = "None"
+            if debug: #this will slow you down dramatically if n>4
+                try:
+                    snappy.Link( pdcode )
+                    if chi != 2:
+                        raise( "Snappy should have given an error for this PD code" )
+                except ValueError as e: # snappy raises a value error if the link isn't planar
+                    #print( e )
+                    #traceback.print_exc()
+                    #print( "pdcode:", pdcode )
+                    #print( "sigma:", sigma.to_cycles() )
+                    #print( "sig:", sig )
+                    error = "nonplanar"
+                    if chi == 2:
+                        raise( e )
+                    #raise( e )
+                except RecursionError as e: # we get this sometimes, even with chi==2, not sure why
+                    #print( e )
+                    #traceback.print_exc()
+                    #print( "pdcode:", pdcode )
+                    #print( "sigma:", sigma.to_cycles() )
+                    #print( "sig:", sig )
+                    error = "recursion"
+                    if chi == 2:
+                        raise( e )
+
+            #print( coordsDict )
+            if debug:
+                if chi not in pddict:
+                    pddict[chi] = [{"pd":pdcode,"sigma":sigma.to_cycles(),"phi":phi.to_cycles(),\
+                                    "epsilon":epsilon.to_cycles(), "sig":sig,"error":error}]
+                else:
+                    pddict[chi].append( {"pd":pdcode,"sigma":sigma.to_cycles(),"phi":phi.to_cycles(),\
+                                    "epsilon":epsilon.to_cycles(), "sig":sig,"error":error} )
+            else:
+                if chi not in pddict:
+                    pddict[chi] = [pdcode]
+                else:
+                    pddict[chi].append(pdcode)
+                    
+
+            #print( pdcode )
+            #if pdcode == [(1, 3, 2, 4), (2, 4, 3, 1)] or pdcode == [(1, 4, 2, 3), (2, 4, 3, 1)] or\
+            #   pdcode == [(1, 4, 2, 3), (2, 1, 3, 4)]:
+            #    continue
+            #try:
+            #    snappy.Link( pdcode )
+            #    pdcodes.append( pdcode )
+            #except ValueError: # snappy raises a value error if the link isn't planar
+            #    traceback.print_exc()
+            #    pass
+            
+        #print()
+        #print( "rep:", rep )
+        #print( "pd codes for this rep:" )
+        #for code in codes:
+        #    print( code )
+        #print()
+
+    #print( "pd by euler char" )
+    for chi in pddict:
+        #print( "chi:", chi, "| num pd codes:", len( pddict[chi]  ) )
+        #print( "-------------------------" )
+        for pd in pddict[chi]:
+            if debug:
+                for key in ["sigma","epsilon","phi","pd","error"]:
+                    print( " ", key, ":", pd[key] )
+                    print()
+            else:
+                pass#print( pd )
+        #print()
+        #print( pd )
+
+    return pddict[2]    
+    
+def test13( n = 1):
+    perms = SymmetricGroup( 4*n )
+    distinctPerms = set()
+    for g in perms:
+        rawlist = list( Permutation( g ) )
+        #print( rawlist )
+        cycString = ""
+        for i in range( n ):
+            cycString += "("
+            cycString += str( rawlist[4*i:4*(i+1)] )[1:-1]
+            cycString += ")"
+        #print( cycString )
+        distinctPerms.add( Permutation( cycString ) )
+    print( "Distinct perms:", len( distinctPerms ) )
+    for elt in distinctPerms:
+        print( elt.to_cycles() )
+    print( "Distinct isotopy classes:", len( distinctPerms )/(2*n) )
+   
 def test12():
-
+    """Creating a catalog of some loops correpsonding to knot in
+    the Rolfsen-Thistlethwaite tables"""
     numKnots = 100
     loops = []
     #indices=(0, 491327, 1)
@@ -113,7 +449,7 @@ def test12():
 
     
 
-def createCatalog( title, links ):
+def createCatalog( title, links, skipTrivial = False ):
     """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
 
     data = {}
@@ -126,7 +462,8 @@ def createCatalog( title, links ):
     for link in links:
         drawnpd = plinkPD( link )
         toAdd = getPinSets( drawnpd, debug=False )
-        if len( toAdd["minPinSets"] ) == 1:
+        print( "Analyzing", link )
+        if skipTrivial and len( toAdd["minPinSets"] ) == 1:
             print( "Skipping ", link, "because it has a unique minimal pinning set" )
             skipped += 1
             continue
