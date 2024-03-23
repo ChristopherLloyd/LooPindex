@@ -78,14 +78,15 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 # Main
 
 def main():
-    #test14()
+    test12()
+    return
 
     codes = planarPDcodes( n=3 )
     for i in range( len( codes ) ):
         if i in []:
             L = snappy.Link( codes[i] )
             L.view()
-            print( codes[i] )
+        print( codes[i] )
 
     print( len( codes ) )
 
@@ -461,8 +462,8 @@ def createCatalog( title, links, skipTrivial = False ):
 
     for link in links:
         drawnpd = plinkPD( link )
-        toAdd = getPinSets( drawnpd, debug=False )
         print( "Analyzing", link )
+        toAdd = getPinSets( drawnpd, debug=True )        
         if skipTrivial and len( toAdd["minPinSets"] ) == 1:
             print( "Skipping ", link, "because it has a unique minimal pinning set" )
             skipped += 1
@@ -1079,14 +1080,28 @@ def testSi( link, pinSet, treeBase = 0, rewriteFrom = 0, verbose = False):
 
 def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFrom = 0 ):
     """Returns the minimal pinning sets of a link"""
+
+   
+    
     if type( link ) == list:
+        
         G = SurfaceGraphFromPD( link )
+        
         pd = link
     else:
         pd = plinkPD( link )
-        G = SurfaceGraphFromPD( pd )    
+        G = SurfaceGraphFromPD( pd )
+
+    
+
+    if debug:
+        print( "G:", G )
     
     T = G.spanningTree( baseRegion = treeBase )
+
+    print( T )
+
+    
     T.createCyclicGenOrder()
     gamma = T.genProd()
     #print( gamma )
@@ -1094,7 +1109,7 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
 
     #print( n )
     if debug:
-        print( T )
+        print( "T:", T )
         print()
     #plink( link )
     #print( T.wordDict )
@@ -1391,15 +1406,22 @@ class SurfaceGraph:
 
         order = []
         startVert = getKey( self.wordDict )
+        #print( binSet( startVert ) )
         curVert = startVert
         curEdge = self.wordDict[ curVert ].seq[0]
-        while True:
+        #while True:
+        for i in range( len( self.adjDict )*2 ):
             order.append( curEdge )
             curVert = self.adjDict[ abs( curEdge )  ][ (sign( 0, curEdge )+1)//2 ]
             curWord = self.wordDict[ curVert ].seq
+            #print( "curVert:", binSet( curVert ) )
+            #print( "curWord:", curWord )
             curEdge = curWord[ ( curWord.index( -curEdge ) + 1 ) % len( curWord ) ] # (*)
-            if curVert == startVert:
-                break
+            #print( "curorder:", order )
+            #print()
+            #input()
+            #if curVert == startVert:
+            #    break
 
         # Check that we hit every edge twice to know if we are in a tree
         # If graph is disconnected or contains cycles, this is false
@@ -2012,6 +2034,8 @@ def drawLoop():
 ####################### DATABASE/TRANSLATION FUNCTIONS ####################################
 
 def SurfaceGraphFromPD( pd ):
+
+    #print( pd )
     sigma = pd
     coordsDict = {}
     for i in range( len( sigma ) ):
@@ -2030,12 +2054,18 @@ def SurfaceGraphFromPD( pd ):
             # depending on PD code convention, may need to
             # subtract or add from index here
             # to match clockwise/counterclockwise convention
+            #print( "reg", reg )
+            #input()
+            curCoords = [(coords[0]),(coords[1]-1)%4]
             nextEdge = sigma[coords[0]][(coords[1]-1)%4 ]
             if nextEdge == startEdge:
                 break
             reg.append( nextEdge )
             for cordChoice in coordsDict[nextEdge]:
-                if coords[0] != cordChoice[0]:
+                #if coords[0] != cordChoice[0]:
+                #    coords = cordChoice
+                #    break
+                if cordChoice != curCoords:
                     coords = cordChoice
                     break
         return reg   
@@ -2045,7 +2075,7 @@ def SurfaceGraphFromPD( pd ):
 
     #print( pd )
     #print() 
-    #print( coordsDict )
+    print( coordsDict )
 
     # define left and right relative to the first segment
     # you want to start at the cycle containing 1 but not containing 2
@@ -2064,9 +2094,24 @@ def SurfaceGraphFromPD( pd ):
         # we must check whether regions on left and right of this edge exist yet
         # make a choice for left and right based on the previous
 
+       
         curLeftRegion = regionFromCoords( curLeftCoords )
+
+        
+        #print( "hi" )
+
+        #print( "coordsDict:", coordsDict )
+        #print( "curLeftCoords:", curLeftCoords )
+        
+        #print( "curLeftRegion:", curLeftRegion )
+        #print()
+        #print( "curRighCoords:", curRightCoords )
+
         curRightRegion = regionFromCoords( curRightCoords )
 
+        #print( "bye" )
+
+        
         leftkey = binHash( curLeftRegion )
         rightkey = binHash( curRightRegion )
         
@@ -2090,13 +2135,38 @@ def SurfaceGraphFromPD( pd ):
             regDict[rightkey][indexDict[rightkey][i]] *= -1
         edgeDict[i] = [ leftkey , rightkey ]
 
+        
+
         if i == len( sigma )* 2:
             break
-        
-        if sigma[curLeftCoords[0]] == sigma[ coordsDict[i+1][1][0] ] or sigma[curRightCoords[0]] == sigma[ coordsDict[i+1][0][0] ]:
-            curLeftCoords, curRightCoords = coordsDict[i+1][0], coordsDict[i+1][1]
+
+        print( "sigma:", sigma )
+        print( "i:", i )
+        print( "[left,right]", [curLeftRegion,curRightRegion] )
+        print( "curLeftCoords:", curLeftCoords )
+        print( "curRighCoords:", curRightCoords )
+        print( "nextfirst:", coordsDict[i+1][1] )
+        print( "nextsecond:", coordsDict[i+1][0] )
+        #print("HI")
+        #input()
+        nextfirst = coordsDict[i+1][1]
+        nextSecond = coordsDict[i+1][0]
+
+        # OLD        
+        #if sigma[curLeftCoords[0]] == sigma[ coordsDict[i+1][1][0] ] or sigma[curRightCoords[0]] == sigma[ coordsDict[i+1][0][0] ]:
+        #    curLeftCoords, curRightCoords = coordsDict[i+1][0], coordsDict[i+1][1]
+        #else:
+        #    curLeftCoords, curRightCoords = coordsDict[i+1][1], coordsDict[i+1][0]
+
+        #NEW
+        if ( curLeftCoords[0] == nextfirst[0] and \
+             curLeftCoords[1] == (nextfirst[1]+2)%4 ) or \
+             ( curRightCoords[0] == nextSecond[0] and \
+             curRightCoords[1] == (nextSecond[1]+2)%4 ):
+            # sigma[curRightCoords[0]] == sigma[ coordsDict[i+1][0][0] ]:
+            curLeftCoords, curRightCoords = nextSecond, nextfirst
         else:
-            curLeftCoords, curRightCoords = coordsDict[i+1][1], coordsDict[i+1][0]
+            curLeftCoords, curRightCoords = nextfirst, nextSecond
 
     return SurfaceGraph( regDict, adjDict = edgeDict )
     
