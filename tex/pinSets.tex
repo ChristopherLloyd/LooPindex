@@ -23,30 +23,13 @@
 %
 %
 \definecolor{red0}{rgb}{1.0,0,0}
-\definecolor{red1}{rgb}{0.92,0,0}
-\definecolor{red2}{rgb}{0.84,0,0}
-\definecolor{red3}{rgb}{0.76,0,0}
-\definecolor{red4}{rgb}{0.6799999999999999,0,0}
-\definecolor{red5}{rgb}{0.6,0,0}
-\definecolor{red6}{rgb}{0.52,0,0}
-\definecolor{red7}{rgb}{0.43999999999999995,0,0}
-\definecolor{red8}{rgb}{0.36,0,0}
-\definecolor{red9}{rgb}{0.28,0,0}
+\definecolor{red1}{rgb}{0.7333333333333334,0,0}
+\definecolor{red2}{rgb}{0.4666666666666667,0,0}
 \definecolor{green0}{rgb}{0,1.0,0}
-\definecolor{green1}{rgb}{0,0.9272727272727272,0}
-\definecolor{green2}{rgb}{0,0.8545454545454545,0}
-\definecolor{green3}{rgb}{0,0.7818181818181817,0}
-\definecolor{green4}{rgb}{0,0.709090909090909,0}
-\definecolor{green5}{rgb}{0,0.6363636363636362,0}
-\definecolor{green6}{rgb}{0,0.5636363636363636,0}
-\definecolor{green7}{rgb}{0,0.49090909090909085,0}
-\definecolor{green8}{rgb}{0,0.4181818181818181,0}
-\definecolor{green9}{rgb}{0,0.34545454545454535,0}
-\definecolor{green10}{rgb}{0,0.2727272727272726,0}
 %
 %
 %
-\title{Test dataset}
+\title{Pinning sets of irreducible indecomposable UU spheriloops with 6 crossings}
 
 \author{Christopher-Lloyd Simon and Ben Stucky}
 
@@ -54,14 +37,98 @@
 \maketitle
 \small
 
-\section{$7\_6$}
+\section{Statistics for this dataset}
+
+\noindent\textbf{Average optimal pinning set gonality for this dataset:} $2.25$
+
+\noindent\textbf{Average minimal pinning set gonality for this dataset:} $2.275$
+
+\noindent\textbf{Average overall pinning set gonality for this dataset:} $2.717490079365079$
+
+\newpage\section{Loops}
+
+\subsection{[[1, 7, 12, 8], [1, 6, 2, 7], [12, 2, 11, 3], [8, 5, 9, 6], [11, 4, 10, 3], [5, 10, 4, 9]]}
 
 \begin{multicols}{2}
 {\normalsize \noindent\textbf{Total optimal pinning sets:} 1
 
-\noindent\textbf{Total minimal pinning sets:} 3
+\noindent\textbf{Total minimal pinning sets:} 1
 
-\noindent\textbf{Total pinning sets:} 44
+\noindent\textbf{Total pinning sets:} 16
+
+\noindent\textbf{Pinning number:} 4
+
+}
+\columnbreak
+
+{\normalsize \noindent\textbf{Average optimal gonality:} 2.0
+
+\noindent\textbf{Average minimal gonality:} 2.0
+
+\noindent\textbf{Average overall gonality:} 2.63
+
+}
+\end{multicols}
+
+\begin{table}[ht]
+	\caption{Pinning sets/average gonality by cardinal}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXXX}
+		\toprule
+			Cardinal & 4 & 5 & 6 & 7 & 8 & Total\\
+			\hline
+			Optimal pinning sets & 1 & 0 & 0 & 0 & 0 & 1 \\
+			Minimal (suboptimal) pinning sets & 0 & 0 & 0 & 0 & 0 & 0 \\
+			Nonminimal pinning sets & 0 & 4 & 6 & 4 & 1 & 15 \\
+			Average gonality & 2.0 & 2.4 & 2.67 & 2.86 & 3.0 &  \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\begin{table}[ht]
+	\caption{Pinning set data}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXX}
+		\toprule
+			Pinning set & Pindicator & Regions & Card & Gonality seq & Average gonality\\
+			\hline
+			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{1,2,3,5\}$ & 4 & [2, 2, 2, 2] & 2.0 \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\newpage
+
+\begin{multicols}{2}
+\begin{figure}[H]
+\centering
+\def\svgscale{0.7}
+\includesvg{tex/img/[[1, 7, 12, 8], [1, 6, 2, 7], [12, 2, 11, 3], [8, 5, 9, 6], [11, 4, 10, 3], [5, 10, 4, 9]].svg}
+\caption{Snappy loop plot.}
+\label{fig:tex/img/[[1, 7, 12, 8], [1, 6, 2, 7], [12, 2, 11, 3], [8, 5, 9, 6], [11, 4, 10, 3], [5, 10, 4, 9]].svg}
+\end{figure}
+\columnbreak
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=.9]{tex/img/[[1, 7, 12, 8], [1, 6, 2, 7], [12, 2, 11, 3], [8, 5, 9, 6], [11, 4, 10, 3], [5, 10, 4, 9]].png}
+\caption{Minimal join semilattice of pinning sets.}
+\label{fig:tex/img/[[1, 7, 12, 8], [1, 6, 2, 7], [12, 2, 11, 3], [8, 5, 9, 6], [11, 4, 10, 3], [5, 10, 4, 9]].png}
+\end{figure}
+\end{multicols}
+
+\newpage
+
+\subsection{[[1, 5, 12, 6], [1, 9, 2, 8], [5, 8, 4, 7], [12, 7, 11, 6], [9, 3, 10, 2], [4, 10, 3, 11]]}
+
+\begin{multicols}{2}
+{\normalsize \noindent\textbf{Total optimal pinning sets:} 1
+
+\noindent\textbf{Total minimal pinning sets:} 2
+
+\noindent\textbf{Total pinning sets:} 20
 
 \noindent\textbf{Pinning number:} 4
 
@@ -70,9 +137,9 @@
 
 {\normalsize \noindent\textbf{Average optimal gonality:} 2.25
 
-\noindent\textbf{Average minimal gonality:} 2.42
+\noindent\textbf{Average minimal gonality:} 2.33
 
-\noindent\textbf{Average overall gonality:} 2.82
+\noindent\textbf{Average overall gonality:} 2.72
 
 }
 \end{multicols}
@@ -81,14 +148,14 @@
 	\caption{Pinning sets/average gonality by cardinal}
 	\centering
 	\renewcommand{\arraystretch}{1.5}
-	\begin{tabularx}{\textwidth}{lXXXXXXXX}
+	\begin{tabularx}{\textwidth}{lXXXXXXX}
 		\toprule
-			Cardinal & 4 & 5 & 6 & 7 & 8 & 9 & Total\\
+			Cardinal & 4 & 5 & 6 & 7 & 8 & Total\\
 			\hline
-			Optimal pinning sets & 1 & 0 & 0 & 0 & 0 & 0 & 1 \\
-			Minimal (suboptimal) pinning sets & 0 & 2 & 0 & 0 & 0 & 0 & 2 \\
-			Nonminimal pinning sets & 0 & 5 & 15 & 14 & 6 & 1 & 41 \\
-			Average gonality & 2.25 & 2.54 & 2.78 & 2.94 & 3.04 & 3.11 &  \\
+			Optimal pinning sets & 1 & 0 & 0 & 0 & 0 & 1 \\
+			Minimal (suboptimal) pinning sets & 0 & 1 & 0 & 0 & 0 & 1 \\
+			Nonminimal pinning sets & 0 & 4 & 8 & 5 & 1 & 18 \\
+			Average gonality & 2.25 & 2.52 & 2.75 & 2.91 & 3.0 &  \\
 		\bottomrule \\ 
 	\end{tabularx}
 \end{table}
@@ -101,9 +168,8 @@
 		\toprule
 			Pinning set & Pindicator & Regions & Card & Gonality seq & Average gonality\\
 			\hline
-			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{1,3,4,8\}$ & 4 & [2, 3, 2, 2] & 2.25 \\
-			a (minimal) & {\Huge\textcolor{green0}{\textbullet}} & $\{1,2,4,7,8\}$ & 5 & [2, 3, 2, 3, 2] & 2.4 \\
-			b (minimal) & {\Huge\textcolor{green5}{\textbullet}} & $\{1,2,4,6,8\}$ & 5 & [2, 3, 2, 4, 2] & 2.6 \\
+			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{2,3,5,7\}$ & 4 & [2, 3, 2, 2] & 2.25 \\
+			a (minimal) & {\Huge\textcolor{green0}{\textbullet}} & $\{1,2,4,5,7\}$ & 5 & [3, 2, 3, 2, 2] & 2.4 \\
 		\bottomrule \\ 
 	\end{tabularx}
 \end{table}
@@ -114,41 +180,41 @@
 \begin{figure}[H]
 \centering
 \def\svgscale{0.7}
-\includesvg{tex/img/7_6.svg}
+\includesvg{tex/img/[[1, 5, 12, 6], [1, 9, 2, 8], [5, 8, 4, 7], [12, 7, 11, 6], [9, 3, 10, 2], [4, 10, 3, 11]].svg}
 \caption{Snappy loop plot.}
-\label{fig:tex/img/7_6.svg}
+\label{fig:tex/img/[[1, 5, 12, 6], [1, 9, 2, 8], [5, 8, 4, 7], [12, 7, 11, 6], [9, 3, 10, 2], [4, 10, 3, 11]].svg}
 \end{figure}
 \columnbreak
 
 \begin{figure}[H]
 \centering
-\includegraphics[scale=.9]{tex/img/7_6.png}
+\includegraphics[scale=.9]{tex/img/[[1, 5, 12, 6], [1, 9, 2, 8], [5, 8, 4, 7], [12, 7, 11, 6], [9, 3, 10, 2], [4, 10, 3, 11]].png}
 \caption{Minimal join semilattice of pinning sets.}
-\label{fig:tex/img/7_6.png}
+\label{fig:tex/img/[[1, 5, 12, 6], [1, 9, 2, 8], [5, 8, 4, 7], [12, 7, 11, 6], [9, 3, 10, 2], [4, 10, 3, 11]].png}
 \end{figure}
 \end{multicols}
 
 \newpage
 
-\section{[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)]}
+\subsection{[[1, 9, 12, 10], [1, 7, 2, 6], [9, 6, 8, 5], [12, 5, 11, 4], [10, 4, 11, 3], [7, 3, 8, 2]]}
 
 \begin{multicols}{2}
-{\normalsize \noindent\textbf{Total optimal pinning sets:} 2
+{\normalsize \noindent\textbf{Total optimal pinning sets:} 3
 
-\noindent\textbf{Total minimal pinning sets:} 13
+\noindent\textbf{Total minimal pinning sets:} 3
 
-\noindent\textbf{Total pinning sets:} 395
+\noindent\textbf{Total pinning sets:} 32
 
 \noindent\textbf{Pinning number:} 4
 
 }
 \columnbreak
 
-{\normalsize \noindent\textbf{Average optimal gonality:} 3.0
+{\normalsize \noindent\textbf{Average optimal gonality:} 2.5
 
-\noindent\textbf{Average minimal gonality:} 3.25
+\noindent\textbf{Average minimal gonality:} 2.5
 
-\noindent\textbf{Average overall gonality:} 3.23
+\noindent\textbf{Average overall gonality:} 2.8
 
 }
 \end{multicols}
@@ -157,14 +223,14 @@
 	\caption{Pinning sets/average gonality by cardinal}
 	\centering
 	\renewcommand{\arraystretch}{1.5}
-	\begin{tabularx}{\textwidth}{lXXXXXXXXXX}
+	\begin{tabularx}{\textwidth}{lXXXXXXX}
 		\toprule
-			Cardinal & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & Total\\
+			Cardinal & 4 & 5 & 6 & 7 & 8 & Total\\
 			\hline
-			Optimal pinning sets & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 2 \\
-			Minimal (suboptimal) pinning sets & 0 & 4 & 7 & 0 & 0 & 0 & 0 & 0 & 11 \\
-			Nonminimal pinning sets & 0 & 14 & 66 & 130 & 111 & 49 & 11 & 1 & 382 \\
-			Average gonality & 3.0 & 3.13 & 3.21 & 3.23 & 3.25 & 3.27 & 3.27 & 3.27 &  \\
+			Optimal pinning sets & 3 & 0 & 0 & 0 & 0 & 3 \\
+			Minimal (suboptimal) pinning sets & 0 & 0 & 0 & 0 & 0 & 0 \\
+			Nonminimal pinning sets & 0 & 10 & 12 & 6 & 1 & 29 \\
+			Average gonality & 2.5 & 2.72 & 2.86 & 2.95 & 3.0 &  \\
 		\bottomrule \\ 
 	\end{tabularx}
 \end{table}
@@ -177,19 +243,9 @@
 		\toprule
 			Pinning set & Pindicator & Regions & Card & Gonality seq & Average gonality\\
 			\hline
-			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{2,6,9,10\}$ & 4 & [3, 3, 3, 3] & 3.0 \\
-			B (optimal) & {\Huge\textcolor{red5}{\textbullet}} & $\{1,3,4,8\}$ & 4 & [3, 3, 3, 3] & 3.0 \\
-			a (minimal) & {\Huge\textcolor{green0}{\textbullet}} & $\{2,4,6,8,11\}$ & 5 & [3, 3, 3, 3, 4] & 3.2 \\
-			b (minimal) & {\Huge\textcolor{green1}{\textbullet}} & $\{2,5,7,8,11\}$ & 5 & [3, 4, 4, 3, 4] & 3.6 \\
-			c (minimal) & {\Huge\textcolor{green2}{\textbullet}} & $\{1,2,5,8,9\}$ & 5 & [3, 3, 4, 3, 3] & 3.2 \\
-			d (minimal) & {\Huge\textcolor{green3}{\textbullet}} & $\{2,3,7,8,10\}$ & 5 & [3, 3, 4, 3, 3] & 3.2 \\
-			e (minimal) & {\Huge\textcolor{green4}{\textbullet}} & $\{2,6,7,8,10,11\}$ & 6 & [3, 3, 4, 3, 3, 4] & 3.33 \\
-			f (minimal) & {\Huge\textcolor{green5}{\textbullet}} & $\{2,5,6,8,9,11\}$ & 6 & [3, 4, 3, 3, 3, 4] & 3.33 \\
-			g (minimal) & {\Huge\textcolor{green6}{\textbullet}} & $\{2,5,7,8,9,10\}$ & 6 & [3, 4, 4, 3, 3, 3] & 3.33 \\
-			h (minimal) & {\Huge\textcolor{green7}{\textbullet}} & $\{1,2,4,5,8,11\}$ & 6 & [3, 3, 3, 4, 3, 4] & 3.33 \\
-			i (minimal) & {\Huge\textcolor{green8}{\textbullet}} & $\{1,3,4,6,9,10\}$ & 6 & [3, 3, 3, 3, 3, 3] & 3.0 \\
-			j (minimal) & {\Huge\textcolor{green9}{\textbullet}} & $\{2,3,4,7,8,11\}$ & 6 & [3, 3, 3, 4, 3, 4] & 3.33 \\
-			k (minimal) & {\Huge\textcolor{green10}{\textbullet}} & $\{1,2,3,5,7,8\}$ & 6 & [3, 3, 3, 4, 4, 3] & 3.33 \\
+			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{1,3,5,7\}$ & 4 & [2, 3, 3, 2] & 2.5 \\
+			B (optimal) & {\Huge\textcolor{red1}{\textbullet}} & $\{1,3,7,8\}$ & 4 & [2, 3, 2, 3] & 2.5 \\
+			C (optimal) & {\Huge\textcolor{red2}{\textbullet}} & $\{1,4,5,7\}$ & 4 & [2, 3, 3, 2] & 2.5 \\
 		\bottomrule \\ 
 	\end{tabularx}
 \end{table}
@@ -200,100 +256,17 @@
 \begin{figure}[H]
 \centering
 \def\svgscale{0.7}
-\includesvg{tex/img/[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)].svg}
+\includesvg{tex/img/[[1, 9, 12, 10], [1, 7, 2, 6], [9, 6, 8, 5], [12, 5, 11, 4], [10, 4, 11, 3], [7, 3, 8, 2]].svg}
 \caption{Snappy loop plot.}
-\label{fig:tex/img/[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)].svg}
+\label{fig:tex/img/[[1, 9, 12, 10], [1, 7, 2, 6], [9, 6, 8, 5], [12, 5, 11, 4], [10, 4, 11, 3], [7, 3, 8, 2]].svg}
 \end{figure}
 \columnbreak
 
 \begin{figure}[H]
 \centering
-\includegraphics[scale=.9]{tex/img/[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)].png}
+\includegraphics[scale=.9]{tex/img/[[1, 9, 12, 10], [1, 7, 2, 6], [9, 6, 8, 5], [12, 5, 11, 4], [10, 4, 11, 3], [7, 3, 8, 2]].png}
 \caption{Minimal join semilattice of pinning sets.}
-\label{fig:tex/img/[(1, 7, 2, 6), (4, 9, 5, 10), (2, 12, 3, 11), (7, 13, 8, 12), (18, 13, 1, 14), (3, 17, 4, 16), (5, 14, 6, 15), (8, 18, 9, 17), (10, 15, 11, 16)].png}
-\end{figure}
-\end{multicols}
-
-\newpage
-
-\section{[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)]}
-
-\begin{multicols}{2}
-{\normalsize \noindent\textbf{Total optimal pinning sets:} 10
-
-\noindent\textbf{Total minimal pinning sets:} 10
-
-\noindent\textbf{Total pinning sets:} 160
-
-\noindent\textbf{Pinning number:} 5
-
-}
-\columnbreak
-
-{\normalsize \noindent\textbf{Average optimal gonality:} 3.04
-
-\noindent\textbf{Average minimal gonality:} 3.04
-
-\noindent\textbf{Average overall gonality:} 3.15
-
-}
-\end{multicols}
-
-\begin{table}[ht]
-	\caption{Pinning sets/average gonality by cardinal}
-	\centering
-	\renewcommand{\arraystretch}{1.5}
-	\begin{tabularx}{\textwidth}{lXXXXXXXX}
-		\toprule
-			Cardinal & 5 & 6 & 7 & 8 & 9 & 10 & Total\\
-			\hline
-			Optimal pinning sets & 10 & 0 & 0 & 0 & 0 & 0 & 10 \\
-			Minimal (suboptimal) pinning sets & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-			Nonminimal pinning sets & 0 & 42 & 60 & 37 & 10 & 1 & 150 \\
-			Average gonality & 3.04 & 3.11 & 3.16 & 3.19 & 3.2 & 3.2 &  \\
-		\bottomrule \\ 
-	\end{tabularx}
-\end{table}
-
-\begin{table}[ht]
-	\caption{Pinning set data}
-	\centering
-	\renewcommand{\arraystretch}{1.5}
-	\begin{tabularx}{\textwidth}{lXXXXXX}
-		\toprule
-			Pinning set & Pindicator & Regions & Card & Gonality seq & Average gonality\\
-			\hline
-			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{1,3,5,7,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
-			B (optimal) & {\Huge\textcolor{red1}{\textbullet}} & $\{1,3,5,8,10\}$ & 5 & [3, 3, 3, 3, 4] & 3.2 \\
-			C (optimal) & {\Huge\textcolor{red2}{\textbullet}} & $\{1,3,4,7,8\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
-			D (optimal) & {\Huge\textcolor{red3}{\textbullet}} & $\{1,3,4,7,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
-			E (optimal) & {\Huge\textcolor{red4}{\textbullet}} & $\{2,4,5,8,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
-			F (optimal) & {\Huge\textcolor{red5}{\textbullet}} & $\{2,4,6,7,9\}$ & 5 & [3, 3, 4, 3, 3] & 3.2 \\
-			G (optimal) & {\Huge\textcolor{red6}{\textbullet}} & $\{2,3,5,8,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
-			H (optimal) & {\Huge\textcolor{red7}{\textbullet}} & $\{2,3,5,7,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
-			I (optimal) & {\Huge\textcolor{red8}{\textbullet}} & $\{1,2,4,7,8\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
-			J (optimal) & {\Huge\textcolor{red9}{\textbullet}} & $\{1,2,4,5,8\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
-		\bottomrule \\ 
-	\end{tabularx}
-\end{table}
-
-\newpage
-
-\begin{multicols}{2}
-\begin{figure}[H]
-\centering
-\def\svgscale{0.7}
-\includesvg{tex/img/[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)].svg}
-\caption{Snappy loop plot.}
-\label{fig:tex/img/[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)].svg}
-\end{figure}
-\columnbreak
-
-\begin{figure}[H]
-\centering
-\includegraphics[scale=.9]{tex/img/[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)].png}
-\caption{Minimal join semilattice of pinning sets.}
-\label{fig:tex/img/[(1, 7, 2, 6), (3, 8, 4, 9), (5, 11, 6, 10), (16, 12, 1, 11), (2, 13, 3, 14), (4, 16, 5, 15), (7, 12, 8, 13), (9, 15, 10, 14)].png}
+\label{fig:tex/img/[[1, 9, 12, 10], [1, 7, 2, 6], [9, 6, 8, 5], [12, 5, 11, 4], [10, 4, 11, 3], [7, 3, 8, 2]].png}
 \end{figure}
 \end{multicols}
 

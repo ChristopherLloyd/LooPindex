@@ -27,11 +27,8 @@ from sage.all import *
 
  sage -pip install snappy_15_knots  # Larger version of HTLinkExteriors
 
- to be able to use snappy.
- 
- If you previously installed SnapPy into SageMath and want to upgrade SnapPy to the latest version, do:
+ to be able to use snappy."""
 
- sage -pip install --upgrade snappy"""
 
 # Get the needed imports
 
@@ -78,10 +75,169 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 # Main
 
 def main():
-    test12()
-    return
+    #test12()
+    #return
+    #for i in range( 3, 16 ):
+    #    print( " n =", i, "| Number of loops:",  irrPrime( i ) )
+    #    print()
+    #print( irrPrime( 6 ) )
+    #irrPrime()
+    n = 6
+    loops = []
+    for loop in irrPrime( n ):
+        loops.append( loop["pd"] )
+    createCatalog( "Pinning sets of irreducible indecomposable UU spheriloops with "+str(n)+" crossings", loops )
 
-    codes = planarPDcodes( n=3 )
+from subprocess import check_output
+def irrPrime( n = 5 ):
+    """Uses the program plantri to generate PD codes of all
+    irreducible, indecomposable UU loops in the sphere
+    with n crossings. path to plantri must be in PATH"""
+
+    #call(["plantri", str(n+2), "-Goqc2m2d"])
+    #out = check_output(["plantri", str(n+2), "-Gqoc2m2d"]).split(b'>>planar_code<<')[1] #this command seems to get UO rather than UU
+    out = check_output(["plantri", str(n+2), "-Gqc2m2d"]).split(b'>>planar_code<<')[1] #this command seems to get UO rather than UU
+    blocks = out.split(b'\x00')[:-1]
+    graphs = []
+    first = True
+    graph = []
+    for i in range( len( blocks ) ): 
+        block = blocks[i]
+        cycle = []
+        if len( block ) == 5:
+            if not first:
+                graphs.append( graph )
+            graph = []
+            for byte in block[1:]:
+                cycle.append( int( byte ) - 1  )
+            graph.append( cycle )
+            first = False
+        if len( block ) == 4:
+            for byte in block:
+                cycle.append( int( byte ) - 1 )
+            graph.append( cycle )
+        if i == len( blocks ) - 1:
+            graphs.append( graph )
+
+    loops = []
+    #countLoops = 0
+    for graph in graphs:
+        data = isLoop( graph )
+        #print( graph )
+        #print( data["pd"] )
+        #print( data["sigma"] )
+        #print( data["loop"] )
+        if isLoop( graph )["loop"]:
+            #countLoops += 1
+            loops.append( data )
+
+    #print( countLoops )
+
+    return loops
+        
+            
+                
+        
+    """#print( len( block ) )
+    #print( blocks )
+    #return
+    index= 0
+    graphs = []
+    while True:
+        numVerts = index
+        graph = []
+        
+    for byte in out:
+        print( int( byte ) )
+    #for g in str( out ).split(">>planar_code<<"):
+    #    print( g )
+    return
+    #print( out )
+    graphs = []
+    for g in str( out )[2:-1].split("\\n")[:-1]:        
+        strRep = g.split()[1].split(",")
+        graph = []
+        for cycle in strRep:
+            toAdd = []
+            for char in cycle:
+                toAdd.append( ord( char )-97 )
+            graph.append( toAdd )            
+        graphs.append( graph )
+    for g in graphs:
+        print( g )"""
+
+def isLoop( graph ):
+    """Calculates whether this graph represents a loop by determining if the
+    "straight line circuit" is Eulerian. There may be ambiguity if parallel edges,
+    so we note from plantri documentation:
+      In case there are parallel edges, there might be more than one graph
+      whose PLANAR CODE is the same up to rotation of the neighbour lists. 
+      To resolve this ambiguity, plantri makes the following convention:
+      for each vertex v except for the first vertex, if the least numbered
+      vertex that has v as a neighbour is w, then the first w in the section
+      for v represents the same edge as the first v in the section for w."""
+    coordsVisited = 0
+    curvert,curpos = 0,0
+
+    pdcode = []
+    sigma = []
+    for i in range( len( graph ) ):
+        pdcode.append( ([None]*4).copy() )
+        sigma.append( ([None]*4).copy() )
+    #sigma = pdcode.copy()
+    
+    while True:
+        nextvert = graph[curvert][curpos]        
+        outchoices = [curpos]
+        inchoices = []
+        for inchoice in range( len( graph[nextvert] ) ):
+            if graph[nextvert][inchoice] == curvert:
+                inchoices.append( inchoice )
+        if len( inchoices ) == 2:
+            for outchoice in range( len( graph[curvert] ) ):
+                if graph[curvert][outchoice] == nextvert and outchoice not in outchoices:
+                    outchoices.append( outchoice )
+            assert( len( outchoices ) == 2 )
+            outchoices.sort()
+            inchoices.sort()
+            lowestNeighborOfCurrent = min( graph[ curvert ] )
+            lowestNeighborOfNext = min( graph[ nextvert ] )
+            if (lowestNeighborOfCurrent != nextvert and lowestNeighborOfNext != curvert):# or nextvert == 0:  and 
+                inchoices.reverse()
+            if outchoices[0] == curpos:
+                nextpos = (inchoices[0]+2)%4
+            else:
+                nextpos = (inchoices[1]+2)%4
+        else:
+            if not ( len( inchoices ) == 1 ):
+                print( graph )
+                input()
+                assert( False )
+            nextpos = (inchoices[0]+2)%4
+
+        
+        coordsVisited += 1
+        pdcode[curvert][curpos] = coordsVisited
+        pdcode[nextvert][(nextpos-2)%4] = coordsVisited
+        sigma[curvert][curpos] = coordsVisited
+        sigma[nextvert][(nextpos-2)%4] = -coordsVisited
+        
+
+        #print( "(nextvert,nextpos)", nextvert, nextpos )
+        #input()
+            
+        
+        curvert,curpos=nextvert,nextpos
+
+        if (nextvert,nextpos) == (0,0):
+            break
+        
+
+    return {"pd":pdcode, "sigma":sigma, "loop":(coordsVisited == 2*len( graph ))}
+
+def test15():
+    n = 5
+    codes = planarPDcodes( n=n )
     for i in range( len( codes ) ):
         if i in []:
             L = snappy.Link( codes[i] )
@@ -90,8 +246,9 @@ def main():
 
     print( len( codes ) )
 
-    createCatalog( "$n=3$", codes, skipTrivial = False )
+    createCatalog( "$n="+str( n )+"$", codes )# skipTrivial = True )
 
+    
 def test14():
     n = 8
     for k in range( 1, n ):
@@ -111,6 +268,8 @@ def test14():
         #print( "num", num, "denom", denom )
         numpd= 2**(k-1)*numPerfectMatchings//k
         print( numpd )
+
+ 
 
 def planarPDcodes( n=7, debug = False ):
     """Returns an exhaustive list of planar PD codes corresponding to
@@ -460,10 +619,13 @@ def createCatalog( title, links, skipTrivial = False ):
     skipped = 0
     loopStrings = []
 
+    counter = 1
+
     for link in links:
         drawnpd = plinkPD( link )
-        print( "Analyzing", link )
-        toAdd = getPinSets( drawnpd, debug=True )        
+        print( "Analyzing loop", counter, "of", len( links ), "..." )
+        counter += 1
+        toAdd = getPinSets( drawnpd, debug=False )        
         if skipTrivial and len( toAdd["minPinSets"] ) == 1:
             print( "Skipping ", link, "because it has a unique minimal pinning set" )
             skipped += 1
@@ -512,6 +674,10 @@ def createCatalog( title, links, skipTrivial = False ):
     imDir = "tex/img/" # BE CAREFUL, YOU ARE DELETING THIS FOLDER
     shutil.rmtree( imDir )
     os.makedirs( imDir )
+
+    avgOptimalGonalities = []
+    avgMinimalGonalities = []
+    avgGonalities = []
     
     for link in data:
  
@@ -617,6 +783,9 @@ def createCatalog( title, links, skipTrivial = False ):
         avgOverallGonality = totSum/len( data[link]["pinSets"] )
         rows[4].append( "" )
         avgMinGonality = minSum/len( data[str(link)]["minPinSets"] )
+        avgOptimalGonalities.append( avgOptimalGonality )
+        avgMinimalGonalities.append( avgMinGonality )
+        avgGonalities.append( avgOverallGonality )
 
 
         col2 += "\\noindent\\textbf{Average optimal gonality:} "+str( round( avgOptimalGonality, 2 ))+"\n\n"
@@ -720,7 +889,18 @@ def createCatalog( title, links, skipTrivial = False ):
         loopStrings.append( texPinSet(linkstr, col1, col2, tablestrings, plinkFile,\
                                       posetFile, sideBySide = True, imSepPage = True ) )
 
-    makeTex( title, loopStrings, pinSetColors )
+    
+    
+    optgon = sum( avgOptimalGonalities )/len( links )
+    mingon = sum( avgMinimalGonalities )/len( links )
+    allgon = sum( avgGonalities )/len( links )
+
+    avgString = ""
+    avgString += "\\noindent\\textbf{Average optimal pinning set gonality for this dataset:} $"+str( optgon )+"$\n\n"
+    avgString += "\\noindent\\textbf{Average minimal pinning set gonality for this dataset:} $"+str( mingon )+"$\n\n"
+    avgString += "\\noindent\\textbf{Average overall pinning set gonality for this dataset:} $"+str(  allgon )+"$\n\n"    
+
+    makeTex( title, avgString, loopStrings, pinSetColors )
 
     return skipped
 
@@ -756,7 +936,7 @@ def computeRGBColors( range1, range2 ):
         colors["mins"][i] = {"label": "green"+str(i), "rgb":(lightness,startHue+i*step2,lightness)}
     return colors    
 
-def makeTex( title, loopStrings, colors ):
+def makeTex( title, avgString, loopStrings, colors ):
     filename = "tex/pinSets"
     try: # delete old files 
         os.remove(filename+".tex")
@@ -797,6 +977,9 @@ def makeTex( title, loopStrings, colors ):
     preamble += "\\author{Christopher-Lloyd Simon and Ben Stucky}\n\n"
     doc = preamble + "\\begin{document}%\n\\maketitle\n\\small\n\n"#note the font size change
     
+    doc += "\\section{Statistics for this dataset}\n\n"+avgString+"\\newpage"
+    
+    doc += "\\section{Loops}\n\n"
     for loopString in loopStrings:
         doc += loopString
 
@@ -816,7 +999,7 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     """Generating and viewing a TeX file illustrating pinning sets"""
     
 
-    doc = "\\section{"+linkstr+"}\n\n"
+    doc = "\\subsection{"+linkstr+"}\n\n"
 
     doc += "\\begin{multicols}{2}\n"
     doc += "{\\normalsize "+col1+"}\n"
@@ -1099,7 +1282,7 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
     
     T = G.spanningTree( baseRegion = treeBase )
 
-    print( T )
+    #print( T )
 
     
     T.createCyclicGenOrder()
@@ -1118,9 +1301,11 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
     #fullRegList.sort()
     #fullRegDict = {}
     monorBigonSet = set()
-    for key in T.wordDict:
-        if len( G.wordDict[key] ) <= 2:
-            monorBigonSet.add( key )
+    if len( pd ) != 1: # the lemniscate has a bigon which is not part of pinning set
+        # otherwise every monorbigon is part of every pinning set.
+        for key in T.wordDict:
+            if len( G.wordDict[key] ) <= 2:
+                monorBigonSet.add( key )
     #print( monorBigonSet )
     #return
     #i=0
@@ -2075,7 +2260,7 @@ def SurfaceGraphFromPD( pd ):
 
     #print( pd )
     #print() 
-    print( coordsDict )
+    #print( coordsDict )
 
     # define left and right relative to the first segment
     # you want to start at the cycle containing 1 but not containing 2
@@ -2140,13 +2325,13 @@ def SurfaceGraphFromPD( pd ):
         if i == len( sigma )* 2:
             break
 
-        print( "sigma:", sigma )
-        print( "i:", i )
-        print( "[left,right]", [curLeftRegion,curRightRegion] )
-        print( "curLeftCoords:", curLeftCoords )
-        print( "curRighCoords:", curRightCoords )
-        print( "nextfirst:", coordsDict[i+1][1] )
-        print( "nextsecond:", coordsDict[i+1][0] )
+        #print( "sigma:", sigma )
+        #print( "i:", i )
+        #print( "[left,right]", [curLeftRegion,curRightRegion] )
+        #print( "curLeftCoords:", curLeftCoords )
+        #print( "curRighCoords:", curRightCoords )
+        #print( "nextfirst:", coordsDict[i+1][1] )
+        #print( "nextsecond:", coordsDict[i+1][0] )
         #print("HI")
         #input()
         nextfirst = coordsDict[i+1][1]
