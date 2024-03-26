@@ -81,22 +81,24 @@ def main():
     #for i in range( 6, 14 ):
     #    print( " n =", i, "| Number of multiloops:",  len( irrPrime( i, loopsOnly = False ) ) )
     #    print()
-    for mloop in irrPrime( 6, loopsOnly = False ):
+    """for mloop in irrPrime( 6, loopsOnly = False ):
         pd = plinkPD( mloop["pd"] )
         print( "input pd", mloop["pd"] )
         print( "output pd", pd )
         print( "components:", mloop["components"] )
         print( "complist:", pdToComponents( pd ) )
-        print()
+        print()"""
         
     #print( len( irrPrime( 6, loopsOnly = True ) ) )
     #irrPrime( n = 10 )
-    return
+    #return
     n = 6
-    loops = []
-    for loop in irrPrime( n ):
-        loops.append( loop["pd"] )
-    createCatalog( "Pinning sets of irreducible indecomposable UU spheriloops with "+str(n)+" crossings", loops )
+    loops = {}
+    for k in range( 3, n+1 ):
+        loops[k] = []
+        for loop in irrPrime( k, loopsOnly = True ):
+            loops[k].append( loop["pd"] )
+    createCatalog( "Pinning sets of irreducible indecomposable UU spheriloops with at most "+str(n)+" crossings", loops )
 
 def pdToComponents( pdcode ):
     """Returns a list of lists of consecutive positive integers each of which
@@ -148,9 +150,6 @@ def coords( pdcode ):
                 coordsDict[ pdcode[i][j] ].append((i,j))
     return coordsDict
     
-    
-
-
 def irrPrime( n = 5, loopsOnly = False ):
     """Uses the program plantri to generate PD codes of all
     irreducible, indecomposable UU multiloops in the sphere
@@ -704,295 +703,319 @@ def test12():
 def createCatalog( title, links, skipTrivial = False ):
     """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
 
-    data = {}
+    alldata = {}
     numOptimals = set()
     numMinimals = set()
 
     skipped = 0
-    loopStrings = []
+    loopStrings = {}
 
-    counter = 1
+    
 
-    for link in links:
-        drawnpd = plinkPD( link )
-        print( "Analyzing loop", counter, "of", len( links ), "..." )
-        counter += 1
-        toAdd = getPinSets( drawnpd, debug=False )        
-        if skipTrivial and len( toAdd["minPinSets"] ) == 1:
-            print( "Skipping ", link, "because it has a unique minimal pinning set" )
-            skipped += 1
-            continue
-        data[str(link)] = toAdd
-        minDict = {}
-        for elt in data[str(link)]["minPinSets"]:
-            if len( elt ) not in minDict:
-                minDict[len(elt)] = [elt]
-            else:
-                minDict[len(elt)].append( elt )
-        data[str(link)]["minDict"] = minDict
-        minlen = min( minDict )
-        numOptimal = len( minDict[minlen] )
-        numOptimals.add( numOptimal  )
-        numMinimals.add( len( data[str(link)]["minPinSets"] ) - numOptimal )
+    for key in links:
+        loopStrings[key] = []
+        data = {}
+        print( "Analyzing", key, "crossing (multi)loops" )
+        counter = 1
+        for link in links[key]:
+            drawnpd = plinkPD( link )
+            print( "Analyzing loop", counter, "of", len( links[key] ), "..." )
+            counter += 1
+            toAdd = getPinSets( drawnpd, debug=False )        
+            if skipTrivial and len( toAdd["minPinSets"] ) == 1:
+                print( "Skipping ", link, "because it has a unique minimal pinning set" )
+                skipped += 1
+                continue
+            data[str(link)] = toAdd
+            minDict = {}
+            for elt in data[str(link)]["minPinSets"]:
+                if len( elt ) not in minDict:
+                    minDict[len(elt)] = [elt]
+                else:
+                    minDict[len(elt)].append( elt )
+            data[str(link)]["minDict"] = minDict
+            minlen = min( minDict )
+            numOptimal = len( minDict[minlen] )
+            numOptimals.add( numOptimal  )
+            numMinimals.add( len( data[str(link)]["minPinSets"] ) - numOptimal )
 
-        pinDict = {}
-        for elt in data[str(link)]["pinSets"]:
-            if len( elt ) not in pinDict:
-                pinDict[len(elt)] = [elt]
-            else:
-                pinDict[len(elt)].append( elt )
-        data[str(link)]["pinDict"] = pinDict
+            pinDict = {}
+            for elt in data[str(link)]["pinSets"]:
+                if len( elt ) not in pinDict:
+                    pinDict[len(elt)] = [elt]
+                else:
+                    pinDict[len(elt)].append( elt )
+            data[str(link)]["pinDict"] = pinDict
 
-        gonalityDict = {}
-        regToGonality = {}
-        for reg in data[str(link)]["fullRegSet"]:
-            regToGonality[reg] = len( binSet( reg ) )
-        for elt in data[str(link)]["pinSets"]:
-            regs = list( elt )
-            regs.sort()
-            gonalities = []
-            for reg in regs:
-                gonalities.append( regToGonality[reg] )
-            isMinimal = ( elt in data[str(link)]["minPinSets"] )
-            gonalityDict[frozenset(elt)]={"gons":gonalities,"min":isMinimal}
-        data[str(link)]["gonalityDict"] = gonalityDict       
-            
-
+            gonalityDict = {}
+            regToGonality = {}
+            for reg in data[str(link)]["fullRegSet"]:
+                regToGonality[reg] = len( binSet( reg ) )
+            for elt in data[str(link)]["pinSets"]:
+                regs = list( elt )
+                regs.sort()
+                gonalities = []
+                for reg in regs:
+                    gonalities.append( regToGonality[reg] )
+                isMinimal = ( elt in data[str(link)]["minPinSets"] )
+                gonalityDict[frozenset(elt)]={"gons":gonalities,"min":isMinimal}
+            data[str(link)]["gonalityDict"] = gonalityDict
+        alldata[key] = data
+                
     #compute the colors needed for labeling pinning sets
     pinSetColors = computeRGBColors( max( numOptimals ), max( numMinimals ) )
 
-
     # delete old image files
     imDir = "tex/img/" # BE CAREFUL, YOU ARE DELETING THIS FOLDER
-    shutil.rmtree( imDir )
-    os.makedirs( imDir )
+    try:
+        shutil.rmtree( imDir )
+    except FileNotFoundError:
+        pass
+    finally:
+        os.makedirs( imDir )
 
-    avgOptimalGonalities = []
-    avgMinimalGonalities = []
-    avgGonalities = []
+    avgStrings = {}
+    data = None
+
+    for key in alldata:
+
+        avgOptimalGonalities = []
+        avgMinimalGonalities = []
+        avgGonalities = []
+        pinningNumbers = []
+        percentagesNeedingPin = []
     
-    for link in data:
- 
-        # build the intro which describes this loop and gives overall stats
+        for link in alldata[key]:
+     
+            # build the intro which describes this loop and gives overall stats
 
-        if not "[" in link:
-            linkstr = "$"
-            for char in link:
-                if char == "_":
-                    linkstr += "\\"
-                linkstr += char
-            linkstr += "$"
-        else:
-            linkstr = link
-        col1 = ""
-
-        minlen = min( data[link]["minDict"] )
-        numOptimal = len( data[link]["minDict"][minlen] )
-        numMinimal = len( data[str(link)]["minPinSets"] ) - numOptimal
-
-        col2 = ""
-        col1 += "\\noindent\\textbf{Total optimal pinning sets:} "+str(numOptimal) +"\n\n"
-        col1 += "\\noindent\\textbf{Total minimal pinning sets:} "+str(numOptimal+numMinimal) +"\n\n"
-        col1 += "\\noindent\\textbf{Total pinning sets:} "+str( len( data[link]["pinSets"] ) )+"\n\n"
-        
-        
-        col1 += "\\noindent\\textbf{Pinning number:} "+str( minlen )+"\n\n"
-        
-        minPinSetDict = {}
-        label = 1
-        for pinset in data[link]["minPinSets"]:
-            minPinSetDict[frozenset(pinset)] = {}
-
-
-        # build table of pinning sets and average gonality by cardinal
-        rows = [[],[],[],[],[]]
-        caption = "Pinning sets/average gonality by cardinal"
-        rows[0].append( "Cardinal" )
-        numRegions = len( data[link]["fullRegSet"] )
-
-        for i in range( minlen, numRegions + 1):
-            rows[0].append( str( i ) )
-        rows[0].append( "Total" )
-        
-        rows[1].append( "Optimal pinning sets" )
-        rows[1].append( str( numOptimal ) )
-        for i in range( minlen+1, numRegions + 1 ):
-            rows[1].append( "0" )
-        rows[1].append( str( numOptimal ) )
-
-        rows[2].append( "Minimal (suboptimal) pinning sets" )
-        tot = 0
-        for i in range( minlen, numRegions + 1 ):
-            if i != minlen and i in data[link]["minDict"]:
-                add = len( data[link]["minDict"][i] )
-                tot += add
-                rows[2].append( str( add ) )
+            if not "[" in link:
+                linkstr = "$"
+                for char in link:
+                    if char == "_":
+                        linkstr += "\\"
+                    linkstr += char
+                linkstr += "$"
             else:
-                rows[2].append( "0" )
-        rows[2].append( str( tot ) )
+                linkstr = link
+            col1 = ""
 
-        rows[3].append( "Nonminimal pinning sets" )
-        tot = 0
+            minlen = min( alldata[key][link]["minDict"] )
+            numOptimal = len( alldata[key][link]["minDict"][minlen] )
+            numMinimal = len( alldata[key][str(link)]["minPinSets"] ) - numOptimal
 
-        for i in range( minlen, numRegions+1 ):
-            if i in data[link]["minDict"]:
-                add = len( data[link]["pinDict"][i] ) - len( data[link]["minDict"][i] )
-                tot += add
-                rows[3].append( str( add ) )
-            else:
-                add = len( data[link]["pinDict"][i] )
-                tot += add
-                rows[3].append( str( add ) )
-        rows[3].append( str( tot ) )
+            col2 = ""
+            col1 += "\\noindent\\textbf{Total optimal pinning sets:} "+str(numOptimal) +"\n\n"
+            col1 += "\\noindent\\textbf{Total minimal pinning sets:} "+str(numOptimal+numMinimal) +"\n\n"
+            col1 += "\\noindent\\textbf{Total pinning sets:} "+str( len( alldata[key][link]["pinSets"] ) )+"\n\n"
+            
+            
+            col1 += "\\noindent\\textbf{Pinning number:} "+str( minlen )+"\n\n"
 
 
-        rows[4].append( "Average gonality" )
-        cardDict = {}
-        tot = 0
-        for elt in data[str(link)]["gonalityDict"]:
-            leng = len( elt  )
-            if leng not in cardDict:
-                cardDict[leng] = [data[str(link)]["gonalityDict"][elt]]
-            else:
-                cardDict[leng].append(data[str(link)]["gonalityDict"][elt] )
-
-        totSum = 0
-        minSum = 0
-        minCount = 0
-        for i in range( minlen, numRegions+1 ):
-            avgSum = 0
-            for seq in cardDict[i]:
-                avgSum += sum( seq["gons"] )/len( seq["gons"] )
-                if seq["min"]:
-                    minCount += 1
-                    minSum += sum( seq["gons"] )/len( seq["gons"] )
-            add = avgSum/len(cardDict[i])
-            if i == minlen:
-                avgOptimalGonality = add
-            totSum += avgSum
-
-            rows[4].append( str( round( add, 2 ) ) )
-        avgOverallGonality = totSum/len( data[link]["pinSets"] )
-        rows[4].append( "" )
-        avgMinGonality = minSum/len( data[str(link)]["minPinSets"] )
-        avgOptimalGonalities.append( avgOptimalGonality )
-        avgMinimalGonalities.append( avgMinGonality )
-        avgGonalities.append( avgOverallGonality )
+            numRegions = len( alldata[key][link]["fullRegSet"] )
+             
+            pinningNumbers.append( minlen )
+            percentagesNeedingPin.append( minlen/numRegions )
+            
+            minPinSetDict = {}
+            label = 1
+            for pinset in alldata[key][link]["minPinSets"]:
+                minPinSetDict[frozenset(pinset)] = {}
 
 
-        col2 += "\\noindent\\textbf{Average optimal gonality:} "+str( round( avgOptimalGonality, 2 ))+"\n\n"
-        col2 += "\\noindent\\textbf{Average minimal gonality:} "+str( round( avgMinGonality, 2 ))+"\n\n"
-        col2 += "\\noindent\\textbf{Average overall gonality:} "+str( round( avgOverallGonality, 2 ))+"\n\n"
-        
-        tablestrings = [tableString(rows=rows,caption=caption)]
+            # build table of pinning sets and average gonality by cardinal
+            rows = [[],[],[],[],[]]
+            caption = "Pinning sets/average gonality by cardinal"
+            rows[0].append( "Cardinal" )
+           
 
-        # build the table of minimal/optimal pinning sets
-        rows = []
-        caption = "Pinning set data"
-        rows.append( ["Pinning set", "Pindicator","Regions","Card",\
-                   "Gonality seq", "Average gonality"] )
+            for i in range( minlen, numRegions + 1):
+                rows[0].append( str( i ) )
+            rows[0].append( "Total" )
+            
+            rows[1].append( "Optimal pinning sets" )
+            rows[1].append( str( numOptimal ) )
+            for i in range( minlen+1, numRegions + 1 ):
+                rows[1].append( "0" )
+            rows[1].append( str( numOptimal ) )
 
-        regionLabels = {}
-        regList = list( data[link]["fullRegSet"].copy() )
-        regList.sort()
-        for i in range( len( regList ) ):
-            regionLabels[regList[i]] =  i+1         
-        j = 0
-        
-        col3 = ""
-        col3 +=  "\\begin{enumerate}[A)]\n"
-        letterLabel = 'A'
-        firstTime = True
-        sortedKeys = list( data[link]["minDict"] )
-        sortedKeys.sort()
-        for key in sortedKeys:
-            for i in range( len( data[link]["minDict"][key] ) ):
-                row = []
-                elt = frozenset( data[link]["minDict"][key][i] )
-                #print( elt )
-                if key == minlen:
-                    dictkey = "opts"
-                    colorvar = i
-                    numColors = numOptimal
-                    specifier = " (optimal)"
+            rows[2].append( "Minimal (suboptimal) pinning sets" )
+            tot = 0
+            for i in range( minlen, numRegions + 1 ):
+                if i != minlen and i in alldata[key][link]["minDict"]:
+                    add = len( alldata[key][link]["minDict"][i] )
+                    tot += add
+                    rows[2].append( str( add ) )
                 else:
-                    dictkey = "mins"
-                    if firstTime:
-                        col3 += "\\end{enumerate}\n"
-                        col3 += "\\textbf{Minimal (suboptimal) pinning sets:}\n\n"
-                        col3 += "\\begin{enumerate}[a)]\n"
-                        #rows.append( ["Minimal pinning set","","","","",""] )
-                        letterLabel = 'a'
-                    firstTime = False
-                    colorvar = j
-                    numColors = numMinimal
-                    specifier = " (minimal)"
-                    #elt = data[link]["minPinSets"][i]
-                row.append( letterLabel+specifier )
+                    rows[2].append( "0" )
+            rows[2].append( str( tot ) )
 
-                numTotalColors = len( pinSetColors[dictkey] )    
-                colorIndex = int( colorvar*(numTotalColors/numColors) ) 
-                                        
-                minPinSetDict[elt]["label"] = label
-                label += 1
-                minPinSetDict[elt]["color"] = pinSetColors[dictkey][colorIndex]["rgb"]  
-                col3 +=  "\\item{\\Huge\\textcolor{"+pinSetColors[dictkey][colorIndex]["label"]+\
-                        "}{\\textbullet}}$\\{"
+            rows[3].append( "Nonminimal pinning sets" )
+            tot = 0
 
-                row.append( "{\\Huge\\textcolor{"+pinSetColors[dictkey][colorIndex]["label"]+\
-                        "}{\\textbullet}}")
-
-                regStr = "$\\{"
-
-                regSort = list( elt )
-                regSort.sort()
-                for reg in regSort:
-                    col3 += str( regionLabels[reg] ) +","
-                    regStr += str( regionLabels[reg] ) +","
-
-                col3 = col3[:-1]
-                regStr = regStr[:-1]+"\\}$"
-                row.append( regStr )
-                row.append( str( len( regSort ) ) )
-                row.append( str( data[str(link)]["gonalityDict"][elt]["gons"] ) )
-                avgGonality = sum( data[str(link)]["gonalityDict"][elt]["gons"] )/\
-                              len( data[str(link)]["gonalityDict"][elt]["gons"] )
-                row.append( str( round( avgGonality, 2 ) ) )
-                
+            for i in range( minlen, numRegions+1 ):
+                if i in alldata[key][link]["minDict"]:
+                    add = len( alldata[key][link]["pinDict"][i] ) - len( alldata[key][link]["minDict"][i] )
+                    tot += add
+                    rows[3].append( str( add ) )
+                else:
+                    add = len( alldata[key][link]["pinDict"][i] )
+                    tot += add
+                    rows[3].append( str( add ) )
+            rows[3].append( str( tot ) )
 
 
-                col3 += "\\}$\n\n"
-  
-                if key != minlen:
-                    j+=1
-                letterLabel = chr(ord(letterLabel) + 1)
-                rows.append( row )
-        col3 +=  "\\end{enumerate}\n"
+            rows[4].append( "Average gonality" )
+            cardDict = {}
+            tot = 0
+            for elt in alldata[key][str(link)]["gonalityDict"]:
+                leng = len( elt  )
+                if leng not in cardDict:
+                    cardDict[leng] = [alldata[key][str(link)]["gonalityDict"][elt]]
+                else:
+                    cardDict[leng].append(alldata[key][str(link)]["gonalityDict"][elt] )
 
-        tablestrings.append( tableString(rows=rows,caption=caption ) )
-       
+            totSum = 0
+            minSum = 0
+            minCount = 0
+            for i in range( minlen, numRegions+1 ):
+                avgSum = 0
+                for seq in cardDict[i]:
+                    avgSum += sum( seq["gons"] )/len( seq["gons"] )
+                    if seq["min"]:
+                        minCount += 1
+                        minSum += sum( seq["gons"] )/len( seq["gons"] )
+                add = avgSum/len(cardDict[i])
+                if i == minlen:
+                    avgOptimalGonality = add
+                totSum += avgSum
+
+                rows[4].append( str( round( add, 2 ) ) )
+            avgOverallGonality = totSum/len( alldata[key][link]["pinSets"] )
+            rows[4].append( "" )
+            avgMinGonality = minSum/len( alldata[key][str(link)]["minPinSets"] )
+            avgOptimalGonalities.append( avgOptimalGonality )
+            avgMinimalGonalities.append( avgMinGonality )
+            avgGonalities.append( avgOverallGonality )
+
+
+            col2 += "\\noindent\\textbf{Average optimal gonality:} "+str( round( avgOptimalGonality, 2 ))+"\n\n"
+            col2 += "\\noindent\\textbf{Average minimal gonality:} "+str( round( avgMinGonality, 2 ))+"\n\n"
+            col2 += "\\noindent\\textbf{Average overall gonality:} "+str( round( avgOverallGonality, 2 ))+"\n\n"
+            
+            tablestrings = [tableString(rows=rows,caption=caption)]
+
+            # build the table of minimal/optimal pinning sets
+            rows = []
+            caption = "Pinning set data"
+            rows.append( ["Pinning set", "Pindicator","Regions","Card",\
+                       "Gonality seq", "Average gonality"] )
+
+            regionLabels = {}
+            regList = list( alldata[key][link]["fullRegSet"].copy() )
+            regList.sort()
+            for i in range( len( regList ) ):
+                regionLabels[regList[i]] =  i+1         
+            j = 0
+            
+            col3 = ""
+            col3 +=  "\\begin{enumerate}[A)]\n"
+            letterLabel = 'A'
+            firstTime = True
+            sortedKeys = list( alldata[key][link]["minDict"] )
+            sortedKeys.sort()
+            for key1 in sortedKeys:
+                for i in range( len( alldata[key][link]["minDict"][key1] ) ):
+                    row = []
+                    elt = frozenset( alldata[key][link]["minDict"][key1][i] )
+                    #print( elt )
+                    if key1 == minlen:
+                        dictkey = "opts"
+                        colorvar = i
+                        numColors = numOptimal
+                        specifier = " (optimal)"
+                    else:
+                        dictkey = "mins"
+                        if firstTime:
+                            col3 += "\\end{enumerate}\n"
+                            col3 += "\\textbf{Minimal (suboptimal) pinning sets:}\n\n"
+                            col3 += "\\begin{enumerate}[a)]\n"
+                            #rows.append( ["Minimal pinning set","","","","",""] )
+                            letterLabel = 'a'
+                        firstTime = False
+                        colorvar = j
+                        numColors = numMinimal
+                        specifier = " (minimal)"
+                        #elt = data[link]["minPinSets"][i]
+                    row.append( letterLabel+specifier )
+
+                    numTotalColors = len( pinSetColors[dictkey] )    
+                    colorIndex = int( colorvar*(numTotalColors/numColors) ) 
+                                            
+                    minPinSetDict[elt]["label"] = label
+                    label += 1
+                    minPinSetDict[elt]["color"] = pinSetColors[dictkey][colorIndex]["rgb"]  
+                    col3 +=  "\\item{\\Huge\\textcolor{"+pinSetColors[dictkey][colorIndex]["label"]+\
+                            "}{\\textbullet}}$\\{"
+
+                    row.append( "{\\Huge\\textcolor{"+pinSetColors[dictkey][colorIndex]["label"]+\
+                            "}{\\textbullet}}")
+
+                    regStr = "$\\{"
+
+                    regSort = list( elt )
+                    regSort.sort()
+                    for reg in regSort:
+                        col3 += str( regionLabels[reg] ) +","
+                        regStr += str( regionLabels[reg] ) +","
+
+                    col3 = col3[:-1]
+                    regStr = regStr[:-1]+"\\}$"
+                    row.append( regStr )
+                    row.append( str( len( regSort ) ) )
+                    row.append( str( alldata[key][str(link)]["gonalityDict"][elt]["gons"] ) )
+                    avgGonality = sum( alldata[key][str(link)]["gonalityDict"][elt]["gons"] )/\
+                                  len( alldata[key][str(link)]["gonalityDict"][elt]["gons"] )
+                    row.append( str( round( avgGonality, 2 ) ) )
+                    
+
+
+                    col3 += "\\}$\n\n"
+      
+                    if key1 != minlen:
+                        j+=1
+                    letterLabel = chr(ord(letterLabel) + 1)
+                    rows.append( row )
+            col3 +=  "\\end{enumerate}\n"
+
+            tablestrings.append( tableString(rows=rows,caption=caption ) )
+            
+            tolerance = 0.0000001
+            plinkFile = plinkImgFile( link, alldata[key][link]["drawnpd"], alldata[key][link]["G"].adjDict,\
+                                      alldata[key][link]["minPinSets"], tolerance, minPinSetDict, regionLabels, filename = link )
+            posetFile = drawLattice( alldata[key][link]["pinSets"], alldata[key][link]["minPinSets"],\
+                                     alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
+
+            loopStrings[key].append( texPinSet(linkstr, col1, col2, tablestrings, plinkFile,\
+                                          posetFile, sideBySide = True, imSepPage = True ) )
+
         
-        tolerance = 0.0000001
-        plinkFile = plinkImgFile( link, data[link]["drawnpd"], data[link]["G"].adjDict,\
-                                  data[link]["minPinSets"], tolerance, minPinSetDict, regionLabels, filename = link )
-        posetFile = drawLattice( data[link]["pinSets"], data[link]["minPinSets"],\
-                                 data[link]["fullRegSet"], minPinSetDict, filename = link )
-
-        loopStrings.append( texPinSet(linkstr, col1, col2, tablestrings, plinkFile,\
-                                      posetFile, sideBySide = True, imSepPage = True ) )
-
     
-    
-    optgon = sum( avgOptimalGonalities )/len( links )
-    mingon = sum( avgMinimalGonalities )/len( links )
-    allgon = sum( avgGonalities )/len( links )
+        optgon = sum( avgOptimalGonalities )/len( alldata[key] )
+        mingon = sum( avgMinimalGonalities )/len( alldata[key] )
+        allgon = sum( avgGonalities )/len( alldata[key] )
+        avgPinNum = sum( pinningNumbers )/len( alldata[key] )
+        avgPercentageNeedingPin = sum( percentagesNeedingPin )/len( alldata[key] )
 
-    avgString = ""
-    avgString += "\\noindent\\textbf{Average optimal pinning set gonality for this dataset:} $"+str( optgon )+"$\n\n"
-    avgString += "\\noindent\\textbf{Average minimal pinning set gonality for this dataset:} $"+str( mingon )+"$\n\n"
-    avgString += "\\noindent\\textbf{Average overall pinning set gonality for this dataset:} $"+str(  allgon )+"$\n\n"    
+        avgStrings[key] = ""
+        avgStrings[key] += "\\noindent\\textbf{Average pinning number for this dataset:} $"+str( avgPinNum )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average fraction of optimal pinning set size to number of regions:} $"+str( avgPercentageNeedingPin )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average optimal pinning set gonality for this dataset:} $"+str( optgon )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average minimal pinning set gonality for this dataset:} $"+str( mingon )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average overall pinning set gonality for this dataset:} $"+str(  allgon )+"$\n\n"    
 
-    makeTex( title, avgString, loopStrings, pinSetColors )
+    makeTex( title, avgStrings, loopStrings, pinSetColors )
 
     return skipped
 
@@ -1028,7 +1051,7 @@ def computeRGBColors( range1, range2 ):
         colors["mins"][i] = {"label": "green"+str(i), "rgb":(lightness,startHue+i*step2,lightness)}
     return colors    
 
-def makeTex( title, avgString, loopStrings, colors ):
+def makeTex( title, avgStrings, loopStrings, colors ):
     filename = "tex/pinSets"
     try: # delete old files 
         os.remove(filename+".tex")
@@ -1065,15 +1088,19 @@ def makeTex( title, avgString, loopStrings, colors ):
                         ","+str( colors[color][key]["rgb"][1] )+","+\
                         str( colors[color][key]["rgb"][2] )+"}\n"
     preamble += "%\n%\n%\n"
+    preamble += "\\setcounter{tocdepth}{2}\n\n"
     preamble += "\\title{"+title+"}\n\n"
     preamble += "\\author{Christopher-Lloyd Simon and Ben Stucky}\n\n"
-    doc = preamble + "\\begin{document}%\n\\maketitle\n\\small\n\n"#note the font size change
-    
-    doc += "\\section{Statistics for this dataset}\n\n"+avgString+"\\newpage"
-    
-    doc += "\\section{Loops}\n\n"
-    for loopString in loopStrings:
-        doc += loopString
+    doc = preamble + "\\begin{document}%\n\\maketitle\n\n\\tableofcontents\n\n\\small\n\n"#note the font size change
+
+    doc += "\\section{Statistics}"
+    for key in loopStrings:        
+        doc += "\\subsection{$"+str(key)+"$ crossings}\n\n"+avgStrings[key]+"\n\n"
+    doc += "\\newpage\n\n\\section{Loops}"
+    for key in loopStrings:
+        doc += "\\subsection{$"+str(key)+"$ crossings}\n\n"
+        for loopstring in loopStrings[key]:
+            doc += loopstring
 
     doc += "\n\\end{document}"
     f.write( doc )
@@ -1091,7 +1118,7 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     """Generating and viewing a TeX file illustrating pinning sets"""
     
 
-    doc = "\\subsection{"+linkstr+"}\n\n"
+    doc = "\\subsubsection{"+linkstr+"}\n\n"
 
     doc += "\\begin{multicols}{2}\n"
     doc += "{\\normalsize "+col1+"}\n"
