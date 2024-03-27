@@ -16,11 +16,13 @@ filename = sys.argv[8]
 
 # necessary for floating point nonsense
 def closeTo( x0, y0, pointDict ):
+    assert( len( pointDict ) != 0 )
+    #print( "len(pointDict)=", len( pointDict ) )
     #nonlocal tolerance
     for key in pointDict:
         point1 = key
         break
-    point1
+    #point1
     mindist = abs( x0 - point1[0] )+abs( y0 - point1[1] )
     closestPoint = (point1[0], point1[1])
     for point in pointDict:
@@ -73,9 +75,30 @@ for crs in LE.Crossings:
         regs.add( adjDict[strand][1] )
 
     for elt in drawnpd:
+        found = False
         if set( elt ) == {hit1,hit2,next1,next2}:
-            crosses[(crs.x,crs.y)]={"strands":elt, "testStrands":None, "segs":None, "regs":regs, "dirs":None }
+            crosses[(crs.x,crs.y)]={"strands":elt, "testStrands":None, "segs":None, "regs":regs, "dirs":None,"minus":False }
+            found = True
             break
+    if not found:
+        assert( "I was assuming you never get here and it worked well. Try building your PD codes differently" )
+        print( "didn't find place for crossing", {hit1,hit2,next1,next2}, "in", drawnpd )
+        next1 = (hit1+1)%strandCount
+        next2 = (hit2+1)%strandCount
+        if next1 == 0:
+            next1 = strandCount
+        if next2 == 0:
+            next2 = strandCount
+        for elt in drawnpd:
+            found = False
+            if set( elt ) == {hit1,hit2,next1,next2}:
+                crosses[(crs.x,crs.y)]={"strands":elt, "testStrands":None, "segs":None, "regs":regs, "dirs":None,"minus":True }
+                found = True
+                break
+        if not found:
+            print( "STILL didn't find place for crossing", {hit1,hit2,next1,next2}, "in", drawnpd )
+            assert( False )
+        
     #crossCoordDict[ abs( crs.hit1 ) ] = (crs.x, crs.y)
     #crossCoordDict[ abs( crs.hit2 ) ] = (crs.x, crs.y)
 
@@ -159,10 +182,15 @@ for segOut in crosses[(curx,cury)]['segs']:
                 assert( len( crosses[(nextx,nexty)]["dirs"] ) == 2 )
                 #print( "too many labels in", crosses[(nextx,nexty)]["dirs"] )
                 label0, label1 = tuple( crosses[(nextx,nexty)]["dirs"].keys() )
-                label0plus = (label0+1)%strandCount
+                if crosses[(nextx,nexty)]["minus"]:
+                    label0plus = (label0-1)%strandCount
+                    label1plus = (label1-1)%strandCount
+                else:
+                    assert( "I was assuming you never get here and it worked well. Try building your PD codes differently" )
+                    label0plus = (label0+1)%strandCount
+                    label1plus = (label1+1)%strandCount
                 if label0plus == 0:
-                    label0plus = strandCount
-                label1plus = (label1+1)%strandCount
+                    label0plus = strandCount                
                 if label1plus == 0:
                     label1plus = strandCount                
                 if crosses[(nextx,nexty)]["dirs"][label0] == (crosses[(nextx,nexty)]["dirs"][label1]-1)%4:

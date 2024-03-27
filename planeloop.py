@@ -78,27 +78,274 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 def main():
     #test12()
     #return
-    #for i in range( 6, 14 ):
-    #    print( " n =", i, "| Number of multiloops:",  len( irrPrime( i, loopsOnly = False ) ) )
+    #for i in range( 3, 9 ):
+    #    print( " n =", i, "| Number of multiloops:",  len( generateMultiloops( crossings = i, numComponents = 1, allowReflections = False, primeOnly = False ) ) )
     #    print()
-    """for mloop in irrPrime( 6, loopsOnly = False ):
-        pd = plinkPD( mloop["pd"] )
-        print( "input pd", mloop["pd"] )
-        print( "output pd", pd )
-        print( "components:", mloop["components"] )
-        print( "complist:", pdToComponents( pd ) )
-        print()"""
+    #return
+    #for mloop in irrPrime( 6, loopsOnly = False ):
+    #    pd = plinkPD( mloop["pd"] )
+    #    print( "input pd", mloop["pd"] )
+    #    print( "output pd", pd )
+    #    print( "components:", mloop["components"] )
+    #    print( "complist:", pdToComponents( pd ) )
+    #    print()"""
         
     #print( len( irrPrime( 6, loopsOnly = True ) ) )
     #irrPrime( n = 10 )
     #return
     n = 6
+    allowReflections = False
+    primeOnly = True
     loops = {}
     for k in range( 3, n+1 ):
         loops[k] = []
-        for loop in irrPrime( k, loopsOnly = True ):
+        for loop in generateMultiloops( crossings = k, numComponents = 1, allowReflections = allowReflections, primeOnly = primeOnly ):
+            print( loop["pd"] )
             loops[k].append( loop["pd"] )
-    createCatalog( "Pinning sets of irreducible indecomposable UU spheriloops with at most "+str(n)+" crossings", loops )
+    createCatalog( "Pinning sets of UU spheriloops with at most "+str(n)+" crossings", loops )
+    
+def generateMultiloops( crossings = 5, numComponents = 1, allowReflections = False, primeOnly = True ):
+    """Uses the program plantri to generate PD codes of all
+    multiloops in the sphere with n crossings, with certain parameters.
+    path to plantri folder must be in PATH
+
+    numComponents (positive integer or "any"): Set to 1 to restrict to loops, or 'any' to allow all multiloops
+
+    allowReflections: True iff nonisotopic mirror images considered distinct
+
+    prime: Whether or not to restrict to irreducible, indecomposable ("prime") multiloops (2-connected and no nugatory crossings)"""
+
+    #call(["plantri", str(n+2), "-Goqc2m2d"])
+    if numComponents == 1:
+        allowMultiloops = False
+    else:
+        allowMultiloops = True
+
+    case = 4*int( allowMultiloops )+2*int( allowReflections )+1*int( not primeOnly )
+
+    if case == 0: #FFF - UU prime loops, should match https://oeis.org/A264759
+        out = check_output(["knotshadow", str(crossings+2), "-m2c2qGd"]).split(b'>>planar_code<<')[1]
+        
+    elif case == 1: #FFT - UU prime+composite loops, should match https://oeis.org/A008989
+        out = check_output(["knotshadow", str(crossings+2), "-QGd"]).split(b'>>planar_code<<')[1]
+        warnings.warn( "This case may need debugging - sigma might be wrong" )
+        
+    elif case == 2: #FTF - UO prime loops, should match https://oeis.org/A264760
+        out = check_output(["knotshadow", str(crossings+2), "-m2c2qGdo"]).split(b'>>planar_code<<')[1]
+        
+    elif case == 3: #FTT - UO prime+composite loops, should match https://oeis.org/A008987
+        out = check_output(["knotshadow", str(crossings+2), "-QGdo"]).split(b'>>planar_code<<')[1]
+        warnings.warn( "This case may need debugging - sigma might be wrong" )
+        
+    elif case == 4: #TFF - UU prime multiloops, should match https://oeis.org/A113201
+        out = check_output(["plantri", str(crossings+2), "-Gqc2m2d"]).split(b'>>planar_code<<')[1]
+        
+    elif case == 5: #TFT - UU prime+composite multiloops
+        out = check_output(["plantri", str(crossings+2), "-Gqd"]).split(b'>>planar_code<<')[1]
+        warnings.warn( "This option has not been verified to behave as expected." )
+    
+    elif case == 6: #TTF - UO prime multiloops, should match https://oeis.org/A113202
+        out = check_output(["plantri", str(crossings+2), "-Gqoc2m2d"]).split(b'>>planar_code<<')[1]
+        
+    elif case == 7: #TTT - UO prime+composite multiloops
+        out = check_output(["plantri", str(crossings+2), "-Gqdo"]).split(b'>>planar_code<<')[1]
+        warnings.warn( "This option has not been verified to behave as expected." )
+        #raise( "Not yet supported" )    
+    
+    #out = check_output(["plantri", str(n+2), "-Gqoc2m2d"]).split(b'>>planar_code<<')[1] #this get UO irr indecomp
+    #out = check_output(["plantri", str(crossings+2), "-Gqc2m2d"]).split(b'>>planar_code<<')[1] #this gets UU irr indecomp
+    #out = check_output(["plantri", str(n), "-c1"]).split(b'>>planar_code<<')[1] #this gets UU irr indecomp
+    #print( out )
+    blocks = out.split(b'\x00')[:-1]
+    #print( blocks )
+    graphs = []
+    first = True
+    graph = []
+    for i in range( len( blocks ) ): 
+        block = blocks[i]
+        cycle = []
+        if len( block ) == 5:
+            if not first:
+                graphs.append( graph )
+            graph = []
+            for byte in block[1:]:
+                cycle.append( int( byte ) - 1  )
+            graph.append( cycle )
+            first = False
+        if len( block ) == 4:
+            for byte in block:
+                cycle.append( int( byte ) - 1 )
+            graph.append( cycle )
+        if i == len( blocks ) - 1:
+            graphs.append( graph )
+
+    #for graph in graphs:
+    #    print( graph )
+    #return graphs
+    # print( len( graphs ), "generated" )
+    # return graphs
+
+    multiloops = []
+    #countLoops = 0
+    for graph in graphs:
+        data = planarData( graph, debug = False )
+        if numComponents == "any" or data["components"] == numComponents:
+            multiloops.append( data )
+            #countLoops += 1
+        #     multiloops.append( data )
+        #multiloops.append(  )#, loopsOnly ) )
+        #data = planarData( graph, loopsOnly )
+        #print( graph )
+        #print( data["pd"] )
+        #print( data["sigma"] )
+        #print( data["components"] )
+        #if not loopsOnly or data["components"] == 1:
+            #countLoops += 1
+        #     multiloops.append( data )
+        #print()
+    #print( countLoops )
+
+    return multiloops
+        
+    """#print( len( block ) )
+    #print( blocks )
+    #return
+    index= 0
+    graphs = []
+    while True:
+        numVerts = index
+        graph = []
+        
+    for byte in out:
+        print( int( byte ) )
+    #for g in str( out ).split(">>planar_code<<"):
+    #    print( g )
+    return
+    #print( out )
+    graphs = []
+    for g in str( out )[2:-1].split("\\n")[:-1]:        
+        strRep = g.split()[1].split(",")
+        graph = []
+        for cycle in strRep:
+            toAdd = []
+            for char in cycle:
+                toAdd.append( ord( char )-97 )
+            graph.append( toAdd )            
+        graphs.append( graph )
+    for g in graphs:
+        print( g )"""
+
+def planarData( graph, debug = False ):#, loopsOnly ):
+    """Converts a plantri graph to sigma and pd code, and calculates the number of loop components.
+       There may be ambiguity if parallel edges,
+       so we note from plantri documentation:
+       
+      In case there are parallel edges, there might be more than one graph
+      whose PLANAR CODE is the same up to rotation of the neighbour lists. 
+      To resolve this ambiguity, plantri makes the following convention:
+      for each vertex v except for the first vertex, if the least numbered
+      vertex that has v as a neighbour is w, then the first w in the section
+      for v represents the same edge as the first v in the section for w."""
+
+    if graph == [[0,0,0,0]]:
+        return {"pd":[[1,2,2,1]], "sigma":[[-1,-2,2,1]], "components":1}
+    coordsVisited = 0
+    startvert,startpos = 0,3
+    curvert,curpos = startvert,startpos
+
+    if debug:
+        print( "graph", graph )
+        print()
+
+    pdcode = []
+    sigma = []
+    for i in range( len( graph ) ):
+        pdcode.append( ([None]*4).copy() )
+        sigma.append( ([None]*4).copy() )
+    #sigma = pdcode.copy()
+
+    numComponents = 1
+    while coordsVisited != 2*len( graph ):
+        while True:
+            nextvert = graph[curvert][curpos]        
+            outchoices = [curpos]
+            inchoices = []
+            for inchoice in range( len( graph[nextvert] ) ):
+                if graph[nextvert][inchoice] == curvert:
+                    inchoices.append( inchoice )
+            if len( inchoices ) == 2:
+                for outchoice in range( len( graph[curvert] ) ):
+                    if graph[curvert][outchoice] == nextvert and outchoice not in outchoices:
+                        outchoices.append( outchoice )
+                assert( len( outchoices ) == 2 )
+                outchoices.sort()
+                inchoices.sort()
+                
+                lowestNeighborOfCurrent = min( graph[ curvert ] )
+                lowestNeighborOfNext = min( graph[ nextvert ] )
+                if (lowestNeighborOfCurrent != nextvert and lowestNeighborOfNext != curvert) or curvert==nextvert:#  and
+                    #print( "reversing" )
+                    inchoices.reverse()
+                if outchoices[0] == curpos:
+                    nextpos = (inchoices[0]+2)%4
+                else:
+                    nextpos = (inchoices[1]+2)%4
+            else:
+                if not ( len( inchoices ) == 1 ):
+                    print( graph )
+                    input()
+                    assert( False )
+                nextpos = (inchoices[0]+2)%4
+
+            
+            coordsVisited += 1
+            pdcode[curvert][curpos] = coordsVisited
+            pdcode[nextvert][(nextpos-2)%4] = coordsVisited
+            sigma[curvert][curpos] = coordsVisited
+            sigma[nextvert][(nextpos-2)%4] = -coordsVisited
+            
+
+            if debug:
+                print( "curvert:", curvert )
+                print( "nextvert:", nextvert )
+                print( "inchoices:", inchoices )
+                print( "outchoices:", outchoices )
+                print( "curpos:", curpos )
+                print( "nextpos:", nextpos )
+                print( "(nextvert,nextpos)", nextvert, nextpos )
+                print( "pd", pdcode )
+                print( "sigma", sigma )
+                input()
+                
+            
+            curvert,curpos=nextvert,nextpos
+
+            if (nextvert,nextpos) == (startvert,startpos):
+                if coordsVisited == 2*len( graph ):
+                    return {"pd":pdcode, "sigma":sigma, "components":1}
+                else:
+                    break
+                #if loopsOnly:
+                #    if coordsVisited == 2*len( graph ):
+                #        return {"pd":pdcode, "sigma":sigma, "components":1}
+                #    else:
+                #        return {"pd":pdcode, "sigma":sigma, "components":-1}
+                #else:
+                #    break
+
+        found = False
+        for i in range( len( pdcode ) ):
+            for j in range( len( pdcode[i] ) ):
+                if pdcode[i][j] is None:
+                    startvert,startpos = i,j
+                    curvert,curpos = startvert,startpos
+                    found = True
+                    numComponents += 1
+                    break
+            if found:
+                break           
+
+    return {"pd":pdcode, "sigma":sigma, "components":numComponents}
 
 def pdToComponents( pdcode ):
     """Returns a list of lists of consecutive positive integers each of which
@@ -134,10 +381,7 @@ def pdToComponents( pdcode ):
                 if found:
                     break
 
-    return components
-            
-        
-        
+    return components        
         
 def coords( pdcode ):
     """Returns a dictionary of coordinates of entries in a pd code."""
@@ -149,182 +393,6 @@ def coords( pdcode ):
             else:
                 coordsDict[ pdcode[i][j] ].append((i,j))
     return coordsDict
-    
-def irrPrime( n = 5, loopsOnly = False ):
-    """Uses the program plantri to generate PD codes of all
-    irreducible, indecomposable UU multiloops in the sphere
-    with n crossings. path to plantri must be in PATH"""
-
-    #call(["plantri", str(n+2), "-Goqc2m2d"])
-    #out = check_output(["plantri", str(n+2), "-Gqoc2m2d"]).split(b'>>planar_code<<')[1] #this get UO irr indecomp
-    out = check_output(["plantri", str(n+2), "-Gqc2m2d"]).split(b'>>planar_code<<')[1] #this gets UU irr indecomp
-    #out = check_output(["plantri", str(n), "-c1"]).split(b'>>planar_code<<')[1] #this gets UU irr indecomp
-    blocks = out.split(b'\x00')[:-1]
-    graphs = []
-    first = True
-    graph = []
-    for i in range( len( blocks ) ): 
-        block = blocks[i]
-        cycle = []
-        if len( block ) == 5:
-            if not first:
-                graphs.append( graph )
-            graph = []
-            for byte in block[1:]:
-                cycle.append( int( byte ) - 1  )
-            graph.append( cycle )
-            first = False
-        if len( block ) == 4:
-            for byte in block:
-                cycle.append( int( byte ) - 1 )
-            graph.append( cycle )
-        if i == len( blocks ) - 1:
-            graphs.append( graph )
-
-    #for graph in graphs:
-    #    print( graph )
-    #return graphs
-
-    multiloops = []
-    #countLoops = 0
-    for graph in graphs:
-        data = planarData( graph, loopsOnly )
-        #print( graph )
-        #print( data["pd"] )
-        #print( data["sigma"] )
-        #print( data["components"] )
-        if not loopsOnly or data["components"] == 1:
-            #countLoops += 1
-             multiloops.append( data )
-        #print()
-    #print( countLoops )
-
-    return multiloops
-        
-            
-                
-        
-    """#print( len( block ) )
-    #print( blocks )
-    #return
-    index= 0
-    graphs = []
-    while True:
-        numVerts = index
-        graph = []
-        
-    for byte in out:
-        print( int( byte ) )
-    #for g in str( out ).split(">>planar_code<<"):
-    #    print( g )
-    return
-    #print( out )
-    graphs = []
-    for g in str( out )[2:-1].split("\\n")[:-1]:        
-        strRep = g.split()[1].split(",")
-        graph = []
-        for cycle in strRep:
-            toAdd = []
-            for char in cycle:
-                toAdd.append( ord( char )-97 )
-            graph.append( toAdd )            
-        graphs.append( graph )
-    for g in graphs:
-        print( g )"""
-
-def planarData( graph, loopsOnly ):
-    """Calculates whether this graph represents a loop by determining if the
-    "straight line circuit" is Eulerian. There may be ambiguity if parallel edges,
-    so we note from plantri documentation:
-      In case there are parallel edges, there might be more than one graph
-      whose PLANAR CODE is the same up to rotation of the neighbour lists. 
-      To resolve this ambiguity, plantri makes the following convention:
-      for each vertex v except for the first vertex, if the least numbered
-      vertex that has v as a neighbour is w, then the first w in the section
-      for v represents the same edge as the first v in the section for w."""
-    coordsVisited = 0
-    startvert,startpos = 0,0
-    curvert,curpos = startvert,startpos
-
-    #print( graph )
-
-    pdcode = []
-    sigma = []
-    for i in range( len( graph ) ):
-        pdcode.append( ([None]*4).copy() )
-        sigma.append( ([None]*4).copy() )
-    #sigma = pdcode.copy()
-
-    numComponents = 1
-    while coordsVisited != 2*len( graph ):
-        while True:
-            nextvert = graph[curvert][curpos]        
-            outchoices = [curpos]
-            inchoices = []
-            for inchoice in range( len( graph[nextvert] ) ):
-                if graph[nextvert][inchoice] == curvert:
-                    inchoices.append( inchoice )
-            if len( inchoices ) == 2:
-                for outchoice in range( len( graph[curvert] ) ):
-                    if graph[curvert][outchoice] == nextvert and outchoice not in outchoices:
-                        outchoices.append( outchoice )
-                assert( len( outchoices ) == 2 )
-                outchoices.sort()
-                inchoices.sort()
-                lowestNeighborOfCurrent = min( graph[ curvert ] )
-                lowestNeighborOfNext = min( graph[ nextvert ] )
-                if (lowestNeighborOfCurrent != nextvert and lowestNeighborOfNext != curvert):# or nextvert == 0:  and 
-                    inchoices.reverse()
-                if outchoices[0] == curpos:
-                    nextpos = (inchoices[0]+2)%4
-                else:
-                    nextpos = (inchoices[1]+2)%4
-            else:
-                if not ( len( inchoices ) == 1 ):
-                    print( graph )
-                    input()
-                    assert( False )
-                nextpos = (inchoices[0]+2)%4
-
-            
-            coordsVisited += 1
-            pdcode[curvert][curpos] = coordsVisited
-            pdcode[nextvert][(nextpos-2)%4] = coordsVisited
-            sigma[curvert][curpos] = coordsVisited
-            sigma[nextvert][(nextpos-2)%4] = -coordsVisited
-            
-
-            #print( "(nextvert,nextpos)", nextvert, nextpos )
-            #print( "pd", pdcode )
-            #print( "sigma", sigma )
-            #input()
-                
-            
-            curvert,curpos=nextvert,nextpos
-
-            if (nextvert,nextpos) == (startvert,startpos):
-                if loopsOnly:
-                    if coordsVisited == 2*len( graph ):
-                        return {"pd":pdcode, "sigma":sigma, "components":1}
-                    else:
-                        return {"pd":pdcode, "sigma":sigma, "components":-1}
-                else:
-                    break
-
-        found = False
-        for i in range( len( pdcode ) ):
-            for j in range( len( pdcode[i] ) ):
-                if pdcode[i][j] is None:
-                    startvert,startpos = i,j
-                    curvert,curpos = startvert,startpos
-                    found = True
-                    numComponents += 1
-                    break
-            if found:
-                break          
-            
-
-    return {"pd":pdcode, "sigma":sigma, "components":numComponents}
 
 def test15():
     n = 5
