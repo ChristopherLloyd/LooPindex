@@ -73,6 +73,8 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
         (11, 19, 12, 18), (4, 20, 5, 19), (7, 23, 8, 22),\
         (9, 20, 10, 21), (14, 24, 15, 23), (16, 21, 17, 22)]
 
+weird3case = [[1, 6, 2, 1], [5, 4, 6, 5], [2, 4, 3, 3]]
+
 # Main
 
 def main():
@@ -95,14 +97,15 @@ def main():
     #return
     n = 4
     allowReflections = False
-    primeOnly = False
+    primeOnly = True
     loops = {}
-    for k in range( 1, n+1 ):
+    for k in range( 4, n+1 ):
         loops[k] = []
-        for loop in generateMultiloops( crossings = k, numComponents = 1, allowReflections = allowReflections, primeOnly = primeOnly ):
+        for loop in generateMultiloops( crossings = k, numComponents = "any", allowReflections = allowReflections, primeOnly = primeOnly ):
             print( loop["pd"] )
             loops[k].append( loop["pd"] )
-    createCatalog( "Pinning sets of UU spheriloops with at most "+str(n)+" crossings", loops )
+            break
+    createCatalog( "Pinning sets of UU spherimultiloops with at most "+str(n)+" crossings", loops )
     
 def generateMultiloops( crossings = 5, numComponents = 1, allowReflections = False, primeOnly = True ):
     """Uses the program plantri to generate PD codes of all
@@ -128,7 +131,7 @@ def generateMultiloops( crossings = 5, numComponents = 1, allowReflections = Fal
         
     elif case == 1: #FFT - UU prime+composite loops, should match https://oeis.org/A008989
         out = check_output(["knotshadow", str(crossings+2), "-QGd"]).split(b'>>planar_code<<')[1]
-        warnings.warn( "This case may need debugging - sigma might be wrong" )
+        #warnings.warn( "This case may need debugging - sigma might be wrong" ) # fixed, I think
         
     elif case == 2: #FTF - UO prime loops, should match https://oeis.org/A264760
         out = check_output(["knotshadow", str(crossings+2), "-m2c2qGdo"]).split(b'>>planar_code<<')[1]
@@ -811,10 +814,14 @@ def createCatalog( title, links, skipTrivial = False ):
         print( "Analyzing", key, "crossing (multi)loops" )
         counter = 1
         for link in links[key]:
-            drawnpd = plinkPD( link )
+            while True:
+                drawnpd = plinkPD( link )
+                if drawnpd == [(6,4,7,1),(8,2,5,3),(1,5,2,6),(3,7,4,8)]:
+                    break
+            print( "drawnpd", drawnpd )
             print( "Analyzing loop", counter, "of", len( links[key] ), "..." )
             counter += 1
-            toAdd = getPinSets( drawnpd, debug=False )        
+            toAdd = getPinSets( drawnpd, debug=True )        
             if skipTrivial and len( toAdd["minPinSets"] ) == 1:
                 print( "Skipping ", link, "because it has a unique minimal pinning set" )
                 skipped += 1
@@ -1524,6 +1531,7 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
         for key in T.wordDict:
             if len( G.wordDict[key] ) <= 2:
                 monorBigonSet.add( key )
+                #print( "monorbigon found" )
     #print( monorBigonSet )
     #return
     #i=0
@@ -2481,14 +2489,36 @@ def SurfaceGraphFromPD( pd ):
     #print( coordsDict )
 
     # define left and right relative to the first segment
-    # you want to start at the cycle containing 1 but not containing 2
+    # The first left coordinate should be the one which has 2 following in the slot two ahead
 
-    if coordsDict[1][0][0] == coordsDict[2][0][0] or coordsDict[1][0][0] == coordsDict[2][1][0]:
-        curLeftCoords = coordsDict[1][0] 
-        curRightCoords = coordsDict[1][1]
+    #OLD
+
+    #if coordsDict[1][0][0] == coordsDict[2][0][0] or coordsDict[1][0][0] == coordsDict[2][1][0]:
+    #    curLeftCoords = coordsDict[1][0] 
+    #    curRightCoords = coordsDict[1][1]
+    #else:
+    #    curLeftCoords = coordsDict[1][1] 
+    #    curRightCoords = coordsDict[1][0]
+
+    #NEW
+    firstOne = coordsDict[1][0]
+    secondOne = coordsDict[1][1]
+    firstTwo = coordsDict[2][0]
+    secondTwo = coordsDict[2][1]
+
+    if (firstOne[0] == firstTwo[0] and \
+         firstOne[1] == (firstTwo[1]+2)%4 ) or \
+         ( firstOne[0] == secondTwo[0] and \
+           firstOne[1] == (secondTwo[1]+2)%4 ):
+        curLeftCoords = firstOne
+        curRightCoords = secondOne
     else:
-        curLeftCoords = coordsDict[1][1] 
-        curRightCoords = coordsDict[1][0]   
+        curLeftCoords = secondOne
+        curRightCoords = firstOne    
+
+    #print( "First left coordinates:", curLeftCoords )
+    #print( "First right coordinates:", curRightCoords )
+    #curLeftCoords, curRightCoords = curRightCoords, curLeftCoords
     
     regDict = {}
     indexDict = {}
