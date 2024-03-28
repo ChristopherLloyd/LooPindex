@@ -78,7 +78,7 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 def main():
     #test12()
     #return
-    #for i in range( 3, 9 ):
+    #for i in range( 2, 7 ):
     #    print( " n =", i, "| Number of multiloops:",  len( generateMultiloops( crossings = i, numComponents = 1, allowReflections = False, primeOnly = False ) ) )
     #    print()
     #return
@@ -93,11 +93,11 @@ def main():
     #print( len( irrPrime( 6, loopsOnly = True ) ) )
     #irrPrime( n = 10 )
     #return
-    n = 6
+    n = 4
     allowReflections = False
-    primeOnly = True
+    primeOnly = False
     loops = {}
-    for k in range( 3, n+1 ):
+    for k in range( 1, n+1 ):
         loops[k] = []
         for loop in generateMultiloops( crossings = k, numComponents = 1, allowReflections = allowReflections, primeOnly = primeOnly ):
             print( loop["pd"] )
@@ -265,7 +265,7 @@ def planarData( graph, debug = False ):#, loopsOnly ):
     #sigma = pdcode.copy()
 
     numComponents = 1
-    while coordsVisited != 2*len( graph ):
+    while True:
         while True:
             nextvert = graph[curvert][curpos]        
             outchoices = [curpos]
@@ -321,10 +321,10 @@ def planarData( graph, debug = False ):#, loopsOnly ):
             curvert,curpos=nextvert,nextpos
 
             if (nextvert,nextpos) == (startvert,startpos):
-                if coordsVisited == 2*len( graph ):
-                    return {"pd":pdcode, "sigma":sigma, "components":1}
-                else:
-                    break
+                #if coordsVisited == 2*len( graph ):
+                #    return {"pd":pdcode, "sigma":sigma, "components":1}
+                #else:
+                break
                 #if loopsOnly:
                 #    if coordsVisited == 2*len( graph ):
                 #        return {"pd":pdcode, "sigma":sigma, "components":1}
@@ -332,18 +332,43 @@ def planarData( graph, debug = False ):#, loopsOnly ):
                 #        return {"pd":pdcode, "sigma":sigma, "components":-1}
                 #else:
                 #    break
-
-        found = False
-        for i in range( len( pdcode ) ):
-            for j in range( len( pdcode[i] ) ):
-                if pdcode[i][j] is None:
-                    startvert,startpos = i,j
-                    curvert,curpos = startvert,startpos
-                    found = True
-                    numComponents += 1
+        if coordsVisited == 2*len( graph ):
+            break
+        else:        
+            found = False
+            for i in range( len( pdcode ) ):
+                for j in range( len( pdcode[i] ) ):
+                    if pdcode[i][j] is None:
+                        startvert,startpos = i,j
+                        curvert,curpos = startvert,startpos
+                        found = True
+                        numComponents += 1
+                        break
+                if found:
                     break
-            if found:
-                break           
+
+    # to get a consistent pd code (first entry in cycle is always an understrand),
+    # try shifting so every cycle starts with a negative
+    
+    for i in range( len( sigma ) ):
+        for firstNegIndex in range( 4 ):
+            if sigma[i][firstNegIndex] > 0:
+                continue
+            else:
+                sigma[i] = sigma[i][firstNegIndex:]+sigma[i][:firstNegIndex]
+                pdcode[i] = pdcode[i][firstNegIndex:]+pdcode[i][:firstNegIndex]
+                break
+
+    if debug:
+        print( "pd", pdcode )
+        print( "sigma", sigma )
+        input()
+
+    #print( "HIHIIHIH" )
+    #assert( False )
+            
+        #for j in range( len( sigma ) ):
+        #    if sigma[
 
     return {"pd":pdcode, "sigma":sigma, "components":numComponents}
 
@@ -828,6 +853,7 @@ def createCatalog( title, links, skipTrivial = False ):
                 isMinimal = ( elt in data[str(link)]["minPinSets"] )
                 gonalityDict[frozenset(elt)]={"gons":gonalities,"min":isMinimal}
             data[str(link)]["gonalityDict"] = gonalityDict
+            #data[str(link)]["drawnpd"] = drawnpd
         alldata[key] = data
                 
     #compute the colors needed for labeling pinning sets
@@ -1066,7 +1092,7 @@ def createCatalog( title, links, skipTrivial = False ):
                                      alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
 
             loopStrings[key].append( texPinSet(linkstr, col1, col2, tablestrings, plinkFile,\
-                                          posetFile, sideBySide = True, imSepPage = True ) )
+                                          posetFile, sideBySide = True, imSepPage = True, drawnpd = alldata[key][link]["drawnpd"] ) )
 
         
     
@@ -1182,11 +1208,14 @@ def makeTex( title, avgStrings, loopStrings, colors ):
         pass
     return    
 
-def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide = True, imSepPage = True):
+def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide = True, imSepPage = True, drawnpd = None):
     """Generating and viewing a TeX file illustrating pinning sets"""
     
 
     doc = "\\subsubsection{"+linkstr+"}\n\n"
+
+    if drawnpd is not None:
+        doc += "{\\small PD code drawn by snappy: $"+str( drawnpd )+"$}\n\n"
 
     doc += "\\begin{multicols}{2}\n"
     doc += "{\\normalsize "+col1+"}\n"
@@ -1459,6 +1488,8 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
         
         pd = link
     else:
+        warnings.warn( "Careful..." )
+        input()
         pd = plinkPD( link )
         G = SurfaceGraphFromPD( pd )
 

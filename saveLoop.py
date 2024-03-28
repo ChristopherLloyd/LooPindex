@@ -39,7 +39,19 @@ def tkColorfromRgb(rgb):
 
 
 # Create the loop drawing and tweak parameters
-LE = snappy.Link( link ).view()
+badpdcount = 0
+while True:
+    LE = snappy.Link( link ).view()
+    pd = LE.PD_code()
+    if pd == drawnpd:
+        break
+    badpdcount += 1
+    LE.done()
+
+if badpdcount > 0:
+    print( "Had to regenerate", badpdcount, "times to get the expected PD code." )
+    
+#LE = snappy.Link( link ).view()
 LE.style_var.set('pl')
 LE.set_style()
 c = LE.canvas
@@ -81,7 +93,7 @@ for crs in LE.Crossings:
             found = True
             break
     if not found:
-        assert( "I was assuming you never get here and it worked well. Try building your PD codes differently" )
+        print( "I was assuming you never get here and it worked well. Try building your PD codes differently" )
         print( "didn't find place for crossing", {hit1,hit2,next1,next2}, "in", drawnpd )
         next1 = (hit1+1)%strandCount
         next2 = (hit2+1)%strandCount
@@ -97,6 +109,7 @@ for crs in LE.Crossings:
                 break
         if not found:
             print( "STILL didn't find place for crossing", {hit1,hit2,next1,next2}, "in", drawnpd )
+            print( "Original PD code:", link )
             assert( False )
         
     #crossCoordDict[ abs( crs.hit1 ) ] = (crs.x, crs.y)
