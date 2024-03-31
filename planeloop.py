@@ -78,6 +78,15 @@ weird3case = [[1, 6, 2, 1], [5, 4, 6, 5], [2, 4, 3, 3]]
 # Main
 
 def main():
+    #for entry in generateMultiloops( crossings = 13, numComponents = 4, allowReflections = True, primeOnly = True ):
+    #    print( "Original PD code:", entry["pd"] )
+    #    return
+    #    drawnpd = plinkPD( entry["pd"] )
+    #    print( "PD code drawn by snappy:", drawnpd )            
+    #    print( "Components as calculated from drawn PD code:", pdToComponents( drawnpd )  )
+    #    break
+               
+    #return
     #test12()
     #return
     #for i in range( 2, 7 ):
@@ -95,16 +104,17 @@ def main():
     #print( len( irrPrime( 6, loopsOnly = True ) ) )
     #irrPrime( n = 10 )
     #return
-    n = 4
+    n = 14
     allowReflections = False
     primeOnly = True
     loops = {}
-    for k in range( 4, n+1 ):
+    for k in range(n, n+1 ):
         loops[k] = []
-        for loop in generateMultiloops( crossings = k, numComponents = "any", allowReflections = allowReflections, primeOnly = primeOnly ):
+        for loop in generateMultiloops( crossings = k, numComponents = 1, allowReflections = allowReflections, primeOnly = primeOnly ):
             print( loop["pd"] )
             loops[k].append( loop["pd"] )
             break
+            #return
     createCatalog( "Pinning sets of UU spherimultiloops with at most "+str(n)+" crossings", loops )
     
 def generateMultiloops( crossings = 5, numComponents = 1, allowReflections = False, primeOnly = True ):
@@ -378,6 +388,7 @@ def planarData( graph, debug = False ):#, loopsOnly ):
 def pdToComponents( pdcode ):
     """Returns a list of lists of consecutive positive integers each of which
     corresponds to a component of the multiloop represented by pdcode."""
+    #print( "pdcode", pdcode )
     coordsDict = coords( pdcode )
     startx,starty = 0,0
     x,y=startx,starty
@@ -408,6 +419,8 @@ def pdToComponents( pdcode ):
                         break
                 if found:
                     break
+
+    #print( "components:", components )
 
     return components        
         
@@ -816,9 +829,11 @@ def createCatalog( title, links, skipTrivial = False ):
         for link in links[key]:
             while True:
                 drawnpd = plinkPD( link )
+                break #comment to test the one below
                 if drawnpd == [(6,4,7,1),(8,2,5,3),(1,5,2,6),(3,7,4,8)]:
                     break
             print( "drawnpd", drawnpd )
+            print( "multiloop components:", pdToComponents( drawnpd ) )
             print( "Analyzing loop", counter, "of", len( links[key] ), "..." )
             counter += 1
             toAdd = getPinSets( drawnpd, debug=True )        
@@ -1093,8 +1108,11 @@ def createCatalog( title, links, skipTrivial = False ):
             tablestrings.append( tableString(rows=rows,caption=caption ) )
             
             tolerance = 0.0000001
+            #print( "Calling saveloop with link=", link, "and drawnpd=", drawnpd, "and components=", pdToComponents( drawnpd ) )
+            #input()
             plinkFile = plinkImgFile( link, alldata[key][link]["drawnpd"], alldata[key][link]["G"].adjDict,\
-                                      alldata[key][link]["minPinSets"], tolerance, minPinSetDict, regionLabels, filename = link )
+                                      alldata[key][link]["minPinSets"], tolerance, minPinSetDict,\
+                                      regionLabels, pdToComponents( alldata[key][link]["drawnpd"] ), filename = link )
             posetFile = drawLattice( alldata[key][link]["pinSets"], alldata[key][link]["minPinSets"],\
                                      alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
 
@@ -1189,6 +1207,7 @@ def makeTex( title, avgStrings, loopStrings, colors ):
                         ","+str( colors[color][key]["rgb"][1] )+","+\
                         str( colors[color][key]["rgb"][2] )+"}\n"
     preamble += "%\n%\n%\n"
+    preamble += "\\pdfsuppresswarningpagegroup=1\n\n" #surpresses annoying pagegroup warning which triggers on every page of the catalog
     preamble += "\\setcounter{tocdepth}{2}\n\n"
     preamble += "\\title{"+title+"}\n\n"
     preamble += "\\author{Christopher-Lloyd Simon and Ben Stucky}\n\n"
@@ -1210,6 +1229,7 @@ def makeTex( title, avgStrings, loopStrings, colors ):
     try:
         os.remove(filename+".aux")
         os.remove(filename+".log")
+        os.remove(filename+".toc")
         shutil.rmtree( "svg-inkscape/" )
     except FileNotFoundError:
         pass
@@ -1239,15 +1259,16 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     #doc += "\\begin{sdfj}" #deal with a compilation error
     #doc += "\\includesvg[width=30pt]{"+plinkImg+"}\n\n"
 
+    # "\\def\\svgscale{0.7}\n"+\
+
     if imSepPage:
         doc += "\\newpage\n\n"
-    #[width=250pt]
+    #inkscapelatex=false makes it respect the tkinter font size
     if sideBySide:
         doc += "\\begin{multicols}{2}\n"
     doc += "\\begin{figure}[H]\n"+\
            "\\centering\n"+\
-           "\\def\\svgscale{0.7}\n"+\
-           "\\includesvg{"+plinkImg+"}\n"+\
+           "\\includesvg[inkscapelatex=false,width=250pt]{"+plinkImg+"}\n"+\
            "\\caption{Snappy loop plot.}\n"+\
            "\\label{fig:"+plinkImg+"}\n\\end{figure}\n"
     if sideBySide:
@@ -2384,13 +2405,14 @@ def plinkPD( link ):
     """This function is a workaround to get the output PD code when plotting links
     with snappy from an input PD code. The reason it does external scripting
     and file I/O is a workaround for a known multithreading issue with snappy."""
-    filename = getUnusedFileName( "txt" )
-    call(['python3', 'plinkpd.py', str(link), filename])
-    f = open( filename, 'r' ) # can wait here if plinkpd.py doesn't have enough time to write to file
-    code = eval( f.read() )
-    f.close()
-    os.remove( filename )
-    return code
+    return eval( check_output(['python3', 'plinkpd2.py', str(link) ]) )
+    #filename = getUnusedFileName( "txt" )
+    #call(['python3', 'plinkpd.py', str(link), filename]) 
+    #f = open( filename, 'r' ) # can wait here if plinkpd.py doesn't have enough time to write to file
+    #code = eval( f.read() )
+    #f.close()
+    #os.remove( filename )
+    #return code
 
 # The functions below experiment with multithreading rather than subprocess.call
 # to deal with the snappy multithreading issue
@@ -2422,13 +2444,13 @@ def plinkFromPD( link ):
     assert( type( link ) == list )
     snappy.Link( link ).view()
 
-def plinkImgFile( link, drawnpd, adjDict, minPinSets, tolerance, minPinSetDict, regionLabels, filename = None ):
+def plinkImgFile( link, drawnpd, adjDict, minPinSets, tolerance, minPinSetDict, regionLabels, components, filename = None ):
     if filename is None:
         filename = getUnusedFileName( "svg", "tex/img/" )
     else:
         filename = "tex/img/"+filename +".svg"
     call(['python3', 'saveLoop.py', str(link), str(drawnpd), str(adjDict), str(minPinSets),\
-          str(tolerance), str(minPinSetDict), str( regionLabels), filename])
+          str(tolerance), str(minPinSetDict), str( regionLabels), str( components ), filename])
     return filename
 
 # Experimenting with drawing a loop and getting a PD code
