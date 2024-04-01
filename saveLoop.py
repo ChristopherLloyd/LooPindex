@@ -1,7 +1,7 @@
 import snappy
 import sys
-from subprocess import check_output
 from tkinter import font
+from plinkpd2 import getLEwithPD
 
 #print( len( sys.argv ) )
 
@@ -30,8 +30,33 @@ else: #debug test cases
 
     # test case with 2 strands
     link = [[4, 8, 1, 5], [5, 3, 6, 4], [7, 1, 8, 2], [2, 6, 3, 7]]
-    drawnpd = [(6, 4, 7, 1), (8, 2, 5, 3), (1, 5, 2, 6), (3, 7, 4, 8)]
+    drawnpd = [(5, 4, 6, 1), (7, 2, 8, 3), (1, 8, 2, 5), (3, 6, 4, 7)]
+    drawnpdold = [(6, 4, 7, 1), (8, 2, 5, 3), (1, 5, 2, 6), (3, 7, 4, 8)]
     components = [[6, 7, 8, 5], [4, 1, 2, 3]]
+
+    #link = [[1, 6, 2, 1], [2, 5, 3, 6], [4, 3, 5, 4]]
+    #drawnpd= [(2, 1, 3, 2), (6, 3, 1, 4), (5, 4, 6, 5)]
+    #components = [[2, 3, 4, 5, 6, 1]]
+
+    # a few more multiloops to try
+    link = [[6, 12, 1, 7], [7, 5, 8, 6], [8, 11, 9, 12], [1, 4, 2, 5],\
+            [10, 16, 11, 13], [9, 16, 10, 15], [3, 14, 4, 15], [2, 14, 3, 13]]
+    drawnpd= [(5, 2, 6, 3), (12, 3, 13, 4), (13, 16, 14, 11), (4, 11, 5, 12), (7, 6, 8, 1), (1, 8, 2, 9), (9, 14, 10, 15), (15, 10, 16, 7)]
+    components= [[1, 2, 3, 4, 5, 6], [14, 15, 16, 11, 12, 13], [8, 9, 10, 7]]
+
+    #link = [[4, 10, 1, 5], [5, 3, 6, 4], [6, 9, 7, 10], [1, 7, 2, 8], [8, 2, 9, 3]]
+    #drawnpd= [(5, 4, 6, 1), (8, 3, 9, 4), (6, 9, 7, 10), (1, 10, 2, 5), (2, 7, 3, 8)]
+    #components= [[1, 2, 3, 4], [9, 10, 5, 6, 7, 8]]
+
+    #link = [[5, 2, 6, 3], [12, 3, 13, 4], [13, 16, 14, 11], [4, 11, 5, 12],\
+    #        [7, 6, 8, 1], [1, 8, 2, 9], [9, 14, 10, 15], [15, 10, 16, 7]]
+    #drawnpd= [(7, 6, 8, 1), (16, 3, 13, 4), (2, 5, 3, 6), (4, 13, 5, 14), (10, 15, 11, 16), (14, 9, 15, 10), (8, 11, 9, 12), (1, 12, 2, 7)]
+    #components= [[1, 2, 3, 4, 5, 6], [14, 15, 16, 13], [8, 9, 10, 11, 12, 7]]
+
+    #link = [[6,7,1,8],[2,9,3,10],[8,1,9,2],[10,3,11,4],[4,11,5,12],[12,5,7,6]]
+    #drawn = [(8, 1, 9, 2), (10, 3, 11, 4), (12, 5, 7, 6), (6, 7, 1, 8), (2, 9, 3, 10), (4, 11, 5, 12)]
+    #components = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]]
+
 
 #print(drawnpd, ",---")
     
@@ -63,18 +88,27 @@ def tkColorfromRgb(rgb):
 # Create the loop drawing and tweak parameters
 badpdcount = 0
 while True:
-    LE = snappy.Link( link ).view()
-    pd = eval( check_output(['python3', 'plinkpd2.py', str(link) ]) )
+    
+    LE, pd, comps = getLEwithPD( link )
+    #pd = eval( check_output(['python3', 'plinkpd2.py', str(link) ]) )
     #pd = plinkPD( link )
-    #print( pd )
     #print( drawnpd )
+    #print( pd )
     if pd == drawnpd:
         break
     badpdcount += 1
     LE.done()
+    #LE = None
+    #print("hi")
+
+print( "original:", link )
+print( "drawn:", drawnpd )
+print( "components:", components )
 
 if badpdcount > 0:
-    print( "Had to regenerate", badpdcount, "times to get the expected PD code." )
+    print( "For pd=", link)
+    print( "and drawnpd=", drawnpd )
+    print( "We had to regenerate", badpdcount, "times to get the expected PD code." )
     
 #LE = snappy.Link( link ).view()
 LE.style_var.set('pl')
@@ -104,12 +138,12 @@ for i in range( len( components ) ):
 # store coordinates of all crossings
 for crs in LE.Crossings:
     crs.locate()
-    strandCount = len( LE.Crossings )*2
+    #strandCount = len( LE.Crossings )*2
     hit1 = abs( crs.hit1 )
     hit2 = abs( crs.hit2 )
 
-    if hit1 == 1 or hit2 == 1:
-        startCross = (crs.x,crs.y)
+    #if hit1 == 1 or hit2 == 1:
+    #    startCross = (crs.x,crs.y)
 
     #OLD
     #next1 = (hit1-1)%strandCount
@@ -143,15 +177,22 @@ for crs in LE.Crossings:
     for elt in drawnpd:
         found = False
         if set( elt ) == {hit1,hit2,next1,next2}:
-            crosses[(crs.x,crs.y)]={"strands":elt, "hit1":hit1, "hit2":hit2, "testStrands":None,\
-                                    "segs":None, "regs":regs, "dirs":None,"minus":False }
+            #crosses[(crs.x,crs.y)]={"strands":elt, "hit1":hit1, "hit2":hit2, "testStrands":None,\
+            #                        "segs":None, "regs":regs, "dirs":None,"minus":False,\
+            #                        "outdict":{"a":{"label":elt[2],"seg":None,"dir":None},\
+            #                                   "b":{"label":elt[3],"seg":None,"dir":None}},\
+            #                        "outdirs":None}
+            crosses[(crs.x,crs.y)]={"segs":None, "regs":regs,"outdirs":None,\
+                                    "outdict":{"a":{"label":elt[2],"seg":None,"dir":None},\
+                                               "b":{"label":elt[3],"seg":None,"dir":None}}}
             found = True
             break
     if not found:
         print( "I was assuming you never get here and it worked well. Try building your PD codes differently" )
         print( "didn't find place for crossing", {hit1,hit2,next1,next2}, "in", drawnpd )
+        print( "hit1:", hit1, "hit2:", hit2 )
         assert( False )
-        next1 = (hit1+1)%strandCount
+        """next1 = (hit1+1)%strandCount
         next2 = (hit2+1)%strandCount
         if next1 == 0:
             next1 = strandCount
@@ -160,13 +201,15 @@ for crs in LE.Crossings:
         for elt in drawnpd:
             found = False
             if set( elt ) == {hit1,hit2,next1,next2}:
-                crosses[(crs.x,crs.y)]={"strands":elt, "testStrands":None, "segs":None, "regs":regs, "dirs":None,"minus":True }
+                crosses[(crs.x,crs.y)]={"strands":elt, "testStrands":None, "segs":None,\
+                                        "regs":regs, "dirs":None,"minus":True}
+                                    
                 found = True
                 break
         if not found:
             print( "STILL didn't find place for crossing", {hit1,hit2,next1,next2}, "in", drawnpd )
             print( "Original PD code:", link )
-            assert( False )
+            assert( False )"""
 
 #for key in crosses:
 #    print( crosses[key] )
@@ -193,14 +236,35 @@ for a in LE.Arrows:
         closeData = closeTo(seg[0],seg[1],crosses)
         if not closeData[0]:
             if (seg[0],seg[1]) not in corners:
-                corners[(seg[0],seg[1])] = {0:seg,1:None,"strand":None,"regs":None}
+                corners[(seg[0],seg[1])] = {"nextseg":seg,"strand":None,"regs":None}#,1:None,}
             else:
+                assert( False )
                 corners[(seg[0],seg[1])][1]=seg
         else:
             if crosses[closeData[1]]["segs"] is None:
                 crosses[closeData[1]]["segs"] = [seg]
+                jumps = {seg[2]-seg[0]:0,seg[0]-seg[2]:2,seg[3]-seg[1]:3,seg[1]-seg[3]:1}
+                direction = jumps[max(jumps)]
+                crosses[closeData[1]]["outdirs"] = [direction]
+                
             else:
                 crosses[closeData[1]]["segs"].append( seg )
+                jumps = {seg[2]-seg[0]:0,seg[0]-seg[2]:2,seg[3]-seg[1]:3,seg[1]-seg[3]:1}
+                direction = jumps[max(jumps)]
+                crosses[closeData[1]]["outdirs"].append( direction )
+
+                if (crosses[closeData[1]]["outdirs"][0]+1)%4==crosses[closeData[1]]["outdirs"][1]:
+                    crosses[closeData[1]]["outdict"]["a"]["seg"]=crosses[closeData[1]]["segs"][0]
+                    crosses[closeData[1]]["outdict"]["b"]["seg"]=crosses[closeData[1]]["segs"][1]
+                    crosses[closeData[1]]["outdict"]["a"]["dir"]=crosses[closeData[1]]["outdirs"][0]
+                    crosses[closeData[1]]["outdict"]["b"]["dir"]=crosses[closeData[1]]["outdirs"][1]
+                else:
+                    assert( (crosses[closeData[1]]["outdirs"][0]-1)%4==crosses[closeData[1]]["outdirs"][1] )
+                    crosses[closeData[1]]["outdict"]["a"]["seg"]=crosses[closeData[1]]["segs"][1]
+                    crosses[closeData[1]]["outdict"]["b"]["seg"]=crosses[closeData[1]]["segs"][0]
+                    crosses[closeData[1]]["outdict"]["a"]["dir"]=crosses[closeData[1]]["outdirs"][1]
+                    crosses[closeData[1]]["outdict"]["b"]["dir"]=crosses[closeData[1]]["outdirs"][0]
+                    
         """closeData = closeTo(seg[2],seg[3],crosses)
         if not closeData[0]:
             if (seg[2],seg[3]) not in corners:
@@ -216,7 +280,31 @@ for a in LE.Arrows:
 #curLabel = 1
 #i = 0
 
-(curx, cury) = startCross
+
+for cross in crosses:
+    for choice in ["a","b"]:
+        curSeg = crosses[cross]["outdict"][choice]["seg"]
+        label = crosses[cross]["outdict"][choice]["label"]
+        (nextx,nexty) = (curSeg[2],curSeg[3])
+        closeData = closeTo(nextx,nexty,crosses)
+        while not closeData[0]:
+            corners[(nextx,nexty)]['strand'] = label
+            c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
+            if len( sys.argv ) > 2: 
+                corners[(nextx,nexty)]['regs'] = set( adjDict[label] )              
+            curSeg = corners[(nextx,nexty)]["nextseg"]
+            (curx,cury) = (nextx,nexty)
+            (nextx,nexty) = (curSeg[2],curSeg[3])
+            closeData = closeTo(nextx,nexty,crosses)
+        
+if len( sys.argv ) <= 2:   
+    input("Press any key to close the window")
+    LE.done()
+    assert( False )
+
+
+
+"""(curx, cury) = startCross
 startLabel = crosses[startCross]["hit1"]
 #print( startLabel )
 #curLabel = startLabel
@@ -240,7 +328,7 @@ for segOut in crosses[(curx,cury)]['segs']:
     numStrands = len( components[ startLabelCoords[0] ] )
     #print( numStrands )
     happy = False
-    #ids = []
+    ids = []
     strandCount = 0
     while strandCount < numStrands:
         #i+=1
@@ -348,7 +436,7 @@ for segOut in crosses[(curx,cury)]['segs']:
             #(nextx,nexty)
         else: # you are at a corner, add the appropriate label and continue
             
-            #ids.append( c.create_text(nextx,nexty,text=curLabel, fill="black", font=('Helvetica 15 bold')) )
+            ids.append( c.create_text(nextx,nexty,text=curLabel, fill="black", font=('Helvetica 15 bold')) )
             corners[(nextx,nexty)]['strand'] = curLabel
             if len( sys.argv ) > 2: 
                 corners[(nextx,nexty)]['regs'] = set( adjDict[curLabel] )
@@ -403,8 +491,7 @@ for segOut in crosses[(curx,cury)]['segs']:
 #    print()
     #assert( corners[(x,y)][1] is not None )
 
-
-#assert( False )
+"""
     
 # associate boundary coordinates to regions
 regBoundaries = {}

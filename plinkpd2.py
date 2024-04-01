@@ -1,7 +1,17 @@
 import snappy #gives annoying deprecation warning every time
 import sys
 
-link = eval( sys.argv[1] )
+#print( "hi" )
+
+def main():
+    try:
+        link = eval( sys.argv[1] )
+        data = getLEwithPD( link )
+        print( data[1] )
+        data[0].done()
+    except IndexError as e:
+        print( e )
+
 #link = eval( link )
 #link = link = [[6, 12, 1, 7], [7, 5, 8, 6], [8, 11, 9, 12], [1, 4, 2, 5],\
 #  [10, 16, 11, 13], [9, 16, 10, 15], [3, 14, 4, 15], [2, 14, 3, 13]]
@@ -17,116 +27,132 @@ link = eval( sys.argv[1] )
 
 #link = [[1,7,6,12],[1,8,2,7],[6,11,5,12],[8,3,9,2],[11,4,10,5],[3,10,4,9]]
 
-LE = snappy.Link( link ).view()
+#link = [[8, 3, 1, 4], [4, 7, 5, 8], [5, 2, 6, 3], [1, 6, 2, 7]]
 
-components = LE.crossing_components()
+#link = [(2, 1, 3, 2), (6, 3, 1, 4), (5, 4, 6, 5)]
 
-LE.style_var.set('pl')
-LE.set_style()
-#c = LE.canvas
-#corners = {}
-#crosses = {}
-LE.info_var.set(1)
+#link = [(4, 1, 5, 2), (2, 3, 3, 4), (8, 5, 1, 6), (7, 6, 8, 7)]
 
-LE.update_info()
-LE.show_DT()
+def getLEwithPD( link ):
+    LE = snappy.Link( link ).view()
 
-#code = []
-crossings = {}
-for crossing in LE.Crossings:
-    crossings[str( crossing )] = crossing
-comps = []
-for complist in components:
-    comp = []
-    #print( "new component" )
-    for ecrossing in complist:
-        crossing = crossings[str(ecrossing.crossing)]
-        comp.append( {"a":abs( crossing.hit1 ), "b":abs( crossing.hit2 )} )
-        #if crossing.flipped:
-        #    comp.append( {"a":abs( crossing.hit2 ), "b":abs( crossing.hit1 )} )
-        #else:
-        #    comp.append( {"a":abs( crossing.hit1 ), "b":abs( crossing.hit2 )} )
-    comps.append( comp )
-        #continue
-                
-        #print( ecrossing )
-        #emptycrossing = ecrossing.crossing
-        #print( "ecrossing crossing:", ecrossing.crossing )
-        #for crossing in LE.Crossings:
-            #print( "test crossing:", crossing )
-            #input()
-        #    if crossing == emptycrossing:
-        #        if crossing.flipped:
-        #            comp.append( {"first":abs( crossing.hit2 ), "second":abs( crossing.hit1 )} )
-        #        else:
-        #            comp.append( {"first":abs( crossing.hit1 ), "second":abs( crossing.hit2 )} )
-        #        break
-    #comps.append( comp )
-#print( comps )
+    components = LE.crossing_components()
 
-strandcomps = []
-usedLabels = set()
+    LE.style_var.set('pl')
+    LE.set_style()
+    #c = LE.canvas
+    #corners = {}
+    #crosses = {}
+    LE.info_var.set(1)
 
-for comp in comps:
-    compsize = len( comp )
-    for initchoice in ["a","b"]:
-        strandcomp = []
-        if comp[0][initchoice] not in usedLabels:
-            prev = comp[0][initchoice]
-            strandcomp.append( prev )
-            for j in range( 1, compsize ):
-                keepGoing = False
-                for elt in [comp[j]["a"],comp[j]["b"]]:
-                    if elt not in usedLabels and\
-                       (elt == prev+1 or elt == prev-compsize+1):
-                        prev = elt
-                        strandcomp.append( prev )
-                        keepGoing = True
+    LE.update_info()
+    LE.show_DT()
+
+    #code = []
+    crossings = {}
+    for crossing in LE.Crossings:
+        crossings[str( crossing )] = crossing
+    comps = []
+    for complist in components:
+        comp = []
+        #print( "new component" )
+        for ecrossing in complist:
+            crossing = crossings[str(ecrossing.crossing)]
+            comp.append( {"a":abs( crossing.hit1 ), "b":abs( crossing.hit2 )} )
+            #if crossing.flipped:
+            #    comp.append( {"a":abs( crossing.hit2 ), "b":abs( crossing.hit1 )} )
+            #else:
+            #    comp.append( {"a":abs( crossing.hit1 ), "b":abs( crossing.hit2 )} )
+        comps.append( comp )
+            #continue
+                    
+            #print( ecrossing )
+            #emptycrossing = ecrossing.crossing
+            #print( "ecrossing crossing:", ecrossing.crossing )
+            #for crossing in LE.Crossings:
+                #print( "test crossing:", crossing )
+                #input()
+            #    if crossing == emptycrossing:
+            #        if crossing.flipped:
+            #            comp.append( {"first":abs( crossing.hit2 ), "second":abs( crossing.hit1 )} )
+            #        else:
+            #            comp.append( {"first":abs( crossing.hit1 ), "second":abs( crossing.hit2 )} )
+            #        break
+        #comps.append( comp )
+    #print( comps )
+
+    strandcomps = []
+    usedLabels = set()
+
+    for comp in comps:
+        compsize = len( comp )
+        for initchoice in ["a","b"]:
+            strandcomp = []
+            if comp[0][initchoice] not in usedLabels:
+                prev = comp[0][initchoice]
+                strandcomp.append( prev )
+                for j in range( 1, compsize ):
+                    keepGoing = False
+                    for elt in [comp[j]["a"],comp[j]["b"]]:
+                        if elt not in usedLabels and\
+                           (elt == prev+1 or elt == prev-compsize+1):
+                            prev = elt
+                            strandcomp.append( prev )
+                            keepGoing = True
+                            break
+                    if not keepGoing:
                         break
-                if not keepGoing:
+                if keepGoing:
+                    strandcomps.append( strandcomp )
+                    usedLabels = usedLabels.union( set( strandcomp ) )
                     break
-            if keepGoing:
-                strandcomps.append( strandcomp )
-                usedLabels = usedLabels.union( set( strandcomp ) )
-                break
-            else:
-                continue
-            
-#print( strandcomps )
+                else:
+                    continue
+                
+    #print( strandcomps )
 
-prevOf = {}
-for i in range( len( strandcomps ) ):
-    compsize = len( strandcomps[i] )
-    for j in range( len( strandcomps[i] ) ):
-        prevOf[strandcomps[i][j]]=strandcomps[i][(j-1)%compsize]
+    prevOf = {}
+    for i in range( len( strandcomps ) ):
+        compsize = len( strandcomps[i] )
+        for j in range( len( strandcomps[i] ) ):
+            prevOf[strandcomps[i][j]]=strandcomps[i][(j-1)%compsize]
 
-#print( prevOf )
+    #print( prevOf )
 
-pdcode = []
+    pdcode = []
 
-for crossing in crossings:
-    crs = crossings[crossing]
-    if crs.flipped:
-        first,second = abs( crs.hit2 ), abs( crs.hit1 )
-    else:
-        first,second = abs( crs.hit1 ), abs( crs.hit2 )
-    # this pays no attention to whether the crossing is under or over
-    # so it likely changes the link in general
-    # pay attention to the signs if this becomes necessary
-    # alternatively, you can modify the crossing so that components always
-    # show up in a certain order
-    pdcode.append((prevOf[first],prevOf[second],first,second))
+    for crossing in crossings:
+        crs = crossings[crossing]
+        if crs.flipped:
+            first,second = abs( crs.hit2 ), abs( crs.hit1 )
+        else:
+            first,second = abs( crs.hit1 ), abs( crs.hit2 )
+        # this pays no attention to whether the crossing is under or over
+        # so it likely changes the link in general
+        # pay attention to the signs if this becomes necessary
+        # alternatively, you can modify the crossing so that components always
+        # show up in a certain order
+        pdcode.append((prevOf[first],prevOf[second],first,second))
 
-print( pdcode )
+    return LE, pdcode, strandcomps
+    #if pdcode != [(1, 6, 2, 1), (2, 5, 3, 6), (4, 3, 5, 4)]:
+    #    LE.done()
+    #else:
+    #    input()
 
-#f = open( sys.argv[2], 'w' )
+    #f = open( sys.argv[2], 'w' )
 
-#f.write( str( pdcode ) )
-#f.close()
-#print( "hi" )
-LE.done()
+    #f.write( str( pdcode ) )
+    #f.close()
+    #print( "hi" )
+    #if pdcode == [[1, 6, 2, 1], [2, 5, 3, 6], [4, 3, 5, 4]]:
+    #    print
+    #input()
+    #LE.done()
+if __name__ == "__main__":
+    main()
     
-def attempt1():
+"""def attempt1():
     for i in range( len( comps ) ):
         compsize = len( comps[i] )
         prev1 = comps[i][0]["a"]
@@ -170,7 +196,7 @@ def attempt1():
             assert( False )
         if list1 is None and list2 is None:
             print( "Both lists are empty...that doesn't make any sense" )
-            assert( False)
+            assert( False)"""
 
 
     

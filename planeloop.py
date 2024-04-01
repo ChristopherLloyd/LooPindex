@@ -104,16 +104,15 @@ def main():
     #print( len( irrPrime( 6, loopsOnly = True ) ) )
     #irrPrime( n = 10 )
     #return
-    n = 14
+    n = 4
     allowReflections = False
     primeOnly = True
     loops = {}
-    for k in range(n, n+1 ):
+    for k in range(3, n+1 ):
         loops[k] = []
         for loop in generateMultiloops( crossings = k, numComponents = 1, allowReflections = allowReflections, primeOnly = primeOnly ):
             print( loop["pd"] )
             loops[k].append( loop["pd"] )
-            break
             #return
     createCatalog( "Pinning sets of UU spherimultiloops with at most "+str(n)+" crossings", loops )
     
@@ -836,7 +835,7 @@ def createCatalog( title, links, skipTrivial = False ):
             print( "multiloop components:", pdToComponents( drawnpd ) )
             print( "Analyzing loop", counter, "of", len( links[key] ), "..." )
             counter += 1
-            toAdd = getPinSets( drawnpd, debug=True )        
+            toAdd = getPinSets( drawnpd, debug=False )        
             if skipTrivial and len( toAdd["minPinSets"] ) == 1:
                 print( "Skipping ", link, "because it has a unique minimal pinning set" )
                 skipped += 1
