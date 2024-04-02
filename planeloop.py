@@ -104,17 +104,27 @@ def main():
     #print( len( irrPrime( 6, loopsOnly = True ) ) )
     #irrPrime( n = 10 )
     #return
-    n = 4
-    allowReflections = False
+    n = 8
+    allowReflections = True
     primeOnly = True
+    numComponents = "any"
     loops = {}
-    for k in range(3, n+1 ):
+    numLoops = 0
+    for k in range(2, n+1 ):
         loops[k] = []
-        for loop in generateMultiloops( crossings = k, numComponents = 1, allowReflections = allowReflections, primeOnly = primeOnly ):
+        for loop in generateMultiloops( crossings = k, numComponents = numComponents, allowReflections = allowReflections, primeOnly = primeOnly ):
             print( loop["pd"] )
             loops[k].append( loop["pd"] )
+            #break
             #return
-    createCatalog( "Pinning sets of UU spherimultiloops with at most "+str(n)+" crossings", loops )
+        numLoops += len( loops[k] )
+        if loops[k] == []:
+            del loops[k]
+    input( "Ready to build catalog with "+str(numLoops)+" entries. Press any key to begin." )
+    title = "Pinning sets of UU spherimultiloops with "+str(numComponents)+\
+            " components and at most "+str(n)+" crossings"
+    #title = "Weird pinning sets - applying the loop algorithm to multiloops"
+    createCatalog( title , loops )
     
 def generateMultiloops( crossings = 5, numComponents = 1, allowReflections = False, primeOnly = True ):
     """Uses the program plantri to generate PD codes of all
@@ -259,8 +269,13 @@ def planarData( graph, debug = False ):#, loopsOnly ):
       vertex that has v as a neighbour is w, then the first w in the section
       for v represents the same edge as the first v in the section for w."""
 
-    if graph == [[0,0,0,0]]:
+    if graph == [[0,0,0,0]]: #lemniscate is an edge case
         return {"pd":[[1,2,2,1]], "sigma":[[-1,-2,2,1]], "components":1}
+    if graph == [[1, 1, 1, 1], [0, 0, 0, 0]]: #hopf link is an edge case
+        return {"pd":[[1,4,2,3],[3,2,4,1]], "sigma":[[-1,-4,2,3],[-3,-2,4,1]], "components":2}
+    # this covers all cases of 4 parallel edges
+    # but you might have to worry about other edge cases where there are 3 parallel edges
+    # then again those may all be NOT irreducible indecomposible
     coordsVisited = 0
     startvert,startpos = 0,3
     curvert,curpos = startvert,startpos
@@ -826,11 +841,12 @@ def createCatalog( title, links, skipTrivial = False ):
         print( "Analyzing", key, "crossing (multi)loops" )
         counter = 1
         for link in links[key]:
-            while True:
-                drawnpd = plinkPD( link )
-                break #comment to test the one below
-                if drawnpd == [(6,4,7,1),(8,2,5,3),(1,5,2,6),(3,7,4,8)]:
-                    break
+            drawnpd = plinkPD( link )
+            #while True:
+            #    drawnpd = plinkPD( link )
+            #    break #comment to test the one below
+            #    if drawnpd == [(6,4,7,1),(8,2,5,3),(1,5,2,6),(3,7,4,8)]:
+            #        break
             print( "drawnpd", drawnpd )
             print( "multiloop components:", pdToComponents( drawnpd ) )
             print( "Analyzing loop", counter, "of", len( links[key] ), "..." )
@@ -1127,6 +1143,7 @@ def createCatalog( title, links, skipTrivial = False ):
         avgPercentageNeedingPin = sum( percentagesNeedingPin )/len( alldata[key] )
 
         avgStrings[key] = ""
+        avgStrings[key] += "\\noindent\\textbf{Number of multiloops in this data set:} $"+str( len( alldata[key] ) )+"$\n\n"
         avgStrings[key] += "\\noindent\\textbf{Average pinning number for this dataset:} $"+str( avgPinNum )+"$\n\n"
         avgStrings[key] += "\\noindent\\textbf{Average fraction of optimal pinning set size to number of regions:} $"+str( avgPercentageNeedingPin )+"$\n\n"
         avgStrings[key] += "\\noindent\\textbf{Average optimal pinning set gonality for this dataset:} $"+str( optgon )+"$\n\n"
@@ -1531,9 +1548,41 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
 
     
     T.createCyclicGenOrder()
+
+
+    #OLD
     gamma = T.genProd()
+
+    
+    
     #print( gamma )
     n = gamma.si( T.orderDict )
+
+
+    #NEW
+
+    gammaListUnpruned = pdToComponents( pd )
+    #print( gammaListUnpruned )
+    gammalist = []
+    for elt in gammaListUnpruned:
+        gamma = []
+        for gen in elt:
+            if gen in T.adjDict:
+                gamma.append( gen )
+        gammalist.append( Word( gamma ) )
+        #print( gammalist[-1] )
+    #print( gammalist )
+
+    intNumbers = {}
+    for i in range( len( gammalist ) ):
+        for j in range( i, len( gammalist ) ):
+            if i == j:
+                intNumbers[(i,j)] = gammalist[i].si( T.orderDict )
+            else:
+                intNumbers[(i,j)] = gammalist[i].I( gammalist[j], T.orderDict )
+            #print( gammaListUnpruned[i], gammaListUnpruned[j], intNumbers[(i,j)] )
+
+    #print()
 
     #print( n )
     if debug:
@@ -1566,8 +1615,20 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
 
     def isPinning( regSet ):
         nonlocal rewriteFrom
-        rep = T.reducedWordRep( gamma, fullRegSet.difference( regSet ), source = rewriteFrom )[0]
-        return rep.si( T.orderDict ) == n        
+        for i in range( len( gammalist ) ):
+            for j in range( i, len( gammalist ) ):
+                rep1 = T.reducedWordRep( gammalist[i], fullRegSet.difference( regSet ), source = rewriteFrom )[0]
+                if i != j:
+                    rep2 = T.reducedWordRep( gammalist[j], fullRegSet.difference( regSet ), source = rewriteFrom )[0]
+                    intNum = rep1.I( rep2, T.orderDict )
+                else:
+                    intNum = rep1.si( T.orderDict )
+                if intNum != intNumbers[(i,j)]:
+                    return False
+        return True
+                
+        #rep = T.reducedWordRep( gamma, fullRegSet.difference( regSet ), source = rewriteFrom )[0]
+        #return rep.si( T.orderDict ) == n        
 
     pinSets = []
     minPinSets = []
@@ -1668,8 +1729,8 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
             s = set( subset )
             if s == fullRegSet:
                 continue
-            rep = T.reducedWordRep( gamma, s, source = rewriteFrom )[0]
-            if s != fullRegSet and rep.si( T.orderDict ) == n:
+            #rep = T.reducedWordRep( gamma, s, source = rewriteFrom )[0]
+            if s != fullRegSet and isPinning( fullRegSet.difference( s ) ):#rep.si( T.orderDict ) == n:
                 pinsets.append( fullRegSet.difference( s ) )
             i+=1
         #print( "Total number of subsets:", i )
@@ -1689,8 +1750,12 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
         
         for elt in naivePinSets:        
             assert( elt in pinSets )
+            if elt not in pinSets:
+                print( elt, "is a naive pinning set but not computed recursively" )
         for elt in pinSets:
             assert( elt in naivePinSets )
+            if elt not in naivePinSets:
+                print( elt, "is a recursive pinning set but not computed naively" )
         assert( fullRegSet in pinSets )
     #if debug and minOnly:
         print( "Minimal Pinsets:", len( minPinSets ) )
@@ -2522,105 +2587,115 @@ def SurfaceGraphFromPD( pd ):
     #    curRightCoords = coordsDict[1][0]
 
     #NEW
-    firstOne = coordsDict[1][0]
-    secondOne = coordsDict[1][1]
-    firstTwo = coordsDict[2][0]
-    secondTwo = coordsDict[2][1]
 
-    if (firstOne[0] == firstTwo[0] and \
-         firstOne[1] == (firstTwo[1]+2)%4 ) or \
-         ( firstOne[0] == secondTwo[0] and \
-           firstOne[1] == (secondTwo[1]+2)%4 ):
-        curLeftCoords = firstOne
-        curRightCoords = secondOne
-    else:
-        curLeftCoords = secondOne
-        curRightCoords = firstOne    
-
-    #print( "First left coordinates:", curLeftCoords )
-    #print( "First right coordinates:", curRightCoords )
-    #curLeftCoords, curRightCoords = curRightCoords, curLeftCoords
-    
+    comps = pdToComponents( pd )
     regDict = {}
     indexDict = {}
 
-    for i in range( 1, len( sigma )*2+1 ): # this is the number of segments in the loop
-        # we must check whether regions on left and right of this edge exist yet
-        # make a choice for left and right based on the previous
+    for comp in comps:
+        firstLabel = comp[0]
+        secondLabel = comp[1]
+        firstOne = coordsDict[firstLabel][0]
+        secondOne = coordsDict[firstLabel][1]
+        firstTwo = coordsDict[secondLabel][0]
+        secondTwo = coordsDict[secondLabel][1]
 
-       
-        curLeftRegion = regionFromCoords( curLeftCoords )
-
-        
-        #print( "hi" )
-
-        #print( "coordsDict:", coordsDict )
-        #print( "curLeftCoords:", curLeftCoords )
-        
-        #print( "curLeftRegion:", curLeftRegion )
-        #print()
-        #print( "curRighCoords:", curRightCoords )
-
-        curRightRegion = regionFromCoords( curRightCoords )
-
-        #print( "bye" )
-
-        
-        leftkey = binHash( curLeftRegion )
-        rightkey = binHash( curRightRegion )
-        
-        try:
-            regDict[leftkey]
-        except KeyError:
-            eltToIndex = {}
-            for j in range( len(curLeftRegion) ):
-                eltToIndex[curLeftRegion[j]] = j
-            regDict[leftkey] = curLeftRegion
-            indexDict[leftkey] = eltToIndex
-
-        try:
-            regDict[rightkey][indexDict[rightkey][i]] *= -1 # right region sees this edge negative
-        except KeyError:
-            eltToIndex = {}
-            for j in range( len(curRightRegion) ):
-                eltToIndex[curRightRegion[j]] = j
-            regDict[rightkey] = curRightRegion
-            indexDict[rightkey] = eltToIndex
-            regDict[rightkey][indexDict[rightkey][i]] *= -1
-        edgeDict[i] = [ leftkey , rightkey ]
-
-        
-
-        if i == len( sigma )* 2:
-            break
-
-        #print( "sigma:", sigma )
-        #print( "i:", i )
-        #print( "[left,right]", [curLeftRegion,curRightRegion] )
-        #print( "curLeftCoords:", curLeftCoords )
-        #print( "curRighCoords:", curRightCoords )
-        #print( "nextfirst:", coordsDict[i+1][1] )
-        #print( "nextsecond:", coordsDict[i+1][0] )
-        #print("HI")
-        #input()
-        nextfirst = coordsDict[i+1][1]
-        nextSecond = coordsDict[i+1][0]
-
-        # OLD        
-        #if sigma[curLeftCoords[0]] == sigma[ coordsDict[i+1][1][0] ] or sigma[curRightCoords[0]] == sigma[ coordsDict[i+1][0][0] ]:
-        #    curLeftCoords, curRightCoords = coordsDict[i+1][0], coordsDict[i+1][1]
-        #else:
-        #    curLeftCoords, curRightCoords = coordsDict[i+1][1], coordsDict[i+1][0]
-
-        #NEW
-        if ( curLeftCoords[0] == nextfirst[0] and \
-             curLeftCoords[1] == (nextfirst[1]+2)%4 ) or \
-             ( curRightCoords[0] == nextSecond[0] and \
-             curRightCoords[1] == (nextSecond[1]+2)%4 ):
-            # sigma[curRightCoords[0]] == sigma[ coordsDict[i+1][0][0] ]:
-            curLeftCoords, curRightCoords = nextSecond, nextfirst
+        if (firstOne[0] == firstTwo[0] and \
+             firstOne[1] == (firstTwo[1]+2)%4 ) or \
+             ( firstOne[0] == secondTwo[0] and \
+               firstOne[1] == (secondTwo[1]+2)%4 ):
+            curLeftCoords = firstOne
+            curRightCoords = secondOne
         else:
-            curLeftCoords, curRightCoords = nextfirst, nextSecond
+            curLeftCoords = secondOne
+            curRightCoords = firstOne
+
+        curLabel = firstLabel
+
+        #print( "First left coordinates:", curLeftCoords )
+        #print( "First right coordinates:", curRightCoords )
+        #curLeftCoords, curRightCoords = curRightCoords, curLeftCoords
+        
+        
+
+        for i in range( 1, len( comp )+1 ): # this is the number of segments in the loop component
+            # we must check whether regions on left and right of this edge exist yet
+            # make a choice for left and right based on the previous
+
+           
+            curLeftRegion = regionFromCoords( curLeftCoords )
+
+            
+            #print( "hi" )
+
+            #print( "coordsDict:", coordsDict )
+            #print( "curLeftCoords:", curLeftCoords )
+            
+            #print( "curLeftRegion:", curLeftRegion )
+            #print()
+            #print( "curRighCoords:", curRightCoords )
+
+            curRightRegion = regionFromCoords( curRightCoords )
+
+            #print( "bye" )
+
+            
+            leftkey = binHash( curLeftRegion )
+            rightkey = binHash( curRightRegion )
+            
+            try:
+                regDict[leftkey]
+            except KeyError:
+                eltToIndex = {}
+                for j in range( len(curLeftRegion) ):
+                    eltToIndex[curLeftRegion[j]] = j
+                regDict[leftkey] = curLeftRegion
+                indexDict[leftkey] = eltToIndex
+
+            try:
+                regDict[rightkey][indexDict[rightkey][curLabel]] *= -1 # right region sees this edge negative
+            except KeyError:
+                eltToIndex = {}
+                for j in range( len(curRightRegion) ):
+                    eltToIndex[curRightRegion[j]] = j
+                regDict[rightkey] = curRightRegion
+                indexDict[rightkey] = eltToIndex
+                regDict[rightkey][indexDict[rightkey][curLabel]] *= -1
+            edgeDict[curLabel] = [ leftkey , rightkey ]
+
+            
+
+            if i == len( comp ):
+                break
+
+            #print( "sigma:", sigma )
+            #print( "i:", i )
+            #print( "[left,right]", [curLeftRegion,curRightRegion] )
+            #print( "curLeftCoords:", curLeftCoords )
+            #print( "curRighCoords:", curRightCoords )
+            #print( "nextfirst:", coordsDict[i+1][1] )
+            #print( "nextsecond:", coordsDict[i+1][0] )
+            #print("HI")
+            #input()
+            curLabel = comp[i]
+            nextfirst = coordsDict[curLabel][1]
+            nextSecond = coordsDict[curLabel][0]
+
+            # OLD        
+            #if sigma[curLeftCoords[0]] == sigma[ coordsDict[i+1][1][0] ] or sigma[curRightCoords[0]] == sigma[ coordsDict[i+1][0][0] ]:
+            #    curLeftCoords, curRightCoords = coordsDict[i+1][0], coordsDict[i+1][1]
+            #else:
+            #    curLeftCoords, curRightCoords = coordsDict[i+1][1], coordsDict[i+1][0]
+
+            #NEW
+            if ( curLeftCoords[0] == nextfirst[0] and \
+                 curLeftCoords[1] == (nextfirst[1]+2)%4 ) or \
+                 ( curRightCoords[0] == nextSecond[0] and \
+                 curRightCoords[1] == (nextSecond[1]+2)%4 ):
+                # sigma[curRightCoords[0]] == sigma[ coordsDict[i+1][0][0] ]:
+                curLeftCoords, curRightCoords = nextSecond, nextfirst
+            else:
+                curLeftCoords, curRightCoords = nextfirst, nextSecond
 
     return SurfaceGraph( regDict, adjDict = edgeDict )
     

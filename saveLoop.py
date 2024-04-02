@@ -118,7 +118,8 @@ corners = {}
 crosses = {}
 LE.info_var.set(1)
 LE.update_info()
-#LE.show_DT()
+if len( sys.argv ) <= 2:   
+    LE.show_DT()
 
 #print( "minPinSetDict", minPinSetDict )
 
@@ -139,8 +140,12 @@ for i in range( len( components ) ):
 for crs in LE.Crossings:
     crs.locate()
     #strandCount = len( LE.Crossings )*2
-    hit1 = abs( crs.hit1 )
-    hit2 = abs( crs.hit2 )
+    if crs.flipped:
+        first,second = abs( crs.hit2 ), abs( crs.hit1 )
+    else:
+        first,second = abs( crs.hit1 ), abs( crs.hit2 )
+    #hit1 = abs( crs.hit1 )
+    #hit2 = abs( crs.hit2 )
 
     #if hit1 == 1 or hit2 == 1:
     #    startCross = (crs.x,crs.y)
@@ -155,28 +160,34 @@ for crs in LE.Crossings:
 
     #NEW
    
-    hit1x = compCoordDict[hit1][0]
-    numStrands1 = len( components[ hit1x ] )
-    hit1y = compCoordDict[hit1][1]
-    next1 = components[hit1x][(hit1y-1)%numStrands1]
+    firstx = compCoordDict[first][0]
+    numStrands1 = len( components[ firstx ] )
+    firsty = compCoordDict[first][1]
+    next1 = components[firstx][(firsty-1)%numStrands1]
 
     
-    hit2x = compCoordDict[hit2][0]
-    numStrands2 = len( components[ hit2x ] )
-    hit2y = compCoordDict[hit2][1]
-    next2 = components[hit2x][(hit2y-1)%numStrands2]    
+    secondx = compCoordDict[second][0]
+    numStrands2 = len( components[ secondx ] )
+    secondy = compCoordDict[second][1]
+    next2 = components[secondx][(secondy-1)%numStrands2]    
 
     regs = set()
-    adjStrands = {hit1,hit2,next1,next2}
+    adjStrands = {first,second,next1,next2}
 
     if len( sys.argv ) > 2: 
         for strand in adjStrands:
             regs.add( adjDict[strand][0] )
             regs.add( adjDict[strand][1] )
 
+    crosses[(crs.x,crs.y)]={"segs":None, "regs":regs,"outdirs":None,\
+                                    "outdict":{"a":{"label":first,"seg":None,"dir":None},\
+                                               "b":{"label":second,"seg":None,"dir":None}}}
+    """continue
+
     for elt in drawnpd:
         found = False
-        if set( elt ) == {hit1,hit2,next1,next2}:
+        #if set( elt ) == {hit1,hit2,next1,next2}:
+        if {elt[2], elt[3]} == { hit1, hit2 }:
             #crosses[(crs.x,crs.y)]={"strands":elt, "hit1":hit1, "hit2":hit2, "testStrands":None,\
             #                        "segs":None, "regs":regs, "dirs":None,"minus":False,\
             #                        "outdict":{"a":{"label":elt[2],"seg":None,"dir":None},\
@@ -191,8 +202,9 @@ for crs in LE.Crossings:
         print( "I was assuming you never get here and it worked well. Try building your PD codes differently" )
         print( "didn't find place for crossing", {hit1,hit2,next1,next2}, "in", drawnpd )
         print( "hit1:", hit1, "hit2:", hit2 )
-        assert( False )
-        """next1 = (hit1+1)%strandCount
+        assert( False )"""
+    """
+        next1 = (hit1+1)%strandCount
         next2 = (hit2+1)%strandCount
         if next1 == 0:
             next1 = strandCount
@@ -211,15 +223,13 @@ for crs in LE.Crossings:
             print( "Original PD code:", link )
             assert( False )"""
 
-#for key in crosses:
-#    print( crosses[key] )
-#    print()
-    
+
         
     #crossCoordDict[ abs( crs.hit1 ) ] = (crs.x, crs.y)
     #crossCoordDict[ abs( crs.hit2 ) ] = (crs.x, crs.y)
 
 # store coordinates of all corners and the segments that crosses and corners belong to
+#dirDict = {0:"right",1:"up",2:"left",3:"down" }
 for a in LE.Arrows:
     a.expose()
     segs = a.find_segments( LE.Crossings, include_overcrossings=True )
@@ -280,6 +290,11 @@ for a in LE.Arrows:
 #curLabel = 1
 #i = 0
 
+#for key in crosses:
+#    print( crosses[key] )
+#    print()
+    
+
 
 for cross in crosses:
     for choice in ["a","b"]:
@@ -289,9 +304,11 @@ for cross in crosses:
         closeData = closeTo(nextx,nexty,crosses)
         while not closeData[0]:
             corners[(nextx,nexty)]['strand'] = label
-            c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
+            #c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
             if len( sys.argv ) > 2: 
-                corners[(nextx,nexty)]['regs'] = set( adjDict[label] )              
+                corners[(nextx,nexty)]['regs'] = set( adjDict[label] )
+            else:
+                c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
             curSeg = corners[(nextx,nexty)]["nextseg"]
             (curx,cury) = (nextx,nexty)
             (nextx,nexty) = (curSeg[2],curSeg[3])
@@ -309,7 +326,6 @@ startLabel = crosses[startCross]["hit1"]
 #print( startLabel )
 #curLabel = startLabel
 k = 0
-#dirDict = {0:"right",1:"up",2:"left",3:"down" }
 for segOut in crosses[(curx,cury)]['segs']:
     # for each possible direction from the first crossing, we proceed with labeling along the
     # link until we finish, or encounter a PD code discrepancy, in which case we start over
