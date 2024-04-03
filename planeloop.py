@@ -75,9 +75,13 @@ monalisa = [(24, 6, 1, 5), (3, 10, 4, 11), (1, 13, 2, 12), \
 
 weird3case = [[1, 6, 2, 1], [5, 4, 6, 5], [2, 4, 3, 3]]
 
+another3 = [[6, 12, 1, 7], [7, 5, 8, 6], [8, 11, 9, 12], [1, 4, 2, 5],\
+           [10, 16, 11, 13], [9, 16, 10, 15], [3, 14, 4, 15], [2, 14, 3, 13]]
+
 # Main
 
 def main():
+    createCatalog( "debug case" , {3:[weird3case]} )#,8:[another3,link8],9:[link9],12:[monalisa]}, debug = False )
     #for entry in generateMultiloops( crossings = 13, numComponents = 4, allowReflections = True, primeOnly = True ):
     #    print( "Original PD code:", entry["pd"] )
     #    return
@@ -104,6 +108,9 @@ def main():
     #print( len( irrPrime( 6, loopsOnly = True ) ) )
     #irrPrime( n = 10 )
     #return
+   
+
+def plantriCatalog():
     n = 8
     allowReflections = True
     primeOnly = True
@@ -125,6 +132,7 @@ def main():
             " components and at most "+str(n)+" crossings"
     #title = "Weird pinning sets - applying the loop algorithm to multiloops"
     createCatalog( title , loops )
+    
     
 def generateMultiloops( crossings = 5, numComponents = 1, allowReflections = False, primeOnly = True ):
     """Uses the program plantri to generate PD codes of all
@@ -823,7 +831,7 @@ def test12():
 
     
 
-def createCatalog( title, links, skipTrivial = False ):
+def createCatalog( title, links, skipTrivial = False, debug = False ):
     """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
 
     alldata = {}
@@ -851,7 +859,7 @@ def createCatalog( title, links, skipTrivial = False ):
             print( "multiloop components:", pdToComponents( drawnpd ) )
             print( "Analyzing loop", counter, "of", len( links[key] ), "..." )
             counter += 1
-            toAdd = getPinSets( drawnpd, debug=False )        
+            toAdd = getPinSets( drawnpd, debug=debug )        
             if skipTrivial and len( toAdd["minPinSets"] ) == 1:
                 print( "Skipping ", link, "because it has a unique minimal pinning set" )
                 skipped += 1
@@ -1125,9 +1133,11 @@ def createCatalog( title, links, skipTrivial = False ):
             tolerance = 0.0000001
             #print( "Calling saveloop with link=", link, "and drawnpd=", drawnpd, "and components=", pdToComponents( drawnpd ) )
             #input()
+            
             plinkFile = plinkImgFile( link, alldata[key][link]["drawnpd"], alldata[key][link]["G"].adjDict,\
+                                      alldata[key][link]["G"].wordDict,\
                                       alldata[key][link]["minPinSets"], tolerance, minPinSetDict,\
-                                      regionLabels, pdToComponents( alldata[key][link]["drawnpd"] ), filename = link )
+                                      regionLabels, pdToComponents( alldata[key][link]["drawnpd"] ), filename = link, debug=debug )
             posetFile = drawLattice( alldata[key][link]["pinSets"], alldata[key][link]["minPinSets"],\
                                      alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
 
@@ -1266,8 +1276,7 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     doc += "{\\normalsize "+col2+"}\n"
     doc += "\\end{multicols}\n\n"
 
-    for tablestr in tableStrings:
-        doc += tablestr+"\n\n"
+   
     
     #from sage.misc.latex import latex_examples     
     #foo = latex_examples.diagram()
@@ -1278,7 +1287,8 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     # "\\def\\svgscale{0.7}\n"+\
 
     if imSepPage:
-        doc += "\\newpage\n\n"
+        pass#doc += "\\newpage\n\n"
+    #doc += "\\newpage\n\n"
     #inkscapelatex=false makes it respect the tkinter font size
     if sideBySide:
         doc += "\\begin{multicols}{2}\n"
@@ -1296,6 +1306,13 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
            "\\label{fig:"+posetImg+"}\n\\end{figure}\n"
     if sideBySide:
         doc += "\\end{multicols}\n\n"
+   
+
+    doc += tableStrings[0]+"\n\n"
+
+    doc += "\\newpage\n\n"
+     
+    doc += tableStrings[1]+"\n\n"
     doc += "\\newpage\n\n"
 
     return doc
@@ -1526,6 +1543,10 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
 
    
     
+    if debug:
+        #treeBase = 33410
+        print( "treeBase:", treeBase )
+    
     if type( link ) == list:
         
         G = SurfaceGraphFromPD( link )
@@ -1580,7 +1601,8 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
                 intNumbers[(i,j)] = gammalist[i].si( T.orderDict )
             else:
                 intNumbers[(i,j)] = gammalist[i].I( gammalist[j], T.orderDict )
-            #print( gammaListUnpruned[i], gammaListUnpruned[j], intNumbers[(i,j)] )
+            if debug:
+                print( gammaListUnpruned[i], gammaListUnpruned[j], intNumbers[(i,j)] )
 
     #print()
 
@@ -1595,7 +1617,7 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
     #fullRegList.sort()
     #fullRegDict = {}
     monorBigonSet = set()
-    if len( pd ) != 1: # the lemniscate has a bigon which is not part of pinning set
+    if len( pd ) != 1 and not debug: # the lemniscate has a bigon which is not part of pinning set
         # otherwise every monorbigon is part of every pinning set.
         for key in T.wordDict:
             if len( G.wordDict[key] ) <= 2:
@@ -1614,7 +1636,10 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
     #print( type( fullRegSet ) )  
 
     def isPinning( regSet ):
+        testRegSet = None
+        #testRegSet = {4112,258,33792}
         nonlocal rewriteFrom
+        bad = False
         for i in range( len( gammalist ) ):
             for j in range( i, len( gammalist ) ):
                 rep1 = T.reducedWordRep( gammalist[i], fullRegSet.difference( regSet ), source = rewriteFrom )[0]
@@ -1623,8 +1648,18 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
                     intNum = rep1.I( rep2, T.orderDict )
                 else:
                     intNum = rep1.si( T.orderDict )
+                if debug and regSet == testRegSet:
+                    print( "(i,j):", (i,j) )
+                    print( "(gamma[i],gamma[j]:", (str(gammalist[i]), str(gammalist[j])) )
+                    print( "I(gamma[i],gamma[j]):", intNumbers[(i,j)] )
+                    print( "I(gamma[i],gamma[j]) rel testRegSet:", intNum )
                 if intNum != intNumbers[(i,j)]:
-                    return False
+                    if debug:
+                        bad = True
+                    else:
+                        return False
+        if bad:
+            return False
         return True
                 
         #rep = T.reducedWordRep( gamma, fullRegSet.difference( regSet ), source = rewriteFrom )[0]
@@ -2508,13 +2543,18 @@ def plinkFromPD( link ):
     assert( type( link ) == list )
     snappy.Link( link ).view()
 
-def plinkImgFile( link, drawnpd, adjDict, minPinSets, tolerance, minPinSetDict, regionLabels, components, filename = None ):
+def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets, tolerance, minPinSetDict, regionLabels, components, filename = None, debug = False ):
     if filename is None:
         filename = getUnusedFileName( "svg", "tex/img/" )
     else:
         filename = "tex/img/"+filename +".svg"
-    call(['python3', 'saveLoop.py', str(link), str(drawnpd), str(adjDict), str(minPinSets),\
-          str(tolerance), str(minPinSetDict), str( regionLabels), str( components ), filename])
+    words = {}
+    for key in wordDict:
+        words[key] = wordDict[key].seq
+    data = {"link":link,"drawnpd":drawnpd,"adjDict":adjDict,"regWords":words,"minPinSets":minPinSets,\
+            "tolerance":tolerance,"minPinSetDict":minPinSetDict,"regionLabels":regionLabels,\
+            "components":components,"filename":filename,"debug":debug}
+    call(['python3', 'saveLoop.py', str(data), "padding", "padding", "padding"])
     return filename
 
 # Experimenting with drawing a loop and getting a PD code

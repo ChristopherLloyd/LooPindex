@@ -2,22 +2,36 @@ import snappy
 import sys
 from tkinter import font
 from plinkpd2 import getLEwithPD
+from sage.all import Polyhedron
 
 #print( len( sys.argv ) )
 
-if len( sys.argv ) > 2: 
-# get args from command line
-    link = sys.argv[1]
-    if '[' in link:
-        link = eval( link )
-    drawnpd = eval( sys.argv[2] )
-    adjDict = eval( sys.argv[3] )
-    minPinSets = eval( sys.argv[4] )
-    tolerance = eval( sys.argv[5] )
-    minPinSetDict = eval( sys.argv[6] )
-    regLabels = eval( sys.argv[7] )
-    components = eval( sys.argv[8] )
-    filename = sys.argv[9]
+if len( sys.argv ) > 2:
+    # get args from command line
+    data = eval( sys.argv[1] )
+    link = eval( data["link"] )
+    drawnpd = data["drawnpd"]
+    adjDict = data["adjDict"]
+    regWords = data["regWords"]
+    minPinSets = data["minPinSets"]
+    tolerance = data["tolerance"]
+    minPinSetDict = data["minPinSetDict"]
+    regLabels = data["regionLabels"]
+    components = data["components"]
+    filename = data["filename"]
+    debug = data["debug"]
+    
+    #link = sys.argv[1]
+    #if '[' in link:
+    #    link = eval( link )
+    #drawnpd = eval( sys.argv[2] )
+    #adjDict = eval( sys.argv[3] )
+    #minPinSets = eval( sys.argv[4] )
+    #tolerance = eval( sys.argv[5] )
+    #minPinSetDict = eval( sys.argv[6] )
+    #regLabels = eval( sys.argv[7] )
+    #components = eval( sys.argv[8] )
+    #filename = sys.argv[9]
     #print( "COMMAND LINE CASE" )
 
 else: #debug test cases
@@ -58,8 +72,7 @@ else: #debug test cases
     #components = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]]
 
 
-#print(drawnpd, ",---")
-    
+#print(drawnpd, ",---")    
 
 # necessary for floating point nonsense
 def closeTo( x0, y0, pointDict ):
@@ -118,7 +131,7 @@ corners = {}
 crosses = {}
 LE.info_var.set(1)
 LE.update_info()
-if len( sys.argv ) <= 2:   
+if len( sys.argv ) <= 2 or debug:   
     LE.show_DT()
 
 #print( "minPinSetDict", minPinSetDict )
@@ -293,13 +306,34 @@ for a in LE.Arrows:
 #for key in crosses:
 #    print( crosses[key] )
 #    print()
-    
 
+coordPlacementDict = {}
+# keys are strands, values are (reg,index) tuples
+# which specify where that strand appears in the regWords dictionary
+
+regToSegCoords = {}
+# keys are regions, values are lists of coordinates along edges bounding that region
+
+for reg in regWords:
+    regToSegCoords[reg] = []
+    for i in range( len( regWords[reg] ) ):
+        #sign = regWords[reg][i] > 0
+        strand = abs(regWords[reg][i])
+        if strand not in coordPlacementDict:
+            coordPlacementDict[(strand,reg)]={"val":regWords[reg][i],"index":i}
+        regToSegCoords[reg].append( None )
+
+print( regWords )
 
 for cross in crosses:
     for choice in ["a","b"]:
         curSeg = crosses[cross]["outdict"][choice]["seg"]
         label = crosses[cross]["outdict"][choice]["label"]
+        coordList = [(curSeg[0],curSeg[1])]
+        #if len( sys.argv ) > 2: 
+        #    for reg in adjDict[label]:
+        #        if reg not in regToSegCoords:            
+        #        regToSegCoords[reg] = []
         (nextx,nexty) = (curSeg[2],curSeg[3])
         closeData = closeTo(nextx,nexty,crosses)
         while not closeData[0]:
@@ -307,12 +341,30 @@ for cross in crosses:
             #c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
             if len( sys.argv ) > 2: 
                 corners[(nextx,nexty)]['regs'] = set( adjDict[label] )
-            else:
+                #for reg in adjDict[label]:
+                #    regToSegCoords[reg].append((nextx,nexty))
+                coordList.append((nextx,nexty))
+            if len( sys.argv ) <= 2 or debug:
                 c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
             curSeg = corners[(nextx,nexty)]["nextseg"]
             (curx,cury) = (nextx,nexty)
             (nextx,nexty) = (curSeg[2],curSeg[3])
             closeData = closeTo(nextx,nexty,crosses)
+        coordList.append(closeData[1])
+        if len( sys.argv ) > 2:
+            coordListRev = coordList.copy()
+            coordListRev.reverse()
+            for reg in adjDict[label]:
+                val = coordPlacementDict[(label,reg)]["val"]
+                ind = coordPlacementDict[(label,reg)]["index"]
+                if val > 0:
+                    regToSegCoords[reg][ind] = coordList[:-1]
+                else:
+                    regToSegCoords[reg][ind] = coordListRev[:-1]
+                #if reg not in regToSegCoords:
+                #    regToSegCoords[reg] = [coordList.copy()]
+                #else:
+                #    regToSegCoords[reg].append( coordList.copy() )                
         
 if len( sys.argv ) <= 2:   
     input("Press any key to close the window")
@@ -320,6 +372,57 @@ if len( sys.argv ) <= 2:
     assert( False )
 
 
+print( regToSegCoords )
+
+regPolys = {}
+for reg in regToSegCoords:
+    regPolys[reg] = []
+    for coordList in regToSegCoords[reg]:
+        for coords in coordList:
+            regPolys[reg].append( coords )
+
+print( regPolys )
+
+regPolysSage = {}
+
+for reg in regPolys:
+    c.create_polygon(regPolys[reg], outline = "blue", fill = "orange", width = 2)
+    regPolysSage[reg] = Polyhedron(vertices = regPolys[reg])
+
+print( regPolysSage )
+            
+
+
+# orient the coordinates of regions cyclically, NEVERMIND, get this info from sigma.
+# it is complicated to recompute
+
+"""coordPointerDict = {}
+# keys are regions, values are dictionaries
+# whose keys and values are tuples of the form (index of coordinate list,"start" or "end")
+# e.g. (3,"start"):(5,"end") pointing to the next list to jump to, and giving the order
+# to traverse it
+for reg in regToSegCoords:
+    print( "region:", reg )
+    endpointDict = {} #keys endpoint coords, values indices
+    coordPointerDict[reg] = {}
+    for i in range( len( regToSegCoords[reg] ) ):
+        coordList = regToSegCoords[reg][i]
+        print( "i:", i )
+        print( "first:", coordList[0] )
+        print( "last:", coordList[-1] )
+        if coordList[0] not in endpointDict:
+            endpointDict[coordList[0]] = (i,"start")
+        else:
+            coordPointerDict[i][(i,"start")] = endpointDict[coordList[0]]
+            coordPointerDict[i][endpointDict[coordList[0]]] = (i,"start")
+        if coordList[-1] not in endpointDict:
+            endpointDict[coordList[-1]] = (i,"end")
+        else:
+            coordPointerDict[i][(i,"end")] = endpointDict[coordList[-1]]
+            coordPointerDict[i][endpointDict[coordList[-1]]] = (i,"end")
+    print()
+
+print( coordPointerDict )"""
 
 """(curx, cury) = startCross
 startLabel = crosses[startCross]["hit1"]
