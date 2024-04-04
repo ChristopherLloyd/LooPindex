@@ -90,7 +90,7 @@ labelIssue3 = [[6, 14, 1, 7], [7, 15, 8, 18], [13, 5, 14, 6], [1, 16, 2, 15],\
 # Main
 
 def main():
-    createCatalog( "debug case" , {3:[weird3case],8:[labelIssue1],9:[labelIssue2,labelIssue3]} )#,8:[another3,link8],9:[link9],12:[monalisa]}, debug = False )
+    #createCatalog( "debug case" , {3:[weird3case],8:[labelIssue1],9:[labelIssue2,labelIssue3]} )#,8:[another3,link8],9:[link9],12:[monalisa]}, debug = False )
     #for entry in generateMultiloops( crossings = 13, numComponents = 4, allowReflections = True, primeOnly = True ):
     #    print( "Original PD code:", entry["pd"] )
     #    return
@@ -117,20 +117,22 @@ def main():
     #print( len( irrPrime( 6, loopsOnly = True ) ) )
     #irrPrime( n = 10 )
     #return
+
+    plantriCatalog()
    
 
 def plantriCatalog():
-    n = 8
-    allowReflections = True
+    n = 7
+    includeReflections = False #False for UU
     primeOnly = True
-    numComponents = "any"
+    numComponents = 2
     loops = {}
     numLoops = 0
     for k in range(2, n+1 ):
         loops[k] = []
-        for loop in generateMultiloops( crossings = k, numComponents = numComponents, allowReflections = allowReflections, primeOnly = primeOnly ):
-            print( loop["pd"] )
-            loops[k].append( loop["pd"] )
+        for loop in generateMultiloops( crossings = k, numComponents = numComponents, includeReflections = includeReflections, primeOnly = primeOnly ):
+            #print( loop["pd"] )
+            loops[k].append( loop )
             #break
             #return
         numLoops += len( loops[k] )
@@ -143,14 +145,14 @@ def plantriCatalog():
     createCatalog( title , loops )
     
     
-def generateMultiloops( crossings = 5, numComponents = 1, allowReflections = False, primeOnly = True ):
+def generateMultiloops( crossings = 5, numComponents = 1, includeReflections = False, primeOnly = True ):
     """Uses the program plantri to generate PD codes of all
     multiloops in the sphere with n crossings, with certain parameters.
     path to plantri folder must be in PATH
 
     numComponents (positive integer or "any"): Set to 1 to restrict to loops, or 'any' to allow all multiloops
 
-    allowReflections: True iff nonisotopic mirror images considered distinct
+    includeReflections: True iff nonisotopic mirror images considered distinct
 
     prime: Whether or not to restrict to irreducible, indecomposable ("prime") multiloops (2-connected and no nugatory crossings)"""
 
@@ -160,7 +162,7 @@ def generateMultiloops( crossings = 5, numComponents = 1, allowReflections = Fal
     else:
         allowMultiloops = True
 
-    case = 4*int( allowMultiloops )+2*int( allowReflections )+1*int( not primeOnly )
+    case = 4*int( allowMultiloops )+2*int( includeReflections )+1*int( not primeOnly )
 
     if case == 0: #FFF - UU prime loops, should match https://oeis.org/A264759
         out = check_output(["knotshadow", str(crossings+2), "-m2c2qGd"]).split(b'>>planar_code<<')[1]
@@ -287,9 +289,9 @@ def planarData( graph, debug = False ):#, loopsOnly ):
       for v represents the same edge as the first v in the section for w."""
 
     if graph == [[0,0,0,0]]: #lemniscate is an edge case
-        return {"pd":[[1,2,2,1]], "sigma":[[-1,-2,2,1]], "components":1}
+        return {"pd":[[1,2,2,1]], "sigma":[[-1,-2,2,1]], "components":1, "plantrigraph":graph}
     if graph == [[1, 1, 1, 1], [0, 0, 0, 0]]: #hopf link is an edge case
-        return {"pd":[[1,4,2,3],[3,2,4,1]], "sigma":[[-1,-4,2,3],[-3,-2,4,1]], "components":2}
+        return {"pd":[[1,4,2,3],[3,2,4,1]], "sigma":[[-1,-4,2,3],[-3,-2,4,1]], "components":2, "plantrigraph":graph}
     # this covers all cases of 4 parallel edges
     # but you might have to worry about other edge cases where there are 3 parallel edges
     # then again those may all be NOT irreducible indecomposible
@@ -414,7 +416,7 @@ def planarData( graph, debug = False ):#, loopsOnly ):
         #for j in range( len( sigma ) ):
         #    if sigma[
 
-    return {"pd":pdcode, "sigma":sigma, "components":numComponents}
+    return {"pd":pdcode, "sigma":sigma, "components":numComponents, "plantrigraph":graph}
 
 def pdToComponents( pdcode ):
     """Returns a list of lists of consecutive positive integers each of which
@@ -858,6 +860,9 @@ def createCatalog( title, links, skipTrivial = False, debug = False ):
         print( "Analyzing", key, "crossing (multi)loops" )
         counter = 1
         for link in links[key]:
+            graph = link["plantrigraph"]
+            #data[str(link["pd"])]["graph"] = 
+            link = link["pd"]
             drawnpd = plinkPD( link )
             #while True:
             #    drawnpd = plinkPD( link )
@@ -881,6 +886,7 @@ def createCatalog( title, links, skipTrivial = False, debug = False ):
                 else:
                     minDict[len(elt)].append( elt )
             data[str(link)]["minDict"] = minDict
+            data[str(link)]["graph"] = graph
             minlen = min( minDict )
             numOptimal = len( minDict[minlen] )
             numOptimals.add( numOptimal  )
@@ -1096,6 +1102,7 @@ def createCatalog( title, links, skipTrivial = False, debug = False ):
                         numColors = numMinimal
                         specifier = " (minimal)"
                         #elt = data[link]["minPinSets"][i]
+                    minPinSetDict[elt]["letterLabel"] = letterLabel
                     row.append( letterLabel+specifier )
 
                     numTotalColors = len( pinSetColors[dictkey] )    
@@ -1151,7 +1158,8 @@ def createCatalog( title, links, skipTrivial = False, debug = False ):
                                      alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
 
             loopStrings[key].append( texPinSet(linkstr, col1, col2, tablestrings, plinkFile,\
-                                          posetFile, sideBySide = True, imSepPage = True, drawnpd = alldata[key][link]["drawnpd"] ) )
+                                          posetFile, sideBySide = True, imSepPage = True, drawnpd = alldata[key][link]["drawnpd"],\
+                                        graph = alldata[key][link]["graph"]  ) )
 
         
     
@@ -1270,14 +1278,17 @@ def makeTex( title, avgStrings, loopStrings, colors ):
         pass
     return    
 
-def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide = True, imSepPage = True, drawnpd = None):
+def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide = True, imSepPage = True, drawnpd = None, graph = None):
     """Generating and viewing a TeX file illustrating pinning sets"""
     
 
     doc = "\\subsubsection{"+linkstr+"}\n\n"
 
     if drawnpd is not None:
-        doc += "{\\small PD code drawn by snappy: $"+str( drawnpd )+"$}\n\n"
+        doc += "{\\small\\noindent PD code drawn by snappy: $"+str( drawnpd )+"$}\n\n"
+
+    if graph is not None:
+        doc += "{\\small\\noindent Planar representation generated by plantri: $"+str( graph )+"$}\n\n"
 
     doc += "\\begin{multicols}{2}\n"
     doc += "{\\normalsize "+col1+"}\n"
