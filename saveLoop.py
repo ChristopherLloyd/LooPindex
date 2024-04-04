@@ -323,7 +323,7 @@ for reg in regWords:
             coordPlacementDict[(strand,reg)]={"val":regWords[reg][i],"index":i}
         regToSegCoords[reg].append( None )
 
-print( regWords )
+#print( regWords )
 
 for cross in crosses:
     for choice in ["a","b"]:
@@ -372,7 +372,7 @@ if len( sys.argv ) <= 2:
     assert( False )
 
 
-print( regToSegCoords )
+#print( regToSegCoords )
 
 regPolys = {}
 for reg in regToSegCoords:
@@ -381,17 +381,29 @@ for reg in regToSegCoords:
         for coords in coordList:
             regPolys[reg].append( coords )
 
-print( regPolys )
+#print( regPolys )
 
 regPolysSage = {}
 
 for reg in regPolys:
-    c.create_polygon(regPolys[reg], outline = "blue", fill = "orange", width = 2)
+    #c.create_polygon(regPolys[reg], outline = "blue", fill = "orange", width = 2)
     regPolysSage[reg] = Polyhedron(vertices = regPolys[reg])
 
-print( regPolysSage )
-            
+infRegion = reg
 
+#print( regPolysSage )
+
+# find infinite region
+for reg in regPolysSage:
+    bigger = True
+    for vert in regPolys[infRegion]:
+        if vert not in regPolysSage[reg]:
+            bigger = False
+            break
+    if bigger:
+        infRegion = reg
+
+#c.create_polygon(regPolys[infRegion], outline = "blue", fill = "orange", width = 2)
 
 # orient the coordinates of regions cyclically, NEVERMIND, get this info from sigma.
 # it is complicated to recompute
@@ -614,14 +626,14 @@ for segOut in crosses[(curx,cury)]['segs']:
     
 # associate boundary coordinates to regions
 regBoundaries = {}
-for key in corners:
-    randomCorner = key
-    break
+#for key in corners:
+#    randomCorner = key
+#    break
 #randomCorner = getKey(corners)
-minX = randomCorner[0]
-maxX = randomCorner[0]
-minY = randomCorner[1]
-maxY = randomCorner[1]
+#minX = randomCorner[0]
+#maxX = randomCorner[0]
+#minY = randomCorner[1]
+#maxY = randomCorner[1]
 for dct in [corners,crosses]:
     for coord in dct:
         for reg in dct[coord]['regs']:
@@ -629,14 +641,14 @@ for dct in [corners,crosses]:
                 regBoundaries[reg] = {"coords":[coord],"topLeft":None, "bottomLeft":None,"infRegion":False}
             else:
                 regBoundaries[reg]["coords"].append( coord )
-        if coord[0] < minX:
-            minX = coord[0]
-        if coord[0] > maxX:
-            maxX = coord[0]
-        if coord[1] < minY:
-            minY = coord[1]
-        if coord[1] > maxY:
-            maxY = coord[1]
+        #if coord[0] < minX:
+        #    minX = coord[0]
+        #if coord[0] > maxX:
+        #    maxX = coord[0]
+        #if coord[1] < minY:
+        #    minY = coord[1]
+        #if coord[1] > maxY:
+        #    maxY = coord[1]
 
 # compute anchor points for labels and label regions
 
@@ -645,19 +657,19 @@ for reg in regBoundaries:
     #dReg2 = 84
     topLeft = regBoundaries[reg]["coords"][0]
     bottomLeft = regBoundaries[reg]["coords"][0]
-    regMinX = topLeft[0]
-    regMaxX = topLeft[0]
-    regMinY = topLeft[1]
-    regMaxY = topLeft[1]
+    #regMinX = topLeft[0]
+    #regMaxX = topLeft[0]
+    #regMinY = topLeft[1]
+    #regMaxY = topLeft[1]
     for point in regBoundaries[reg]["coords"]:
-        if point[0] < regMinX:
-            regMinX = point[0]
-        if point[0] > regMaxX:
-            regMaxX = point[0]
-        if point[1] < regMinY:
-            regMinY = point[1]
-        if point[1] > regMaxY:
-            regMaxY = point[1]
+        #if point[0] < regMinX:
+        #    regMinX = point[0]
+        #if point[0] > regMaxX:
+        #    regMaxX = point[0]
+        #if point[1] < regMinY:
+        #    regMinY = point[1]
+        #if point[1] > regMaxY:
+        #    regMaxY = point[1]
         #if reg == dReg1 or reg == dReg2:
         #    c.create_text(point[0],point[1],text=str(reg)[0], fill="black", font=('Helvetica 15 bold'))
         if point[0] < topLeft[0] - tolerance or ( abs( point[0]-topLeft[0] ) < tolerance and point[1] < topLeft[1] ):
@@ -670,9 +682,10 @@ for reg in regBoundaries:
     regBoundaries[reg]["topLeft"] = [topLeft]
     regBoundaries[reg]["bottomLeft"] = [bottomLeft]        
 
-    if abs( minX-regMinX ) < tolerance and abs( minY-regMinY ) < tolerance \
-       and abs( maxX-regMaxX ) < tolerance and abs( maxY-regMaxY )<tolerance:
-        regBoundaries[reg]["infRegion"] = True
+    #if abs( minX-regMinX ) < tolerance and abs( minY-regMinY ) < tolerance \
+    #   and abs( maxX-regMaxX ) < tolerance and abs( maxY-regMaxY )<tolerance:
+    #    regBoundaries[reg]["infRegion"] = True
+    regBoundaries[infRegion]["infRegion"]=True
 
 
     # compute matrix of colored dots for this region corresponding to the pinning sets it belongs to

@@ -78,10 +78,19 @@ weird3case = [[1, 6, 2, 1], [5, 4, 6, 5], [2, 4, 3, 3]]
 another3 = [[6, 12, 1, 7], [7, 5, 8, 6], [8, 11, 9, 12], [1, 4, 2, 5],\
            [10, 16, 11, 13], [9, 16, 10, 15], [3, 14, 4, 15], [2, 14, 3, 13]]
 
+labelIssue1 = [[6, 12, 1, 7], [7, 3, 8, 4], [11, 5, 12, 6], [1, 13, 2, 16],\
+               [2, 15, 3, 16], [8, 15, 9, 14], [4, 10, 5, 11],[13, 10, 14, 9]]
+
+labelIssue2 = [[4, 14, 1, 5], [5, 10, 6, 11], [11, 3, 12, 4], [13, 18, 14, 15],\
+               [1, 9, 2, 10], [6, 2, 7, 3], [12, 16, 13, 15], [8, 17, 9, 18], [7, 17, 8, 16]]
+
+labelIssue3 = [[6, 14, 1, 7], [7, 15, 8, 18], [13, 5, 14, 6], [1, 16, 2, 15],\
+               [8, 11, 9, 12], [12, 17, 13, 18], [4, 16,5, 17], [2, 10, 3, 11], [9, 3, 10, 4]]
+
 # Main
 
 def main():
-    createCatalog( "debug case" , {3:[weird3case]} )#,8:[another3,link8],9:[link9],12:[monalisa]}, debug = False )
+    createCatalog( "debug case" , {3:[weird3case],8:[labelIssue1],9:[labelIssue2,labelIssue3]} )#,8:[another3,link8],9:[link9],12:[monalisa]}, debug = False )
     #for entry in generateMultiloops( crossings = 13, numComponents = 4, allowReflections = True, primeOnly = True ):
     #    print( "Original PD code:", entry["pd"] )
     #    return
