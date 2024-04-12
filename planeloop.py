@@ -87,6 +87,13 @@ labelIssue2 = [[4, 14, 1, 5], [5, 10, 6, 11], [11, 3, 12, 4], [13, 18, 14, 15],\
 labelIssue3 = [[6, 14, 1, 7], [7, 15, 8, 18], [13, 5, 14, 6], [1, 16, 2, 15],\
                [8, 11, 9, 12], [12, 17, 13, 18], [4, 16,5, 17], [2, 10, 3, 11], [9, 3, 10, 4]]
 
+smallMonorbigonLess = [[[4, 8, 1, 5], [5, 9, 6, 12], [3, 11, 4, 12], [7, 10, 8, 11], [1, 10, 2, 9], [6, 2, 7, 3]],\
+[[5, 16, 6, 1], [9, 4, 10, 5], [10, 15, 11, 16], [6, 11, 7, 12], [1, 12, 2, 13], [13, 8, 14, 9], [14, 3, 15, 4], [7, 3, 8, 2]],\
+[[18, 5, 1, 6], [6, 11, 7, 12], [12, 17, 13, 18], [13, 4, 14, 5], [1, 10, 2, 11], [7, 16, 8, 17], [8, 3, 9, 4], [14, 9, 15, 10], [2, 15, 3, 16]],\
+[[13, 20, 14, 1], [5, 12, 6, 13], [6, 19, 7, 20], [14, 7, 15, 8], [1, 8, 2, 9], [17, 4, 18, 5], [18, 11, 19, 12], [15, 3, 16, 2], [9, 16, 10, 17], [10, 3, 11, 4]],\
+[[14, 20, 1, 15], [15, 6, 16, 5], [13, 4, 14, 5], [9, 19, 10, 20], [1, 10, 2, 11], [6, 11, 7, 12], [16, 12, 17, 13], [8, 3, 9, 4], [18, 2, 19, 3], [7, 18, 8, 17]],\
+[[6, 12, 1, 7], [7, 13, 8, 16], [5, 15, 6, 16], [11, 14, 12, 15], [1, 14, 2, 13], [8, 17, 9, 20], [4, 19, 5, 20], [10, 18, 11, 19], [2, 18, 3, 17], [9, 3, 10, 4]]]
+
 # Main
 
 def main():
@@ -117,12 +124,231 @@ def main():
     #print( len( irrPrime( 6, loopsOnly = True ) ) )
     #irrPrime( n = 10 )
     #return
+    #monorbigonFig()
+    smallMonorBigonlessPinningSets()
+    #plantriCatalog()
 
-    plantriCatalog()
-   
+def smallMonorBigonlessPinningSets():
+    a = smallMonorbigonLess
+    loops = {6:[a[0]],8:[a[1]],9:[a[2]],10:[a[3],a[4],a[5]]}
+    print( loops )
+    createCatalog( "Pinning sets of all spherimultiloops with at most $12$ regions and no monorbigons" , loops )
+
+def monorbigonFig():
+    loop = [[3, 18, 4, 1], [2, 15, 3, 16], [17, 14, 18, 15], [4, 7, 5, 8],\
+            [1, 17, 2, 16], [8, 13, 9, 14], [11, 6, 12, 7], [5, 12, 6, 13], [9, 10, 10, 11]]
+
+    LE = snappy.Link( loop ).view()
+    LE.style_var.set('pl')
+    LE.set_style()
+    for a in LE.Arrows:
+    # expose arrows and add in missing segments
+        a.expose()
+
+    LE.save_as_svg("monobig.svg")
+    LE.done()
+
+    return
+    for loop in generateMultiloops( crossings = 9, numComponents = 1, includeReflections = False, primeOnly = False ):
+        G = SurfaceGraphFromPD( loop["pd"] )
+        moveOn = False
+        monogonCount = 0
+        bigonCount = 0
+        for word in G.wordDict:
+            if len( G.wordDict[word] ) == 1:
+                monogonCount += 1
+            if len( G.wordDict[word] ) == 2:
+                bigonCount += 1
+            if monogonCount > 1 or bigonCount > 2:
+                #print( G.wordDict[word] 
+                moveOn = True
+                break    
+                
+        if moveOn:
+            continue
+        print( loop["pd"] )
+        input()
+            #print( 
+    #findMonorbigonLess()
+    #plantriCatalog()
+
+def saveLoops():
+    loops = smallMonorbigonLess
+
+    counter = 1    
+    for loop in loops:
+        plinkFile = plinkImgFile( str(loop), None, None,\
+                                      [],\
+                                      None, None,\
+                                      None, pdToComponents( loop ), filename = "monorbigonless"+str(counter))
+        counter += 1
+
+    
+
+
+def findMonorbigonLess():
+    
+    primeOnly = True
+    includeReflections = False
+    numComponents = "any"
+    numLoops = 0
+    n=14
+    loops = {}
+    for k in range(13, n+1 ):
+        loops[k] = []
+        for loop in generateMultiloops( crossings = k, numComponents = numComponents, includeReflections = includeReflections, primeOnly = primeOnly ):
+            #print( loop["pd"] )
+            loops[k].append( loop["pd"] )
+            #break
+            #return
+        numLoops += len( loops[k] )
+        if loops[k] == []:
+            del loops[k]
+
+    
+    monorbigonLess = []
+    regLabels = {}
+    for crossNum in loops:
+        print( "Crossing number:", crossNum )
+        counter = 1
+        for loop in loops[crossNum]:
+            #print( "Checking loop", counter )
+            
+            #drawnpd = plinkPD( loop )
+            G = SurfaceGraphFromPD( loop )
+            moveOn = False
+            for word in G.wordDict:
+                if len( G.wordDict[word] ) < 4:
+                    #print( G.wordDict[word] )
+                    moveOn = True
+                    break
+            if moveOn:
+                continue
+            #print( loop )
+            
+            #print( regLabels )
+                 #drawnpd = plinkPD( loop )
+            drawnpd = plinkPD( loop )
+            G = SurfaceGraphFromPD( drawnpd )
+            fullRegList = list( G.wordDict.copy().keys() )
+            regLabels = {}
+            for reg in fullRegList:
+                regLabels[reg] = len( G.wordDict[reg] )
+            plinkFile = plinkImgFile( str(loop), drawnpd, G.adjDict, G.wordDict,\
+                                      [],None,\
+                                      regLabels, pdToComponents( drawnpd ), filename = "m_"+str(crossNum)+"_"+str(counter))
+            counter += 1
+            monorbigonLess.append( loop )
+
+            #snappy.Link( loop ).view()
+    #print( len( monorbigonLess ) )
+    
+            #input()
+
+def fig1():
+    """Plots some pinning sets for a single multiloop (snappy svg)."""
+    loop =[[1, 7, 14, 8], [1, 13, 2, 12], [7, 10, 6, 9],\
+           [14, 9, 13, 8], [2, 6, 3, 5], [12, 5, 11, 4],\
+           [10, 4, 11, 3]]
+    drawnpd = plinkPD( loop )
+    #print( "drawnpd", drawnpd )
+    #print( "multiloop components:", pdToComponents( drawnpd ) )
+    #print( "Analyzing loop", counter, "of", len( links[key] ), "..." )
+    #counter += 1
+    pinSets = getPinSets( drawnpd )#, debug=debug )
+    minDict = {}
+    
+    for elt in pinSets["minPinSets"]:
+        if len( elt ) not in minDict:
+            minDict[len(elt)] = [elt]
+        else:
+            minDict[len(elt)].append( elt )
+
+    minlen = min( minDict )
+    
+    #print( type( pinSets["minPinSets"] ) )
+    minsuboptimals = []
+    optimals = []
+    for elt in pinSets["minPinSets"]:
+        if len( elt ) == minlen:
+            optimals.append( elt )
+        else:
+            minsuboptimals.append( elt )
+    
+    #data[str(link)]["minDict"] = minDict
+    #data[str(link)]["graph"] = graph
+    
+    numOptimal = len( minDict[minlen] )
+    numMinimal = len( pinSets["minPinSets"] ) - numOptimal 
+    pinSetColors = computeRGBColors( numOptimal, numMinimal )
+    minPinSetDict = {}
+    label = 1
+    for pinset in pinSets["minPinSets"]:
+        minPinSetDict[frozenset(pinset)] = {}
+
+    regionLabels = {}
+    regList = list( pinSets["fullRegSet"].copy() )
+    regList.sort()
+    for i in range( len( regList ) ):
+        regionLabels[regList[i]] = ""# i+1         
+    j = 0
+
+    letterLabel = 'A'
+    firstTime = True
+    sortedKeys = list( minDict )
+    sortedKeys.sort()
+    for key1 in sortedKeys:
+        for i in range( len( minDict[key1] ) ):
+            elt = frozenset( minDict[key1][i] )
+            #print( elt )
+            if key1 == minlen:
+                dictkey = "opts"
+                colorvar = i
+                numColors = numOptimal
+                #specifier = " (optimal)"
+            else:
+                dictkey = "mins"
+                if firstTime:
+                #    col3 += "\\end{enumerate}\n"
+                #    col3 += "\\textbf{Minimal (suboptimal) pinning sets:}\n\n"
+                #    col3 += "\\begin{enumerate}[a)]\n"
+                    #rows.append( ["Minimal pinning set","","","","",""] )
+                    letterLabel = 'a'
+                firstTime = False
+                colorvar = j
+                numColors = numMinimal
+                #specifier = " (minimal)"
+                #elt = data[link]["minPinSets"][i]
+            minPinSetDict[elt]["letterLabel"] = letterLabel
+            #row.append( letterLabel+specifier )
+
+            #numTotalColors = len( pinSetColors[dictkey] )    
+            #colorIndex = int( colorvar*(numTotalColors/numColors) ) 
+                                    
+            minPinSetDict[elt]["label"] = label
+            label += 1
+            minPinSetDict[elt]["color"] = pinSetColors[dictkey][colorvar]["rgb"]
+            if key1 != minlen:
+                j+=1
+            letterLabel = chr(ord(letterLabel) + 1)
+
+        
+    plinkFile = plinkImgFile( str(loop), drawnpd, pinSets["G"].adjDict,\
+                                      pinSets["G"].wordDict,\
+                                      optimals, minPinSetDict,\
+                                      regionLabels, pdToComponents( drawnpd ), filename = "opts",\
+                                      bufferFrac = 1/10, diamFrac = 1/4)
+
+    plinkFile = plinkImgFile( str(loop), drawnpd, pinSets["G"].adjDict,\
+                                      pinSets["G"].wordDict,\
+                                      minsuboptimals, minPinSetDict,\
+                                      regionLabels, pdToComponents( drawnpd ), filename = "subopts",
+                                      bufferFrac = 1/10, diamFrac = 1/4)
+
+    
 
 def plantriCatalog():
-    n = 7
+    n = 5
     includeReflections = False #False for UU
     primeOnly = True
     numComponents = 2
@@ -142,7 +368,7 @@ def plantriCatalog():
     title = "Pinning sets of UU spherimultiloops with "+str(numComponents)+\
             " components and at most "+str(n)+" crossings"
     #title = "Weird pinning sets - applying the loop algorithm to multiloops"
-    createCatalog( title , loops )
+    createCatalog( title , loops, plantriMode = True )
     
     
 def generateMultiloops( crossings = 5, numComponents = 1, includeReflections = False, primeOnly = True ):
@@ -842,7 +1068,7 @@ def test12():
 
     
 
-def createCatalog( title, links, skipTrivial = False, debug = False ):
+def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode = False ):
     """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
 
     alldata = {}
@@ -860,9 +1086,11 @@ def createCatalog( title, links, skipTrivial = False, debug = False ):
         print( "Analyzing", key, "crossing (multi)loops" )
         counter = 1
         for link in links[key]:
-            graph = link["plantrigraph"]
-            #data[str(link["pd"])]["graph"] = 
-            link = link["pd"]
+            print( "link", link )
+            if plantriMode:
+                graph = link["plantrigraph"]
+                #data[str(link["pd"])]["graph"] = 
+                link = link["pd"]
             drawnpd = plinkPD( link )
             #while True:
             #    drawnpd = plinkPD( link )
@@ -886,7 +1114,10 @@ def createCatalog( title, links, skipTrivial = False, debug = False ):
                 else:
                     minDict[len(elt)].append( elt )
             data[str(link)]["minDict"] = minDict
-            data[str(link)]["graph"] = graph
+            if plantriMode:
+                data[str(link)]["graph"] = graph
+            else:
+                data[str(link)]["graph"] = "-"
             minlen = min( minDict )
             numOptimal = len( minDict[minlen] )
             numOptimals.add( numOptimal  )
@@ -1146,13 +1377,13 @@ def createCatalog( title, links, skipTrivial = False, debug = False ):
 
             tablestrings.append( tableString(rows=rows,caption=caption ) )
             
-            tolerance = 0.0000001
+            #tolerance = 0.0000001
             #print( "Calling saveloop with link=", link, "and drawnpd=", drawnpd, "and components=", pdToComponents( drawnpd ) )
             #input()
             
             plinkFile = plinkImgFile( link, alldata[key][link]["drawnpd"], alldata[key][link]["G"].adjDict,\
                                       alldata[key][link]["G"].wordDict,\
-                                      alldata[key][link]["minPinSets"], tolerance, minPinSetDict,\
+                                      alldata[key][link]["minPinSets"], minPinSetDict,\
                                       regionLabels, pdToComponents( alldata[key][link]["drawnpd"] ), filename = link, debug=debug )
             posetFile = drawLattice( alldata[key][link]["pinSets"], alldata[key][link]["minPinSets"],\
                                      alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
@@ -1310,6 +1541,7 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
         pass#doc += "\\newpage\n\n"
     #doc += "\\newpage\n\n"
     #inkscapelatex=false makes it respect the tkinter font size
+    #"\\includegraphics[scale=.9]{"+posetImg+"}\n"+\
     if sideBySide:
         doc += "\\begin{multicols}{2}\n"
     doc += "\\begin{figure}[H]\n"+\
@@ -1321,7 +1553,7 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
         doc += "\\columnbreak\n\n"
     doc += "\\begin{figure}[H]\n"+\
            "\\centering\n"+\
-           "\\includegraphics[scale=.9]{"+posetImg+"}\n"+\
+           "\\input{"+posetImg+"}\n"+\
            "\\caption{Minimal join semilattice of pinning sets.}\n"+\
            "\\label{fig:"+posetImg+"}\n\\end{figure}\n"
     if sideBySide:
@@ -1352,10 +1584,37 @@ def getUnusedFileName( ext, directory = "./" ):
     return filename
 
 ####################### CREATING PINNING POSET WITH SAGE ####################################
+
+
+def posetPlot( sageObject, heights, colors, vertlabels, edgeColors, filename ):
+    """Create latex figure of poset for use with pgf package"""
+    p = sageObject.plot( layout = "ranked",\
+                         vertex_colors = colors, edge_thickness = 2,
+                         edge_style = "-", heights = heights, vertex_labels = vertlabels,
+                         edge_colors = edgeColors)
+    if filename is None:
+        filename = getUnusedFileName( "pgf", "tex/img/" )
+    else:
+        filename = "tex/img/"+filename+".pgf"
+    #print( filename )
+
+    f = open( filename, 'w' )
+    f.write( latex( p ) )
+    f.close()
+    return filename
+
     
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-def posetPlot( sageObject, heights, colors, vertlabels, edgeColors, filename ):
+
+#trying to convert to tikz
+#from matplotlib.backends.backend_pgf import _tex_escape as mpl_common_texification
+#import tikzplotlib # fails due to known issue, see https://github.com/nschloe/tikzplotlib/issues/559
+#alse see https://stackoverflow.com/questions/52979322/matplotlib-3-0-0-cannot-import-name-get-backend-from-matplotlib
+#i haven't tried downgrading matplotlib to 3.6 because I'm afraid it could be break sage
+#nevermind i downgraded so the import at works, but it's not doing anything i want it to
+
+def posetPlotOld( sageObject, heights, colors, vertlabels, edgeColors, filename ):
     """A workaround function for getting a sage object to show via matplotlib
     since sageObject.plot() does not produce visible output when run from script"""
     p = sageObject.plot( layout = "ranked",\
@@ -1367,10 +1626,19 @@ def posetPlot( sageObject, heights, colors, vertlabels, edgeColors, filename ):
     else:
         filename = "tex/img/"+filename+".png"
     #print( filename )
+
+    print( latex( p ) )
+    
     p.save( filename )
-    #img = mpimg.imread( filename )
-    #plt.imshow(img)
-    #plt.show()
+    img = mpimg.imread( filename )
+    plt.imshow(img)
+    plt.plot()
+    #p.matplotlib()
+    #import tikzplotlib
+    #print( tikzplotlib.get_tikz_code() )
+    #tikzplotlib.save( "test.tex" )
+    plt.close()
+    #mpl.rcParams.update(mpl.rcParamsDefault)
     #os.remove(filename)
     return filename
 
@@ -2563,7 +2831,9 @@ def plinkFromPD( link ):
     assert( type( link ) == list )
     snappy.Link( link ).view()
 
-def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets, tolerance, minPinSetDict, regionLabels, components, filename = None, debug = False ):
+def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets,\
+                 minPinSetDict, regionLabels, components, tolerance = 0.0000001,\
+                  bufferFrac = None, diamFrac = None, filename = None, debug = False ):
     if filename is None:
         filename = getUnusedFileName( "svg", "tex/img/" )
     else:
@@ -2573,7 +2843,8 @@ def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets, tolerance, minPi
         words[key] = wordDict[key].seq
     data = {"link":link,"drawnpd":drawnpd,"adjDict":adjDict,"regWords":words,"minPinSets":minPinSets,\
             "tolerance":tolerance,"minPinSetDict":minPinSetDict,"regionLabels":regionLabels,\
-            "components":components,"filename":filename,"debug":debug}
+            "components":components,"filename":filename,"debug":debug,\
+            "bufferFrac":bufferFrac,"diamFrac":diamFrac}
     call(['python3', 'saveLoop.py', str(data), "padding", "padding", "padding"])
     return filename
 

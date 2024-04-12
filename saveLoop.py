@@ -20,6 +20,8 @@ if len( sys.argv ) > 2:
     components = data["components"]
     filename = data["filename"]
     debug = data["debug"]
+    bufferFrac = data["bufferFrac"]
+    diamFrac = data["diamFrac"]
 
 else: #debug test cases
     # test case with 1 strand
@@ -93,7 +95,7 @@ while True:
     #pd = plinkPD( link )
     #print( drawnpd )
     #print( pd )
-    if pd == drawnpd:
+    if drawnpd is None or pd == drawnpd:
         break
     badpdcount += 1
     LE.done()
@@ -157,7 +159,7 @@ for crs in LE.Crossings:
     regs = set()
     adjStrands = {first,second,next1,next2}
 
-    if len( sys.argv ) > 2: 
+    if len( sys.argv ) > 2 and regLabels is not None: 
         for strand in adjStrands:
             regs.add( adjDict[strand][0] )
             regs.add( adjDict[strand][1] )
@@ -181,6 +183,8 @@ for a in LE.Arrows:
             toAdd.append( [segs[i][2],segs[i][3],midx,midy] )
             toAdd.append( [midx,midy,segs[i+1][0],segs[i+1][1]] )
     segs += toAdd
+    if regLabels is None:
+        continue
 
     # create a linked list out of segments
     # and correctly associate outgoing labels to segments
@@ -219,7 +223,10 @@ for a in LE.Arrows:
                     crosses[closeData[1]]["outdict"]["b"]["dir"]=crosses[closeData[1]]["outdirs"][0]
                     
 
-
+if regLabels is None:
+    LE.save_as_svg(filename)
+    LE.done()
+    raise( "All done" )
 
 
 #for key in crosses:
@@ -351,11 +358,17 @@ gridLength = min( nonzeroDistances )
 
 # Define parameters for plotted data in regions based on grid size
 labelFontSize = max( int( gridLength/5 ), 1 )
-leftbuffer = gridLength*1/15
+if bufferFrac is not None:
+    leftbuffer = gridLength*bufferFrac #1/10
+else:
+    leftbuffer = gridLength*1/15
 topbuffer = leftbuffer
 dotTopBuffer = labelFontSize+2*topbuffer
-diam = gridLength*1/8
-circleWidth = 0.5
+if diamFrac is not None:
+    diam = gridLength*diamFrac #1/4 
+else:
+    diam = gridLength*1/7 #1/7 or 1/8
+circleWidth = 0
 dotFontSize = max( int( diam*0.9 ), 1 )
 spacing = (diam+circleWidth)*1.1
 labelsPerLine = 5
@@ -401,45 +414,50 @@ for reg in regBoundaries:
 
 
     regBoundaries[infRegion]["infRegion"]=True
-
-
-    # compute matrix of colored dots for this region corresponding to the pinning sets it belongs to
-    dotDict = {}
-    for key in minPinSetDict:
-        pinSet = key
-        if reg in key:
-            dotDict[ minPinSetDict[key]["label"] ] = {"color":tkColorfromRgb( minPinSetDict[key]["color"] ), "letter":minPinSetDict[key]["letterLabel"] } 
-
-    i = 0
-    j = 0
-    k = 0
-    
-    #j = 0
     # label the infinite region based on the bottom left, all else anchored from top left
     if not regBoundaries[reg]["infRegion"]:
         anchor1 = topLeft
     else:
         anchor1 = bottomLeft
-        
+
     c.create_text(anchor1[0]+leftbuffer,anchor1[1]+topbuffer,text=regLabels[reg], fill="black", anchor="nw", font = ("Helvetica", labelFontSize, "bold" ))
     #font.families()[0], 36, "bold") )#, font="Arial 10 bold")
 
-    sortedkeys = list( dotDict.keys() )
-    sortedkeys.sort()
-    for key in sortedkeys:
-        c.create_oval( anchor1[0]+leftbuffer + i*spacing, anchor1[1]+dotTopBuffer+k*spacing,\
-                       anchor1[0]+leftbuffer + i*spacing+diam, anchor1[1]+dotTopBuffer+k*spacing+diam,\
-                       outline = dotDict[key]["color"], fill = dotDict[key]["color"], width = circleWidth )
-        centerx = anchor1[0]+leftbuffer + i*spacing+diam/2
-        centery = anchor1[1]+dotTopBuffer+k*spacing+diam/1.7 #looks a little better to push down past half
-        c.create_text(centerx,centery,text=dotDict[key]["letter"], fill="white",\
-                      anchor="center", font = ("Helvetica", dotFontSize ) ) #font=('Arial',30, "bold italic" ), "•"
-        i+=1
-        j += 1
-        if j == labelsPerLine:
-            i = 0
-            j = 0
-            k += 1    
+    if minPinSets is not None:
+        # compute matrix of colored dots for this region corresponding to the pinning sets it belongs to
+        dotDict = {}
+        for key in minPinSets:
+            pinSet = frozenset(key)
+            if reg in key:
+                dotDict[ minPinSetDict[pinSet]["label"] ] =\
+                         {"color":tkColorfromRgb( minPinSetDict[pinSet]["color"] ),\
+                          "letter":minPinSetDict[pinSet]["letterLabel"] } 
+
+        i = 0
+        j = 0
+        k = 0
+        
+        #j = 0
+       
+        
+            
+        
+        sortedkeys = list( dotDict.keys() )
+        sortedkeys.sort()
+        for key in sortedkeys:
+            c.create_oval( anchor1[0]+leftbuffer + i*spacing, anchor1[1]+dotTopBuffer+k*spacing,\
+                           anchor1[0]+leftbuffer + i*spacing+diam, anchor1[1]+dotTopBuffer+k*spacing+diam,\
+                           outline = dotDict[key]["color"], fill = dotDict[key]["color"], width = circleWidth )
+            centerx = anchor1[0]+leftbuffer + i*spacing+diam/2
+            centery = anchor1[1]+dotTopBuffer+k*spacing+diam/1.7 #looks a little better to push down past half
+            c.create_text(centerx,centery,text=dotDict[key]["letter"], fill="white",\
+                          anchor="center", font = ("Helvetica", dotFontSize ) ) #font=('Arial',30, "bold italic" ), "•"
+            i+=1
+            j += 1
+            if j == labelsPerLine:
+                i = 0
+                j = 0
+                k += 1    
 
 # save file
 LE.save_as_svg(filename)

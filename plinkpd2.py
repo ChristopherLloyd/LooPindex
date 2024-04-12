@@ -38,8 +38,8 @@ def getLEwithPD( link ):
 
     components = LE.crossing_components()
 
-    LE.style_var.set('pl')
-    LE.set_style()
+    #LE.style_var.set('pl')
+    #LE.set_style()
     #c = LE.canvas
     #corners = {}
     #crosses = {}
