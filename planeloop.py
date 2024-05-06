@@ -41,6 +41,9 @@ import shutil #used for removing temp files
 from subprocess import call #used for running external scripts
 from subprocess import check_output
 from latextable_lite import utils
+import mysql.connector
+
+
 #import pylatex as p
 
 # Currently unused imports:
@@ -87,12 +90,43 @@ labelIssue2 = [[4, 14, 1, 5], [5, 10, 6, 11], [11, 3, 12, 4], [13, 18, 14, 15],\
 labelIssue3 = [[6, 14, 1, 7], [7, 15, 8, 18], [13, 5, 14, 6], [1, 16, 2, 15],\
                [8, 11, 9, 12], [12, 17, 13, 18], [4, 16,5, 17], [2, 10, 3, 11], [9, 3, 10, 4]]
 
+# for some of the figures:
 smallMonorbigonLess = [[[4, 8, 1, 5], [5, 9, 6, 12], [3, 11, 4, 12], [7, 10, 8, 11], [1, 10, 2, 9], [6, 2, 7, 3]],\
 [[5, 16, 6, 1], [9, 4, 10, 5], [10, 15, 11, 16], [6, 11, 7, 12], [1, 12, 2, 13], [13, 8, 14, 9], [14, 3, 15, 4], [7, 3, 8, 2]],\
 [[18, 5, 1, 6], [6, 11, 7, 12], [12, 17, 13, 18], [13, 4, 14, 5], [1, 10, 2, 11], [7, 16, 8, 17], [8, 3, 9, 4], [14, 9, 15, 10], [2, 15, 3, 16]],\
 [[13, 20, 14, 1], [5, 12, 6, 13], [6, 19, 7, 20], [14, 7, 15, 8], [1, 8, 2, 9], [17, 4, 18, 5], [18, 11, 19, 12], [15, 3, 16, 2], [9, 16, 10, 17], [10, 3, 11, 4]],\
 [[14, 20, 1, 15], [15, 6, 16, 5], [13, 4, 14, 5], [9, 19, 10, 20], [1, 10, 2, 11], [6, 11, 7, 12], [16, 12, 17, 13], [8, 3, 9, 4], [18, 2, 19, 3], [7, 18, 8, 17]],\
 [[6, 12, 1, 7], [7, 13, 8, 16], [5, 15, 6, 16], [11, 14, 12, 15], [1, 14, 2, 13], [8, 17, 9, 20], [4, 19, 5, 20], [10, 18, 11, 19], [2, 18, 3, 17], [9, 3, 10, 4]]]
+
+
+tripleLem = [(4,5,5,6),(1,8,2,9),(6,12,7,11),(3,12,4,13),\
+             (10,13,11,14),(22,15,1,16),(7,19,8,18),(14,18,15,17),\
+             (2,19,3,20),(9,20,10,21),(16,21,17,22)]
+
+quadTrefoil =  [(102,16,1,15),(7,16,8,17),(8,24,9,23),(14,25,15,26),(17,33,18,32),\
+                (22,33,23,34),(1,41,2,40),(26,40,27,39),(6,41,7,42),(9,49,10,48),(31,42,32,43),\
+                (34,48,35,47),(13,50,14,51),(18,58,19,57),(38,51,39,52),(43,57,44,56),(21,58,22,59),\
+                (46,59,47,60),(2,66,3,65),(27,65,28,64),(52,64,53,63),(5,66,6,67),(30,67,31,68),(55,68,56,69),\
+                (10,74,11,73),(35,73,36,72),(60,72,61,71),(12,75,13,76),(19,83,20,82),(37,76,38,77),(44,82,45,81),\
+                (62,77,63,78),(69,81,70,80),(20,83,21,84),(45,84,46,85),(70,85,71,86),(3,91,4,90),(28,90,29,89),\
+                (53,89,54,88),(78,88,79,87),(4,91,5,92),(29,92,30,93),(54,93,55,94),(79,94,80,95),(11,99,12,98),\
+                (36,98,37,97),(61,97,62,96),(86,96,87,95),(24,102,25,101),(49,101,50,100),(74,100,75,99)]
+
+naiveGonalityCounterExample = [(12,1,13,2),(6,3,7,4),(10,5,11,6),(14,7,15,8),\
+                               (4,9,5,10),(16,11,1,12),(8,13,9,14),(2,15,3,16)]
+
+strongerCounterEx10 = [[1, 5, 20, 6], [1, 14, 2, 15],\
+                     [5, 11, 4, 12], [20, 12, 19, 13], [6, 13, 7, 14],\
+                     [2, 9, 3, 10], [15, 10, 16, 11], [4, 16, 3, 17], \
+                     [19, 8, 18, 7], [9, 18, 8, 17]]
+
+strongerCounterEx9 = [[1, 4, 18, 3], [1, 12, 2, 13], [4, 10, 5, 9], [18, 9, 17, 8],\
+                      [3, 11, 2, 12], [13, 11, 14,10], [5, 14, 6, 15],\
+                      [17, 7, 16, 8], [6, 16, 7, 15]]
+
+sumCounterEx = [(5,8,6,9),(2,12,3,11),(1,16,2,17),(12,16,13,15),(4,20,5,19),(9,18,10,19),\
+                (6,22,7,21),(7,22,8,23),(20,24,21,23),(3,24,4,25),(10,26,11,25),(17,26,18,27),\
+                (30,28,1,27),(13,28,14,29),(14,30,15,29)]
 
 # Main
 
@@ -125,8 +159,11 @@ def main():
     #irrPrime( n = 10 )
     #return
     #monorbigonFig()
-    smallMonorBigonlessPinningSets()
-    #plantriCatalog()
+    #smallMonorBigonlessPinningSets()
+    #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
+    #createCatalog( "Some counterexamples to naive gonality conjectures" , loops )
+   
+    plantriCatalog( n=6, numComponents = "any" )
 
 def smallMonorBigonlessPinningSets():
     a = smallMonorbigonLess
@@ -135,6 +172,7 @@ def smallMonorBigonlessPinningSets():
     createCatalog( "Pinning sets of all spherimultiloops with at most $12$ regions and no monorbigons" , loops )
 
 def monorbigonFig():
+    """Used to generated hte first figure in the paper."""
     loop = [[3, 18, 4, 1], [2, 15, 3, 16], [17, 14, 18, 15], [4, 7, 5, 8],\
             [1, 17, 2, 16], [8, 13, 9, 14], [11, 6, 12, 7], [5, 12, 6, 13], [9, 10, 10, 11]]
 
@@ -347,16 +385,41 @@ def fig1():
 
     
 
-def plantriCatalog():
-    n = 5
-    includeReflections = False #False for UU
-    primeOnly = True
-    numComponents = 2
+def plantriCatalog( n = 5, generatePDF = True, includeReflections = False, primeOnly = True, numComponents = "any" ):
+    #n = 5
+    #includeReflections = False #False for UU
+    #primeOnly = True
+    #numComponents = 2
     loops = {}
     numLoops = 0
-    for k in range(2, n+1 ):
+    db = mysql.connector.connect( username=os.environ.get('MYSQL_USER'), password=os.environ.get('MYSQL_PASS') )
+    cursor = db.cursor()
+    try:
+        cursor.execute("DROP DATABASE multiloops") #hangs sometimes, if this happens:
+        # run and kill the hanging processes with
+        # sudo mysqladmin processlist -u root -p
+        # sudo mysqladmin kill [pid]
+    except: #DatabaseError
+        pass
+    
+    cursor.execute("CREATE DATABASE multiloops")
+    cursor.execute("USE multiloops")
+    create_table = """
+        CREATE TABLE mloops(
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        pc VARCHAR(500),
+        pd VARCHAR(500),
+        sigma VARCHAR(500),
+        components INT
+        )
+    """
+    
+    cursor.execute(create_table)
+    for k in range(4, n+1 ):
         loops[k] = []
-        for loop in generateMultiloops( crossings = k, numComponents = numComponents, includeReflections = includeReflections, primeOnly = primeOnly ):
+        for loop in generateMultiloops( k, numComponents = numComponents,\
+                                        includeReflections = includeReflections, primeOnly = primeOnly,\
+                                        db = db, cursor = cursor ):
             #print( loop["pd"] )
             loops[k].append( loop )
             #break
@@ -364,14 +427,17 @@ def plantriCatalog():
         numLoops += len( loops[k] )
         if loops[k] == []:
             del loops[k]
-    input( "Ready to build catalog with "+str(numLoops)+" entries. Press any key to begin." )
-    title = "Pinning sets of UU spherimultiloops with "+str(numComponents)+\
-            " components and at most "+str(n)+" crossings"
-    #title = "Weird pinning sets - applying the loop algorithm to multiloops"
-    createCatalog( title , loops, plantriMode = True )
+    if generatePDF:
+        if numComponents == "any":
+            numComponents = "any number of"
+        input( "Ready to build catalog with "+str(numLoops)+" entries. Press any key to begin." )
+        title = "Pinning sets of all irreducible, indecomposable spherimultiloops with "+str(numComponents)+\
+                " components and at most "+str(n)+" regions"
+        #title = "Weird pinning sets - applying the loop algorithm to multiloops"
+        createCatalog( title , loops, plantriMode = True )
     
     
-def generateMultiloops( crossings = 5, numComponents = 1, includeReflections = False, primeOnly = True ):
+def generateMultiloops( regions, numComponents = 1, includeReflections = False, primeOnly = True, db = None, cursor = None ):
     """Uses the program plantri to generate PD codes of all
     multiloops in the sphere with n crossings, with certain parameters.
     path to plantri folder must be in PATH
@@ -391,31 +457,31 @@ def generateMultiloops( crossings = 5, numComponents = 1, includeReflections = F
     case = 4*int( allowMultiloops )+2*int( includeReflections )+1*int( not primeOnly )
 
     if case == 0: #FFF - UU prime loops, should match https://oeis.org/A264759
-        out = check_output(["knotshadow", str(crossings+2), "-m2c2qGd"]).split(b'>>planar_code<<')[1]
+        out = check_output(["knotshadow", str(regions), "-m2c2qGd"]).split(b'>>planar_code<<')[1]
         
     elif case == 1: #FFT - UU prime+composite loops, should match https://oeis.org/A008989
-        out = check_output(["knotshadow", str(crossings+2), "-QGd"]).split(b'>>planar_code<<')[1]
+        out = check_output(["knotshadow", str(regions), "-QGd"]).split(b'>>planar_code<<')[1]
         #warnings.warn( "This case may need debugging - sigma might be wrong" ) # fixed, I think
         
     elif case == 2: #FTF - UO prime loops, should match https://oeis.org/A264760
-        out = check_output(["knotshadow", str(crossings+2), "-m2c2qGdo"]).split(b'>>planar_code<<')[1]
+        out = check_output(["knotshadow", str(regions), "-m2c2qGdo"]).split(b'>>planar_code<<')[1]
         
     elif case == 3: #FTT - UO prime+composite loops, should match https://oeis.org/A008987
-        out = check_output(["knotshadow", str(crossings+2), "-QGdo"]).split(b'>>planar_code<<')[1]
+        out = check_output(["knotshadow", str(regions), "-QGdo"]).split(b'>>planar_code<<')[1]
         warnings.warn( "This case may need debugging - sigma might be wrong" )
         
     elif case == 4: #TFF - UU prime multiloops, should match https://oeis.org/A113201
-        out = check_output(["plantri", str(crossings+2), "-Gqc2m2d"]).split(b'>>planar_code<<')[1]
+        out = check_output(["plantri", str(regions), "-Gqc2m2d"]).split(b'>>planar_code<<')[1]
         
     elif case == 5: #TFT - UU prime+composite multiloops
-        out = check_output(["plantri", str(crossings+2), "-Gqd"]).split(b'>>planar_code<<')[1]
+        out = check_output(["plantri", str(regions), "-Gqd"]).split(b'>>planar_code<<')[1]
         warnings.warn( "This option has not been verified to behave as expected." )
     
     elif case == 6: #TTF - UO prime multiloops, should match https://oeis.org/A113202
-        out = check_output(["plantri", str(crossings+2), "-Gqoc2m2d"]).split(b'>>planar_code<<')[1]
+        out = check_output(["plantri", str(regions), "-Gqoc2m2d"]).split(b'>>planar_code<<')[1]
         
     elif case == 7: #TTT - UO prime+composite multiloops
-        out = check_output(["plantri", str(crossings+2), "-Gqdo"]).split(b'>>planar_code<<')[1]
+        out = check_output(["plantri", str(regions), "-Gqdo"]).split(b'>>planar_code<<')[1]
         warnings.warn( "This option has not been verified to behave as expected." )
         #raise( "Not yet supported" )    
     
@@ -454,10 +520,42 @@ def generateMultiloops( crossings = 5, numComponents = 1, includeReflections = F
 
     multiloops = []
     #countLoops = 0
+    
+    
+    
+    #i = 0
+    mloopStrings = []
     for graph in graphs:
-        data = planarData( graph, debug = False )
-        if numComponents == "any" or data["components"] == numComponents:
-            multiloops.append( data )
+        #data = planarData( graph, debug = False )
+        multiloop = Spherimultiloop( graph )
+        if numComponents == "any" or multiloop.components == numComponents:
+            #ID = cursor.execute("SELECT LAST_INSERT_ID()")
+            #if ID is None:
+            #    ID = -1
+            #insert_entry = """
+            #INSERT INTO mloops (id, pc, pd, sigma, components)
+            #VALUES
+            mloopStrings.append( """("{}", "{}", "{}", {}),\n""".format(\
+                    str( multiloop.plantriCode ), str( multiloop.pd ),\
+                    str( multiloop.sigma ), multiloop.components ) )
+            #print( insert_entry )
+           
+            multiloops.append( multiloop )
+            #print( i )
+            #i+=1
+    if mloopStrings != [] and db is not None:        
+        insert_entry="""
+                INSERT INTO mloops (pc, pd, sigma, components)
+                VALUES\n"""
+        for mloop in mloopStrings:
+            insert_entry += mloop
+
+        print( insert_entry )
+
+        insert_entry = insert_entry[:-2]
+        cursor.execute(insert_entry)
+
+    db.commit()
             #countLoops += 1
         #     multiloops.append( data )
         #multiloops.append(  )#, loopsOnly ) )
@@ -1088,9 +1186,9 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
         for link in links[key]:
             print( "link", link )
             if plantriMode:
-                graph = link["plantrigraph"]
+                graph = link.plantriCode#["plantrigraph"]
                 #data[str(link["pd"])]["graph"] = 
-                link = link["pd"]
+                link = link.pd#["pd"]
             drawnpd = plinkPD( link )
             #while True:
             #    drawnpd = plinkPD( link )
@@ -1162,6 +1260,17 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
     avgStrings = {}
     data = None
 
+    # dictionary which organizes data by pinning number
+    # key = pinning number
+    """value = {"count":number with this pinning number,
+        "crossings":list of crossing numbers,
+        "percentagesNeedingPinPinnum:"
+        "avgOptimalGonalitiesPinnum":
+        "avgMinimalGonalitiesPinnum":
+        "avgGonalitiesPinnum":
+        """
+    pinData = {}
+
     for key in alldata:
 
         avgOptimalGonalities = []
@@ -1202,6 +1311,18 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
              
             pinningNumbers.append( minlen )
             percentagesNeedingPin.append( minlen/numRegions )
+
+            #### for organizing by pinning number
+            if minlen not in pinData:
+                pinData[minlen] = { "count":1,"regions":[key+2],"percentagesNeedingPinPinNum":[minlen/numRegions],\
+                                    "avgOptimalGonalitiesPinNum":[],"avgMinimalGonalitiesPinNum":[],\
+                                    "avgGonalitiesPinNum":[] }
+            else:
+                pinData[minlen]["count"]+=1
+                pinData[minlen]["regions"].append(key+2)
+                pinData[minlen]["percentagesNeedingPinPinNum"].append(minlen/numRegions)
+            ##########
+            
             
             minPinSetDict = {}
             label = 1
@@ -1284,7 +1405,12 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
             avgMinimalGonalities.append( avgMinGonality )
             avgGonalities.append( avgOverallGonality )
 
-
+            #### for organizing by pinning number
+            pinData[minlen]["avgOptimalGonalitiesPinNum"].append( avgOptimalGonality )
+            pinData[minlen]["avgMinimalGonalitiesPinNum"].append( avgMinGonality )
+            pinData[minlen]["avgGonalitiesPinNum"].append(avgOverallGonality)
+            ##########
+            
             col2 += "\\noindent\\textbf{Average optimal gonality:} "+str( round( avgOptimalGonality, 2 ))+"\n\n"
             col2 += "\\noindent\\textbf{Average minimal gonality:} "+str( round( avgMinGonality, 2 ))+"\n\n"
             col2 += "\\noindent\\textbf{Average overall gonality:} "+str( round( avgOverallGonality, 2 ))+"\n\n"
@@ -1401,14 +1527,37 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
         avgPercentageNeedingPin = sum( percentagesNeedingPin )/len( alldata[key] )
 
         avgStrings[key] = ""
-        avgStrings[key] += "\\noindent\\textbf{Number of multiloops in this data set:} $"+str( len( alldata[key] ) )+"$\n\n"
-        avgStrings[key] += "\\noindent\\textbf{Average pinning number for this dataset:} $"+str( avgPinNum )+"$\n\n"
-        avgStrings[key] += "\\noindent\\textbf{Average fraction of optimal pinning set size to number of regions:} $"+str( avgPercentageNeedingPin )+"$\n\n"
-        avgStrings[key] += "\\noindent\\textbf{Average optimal pinning set gonality for this dataset:} $"+str( optgon )+"$\n\n"
-        avgStrings[key] += "\\noindent\\textbf{Average minimal pinning set gonality for this dataset:} $"+str( mingon )+"$\n\n"
-        avgStrings[key] += "\\noindent\\textbf{Average overall pinning set gonality for this dataset:} $"+str(  allgon )+"$\n\n"    
+        avgStrings[key] += "\\noindent\\textbf{Number of multiloops with this number of crossings in this dataset:} $"+str( len( alldata[key] ) )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average pinning number:} $"+str( avgPinNum )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average pinning number/number of regions:} $"+str( avgPercentageNeedingPin )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average optimal pinning set gonality:} $"+str( optgon )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average minimal pinning set gonality:} $"+str( mingon )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average overall pinning set gonality:} $"+str(  allgon )+"$\n\n"
 
-    makeTex( title, avgStrings, loopStrings, pinSetColors )
+    #### for organizing by pinning number
+
+    #     pinData[minlen] = { "count":1,"crossings":[key],"percentagesNeedingPinPinNum":[minlen/numRegions],\
+    #                                "avgOptimalGonalitiesPinNum":[],"avgMinimalGonalitiesPinNum":[],\
+    #                                "avgGonalitiesPinNum":[] }
+
+    avgStringsPinNum = {}
+    for pinNum in pinData:
+        optgon = sum( pinData[pinNum]["avgOptimalGonalitiesPinNum"] )/pinData[pinNum]["count"]
+        mingon = sum( pinData[pinNum]["avgMinimalGonalitiesPinNum"] )/pinData[pinNum]["count"]
+        allgon = sum( pinData[pinNum]["avgGonalitiesPinNum"] )/pinData[pinNum]["count"]
+        avgRegions = sum( pinData[pinNum]["regions"] )/pinData[pinNum]["count"]
+        avgPercentageNeedingPin = sum( pinData[pinNum]["percentagesNeedingPinPinNum"] )/pinData[pinNum]["count"]
+        avgStringsPinNum[pinNum] = ""
+        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Number of multiloops with this pinning number in this dataset:} $"\
+                                    +str( pinData[pinNum]["count"] )+"$\n\n"
+        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average number of regions:} $"+str( avgRegions )+"$\n\n"
+        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average pinning number/number of regions:} $"+str( avgPercentageNeedingPin )+"$\n\n"
+        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average optimal pinning set gonality:} $"+str( optgon )+"$\n\n"
+        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average minimal pinning set gonality:} $"+str( mingon )+"$\n\n"
+        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average overall pinning set gonality:} $"+str( allgon )+"$\n\n"
+        
+
+    makeTex( title, avgStrings, avgStringsPinNum, loopStrings, pinSetColors )
 
     return skipped
 
@@ -1444,7 +1593,7 @@ def computeRGBColors( range1, range2 ):
         colors["mins"][i] = {"label": "green"+str(i), "rgb":(lightness,startHue+i*step2,lightness)}
     return colors    
 
-def makeTex( title, avgStrings, loopStrings, colors ):
+def makeTex( title, avgStrings, avgStringsPinNum, loopStrings, colors ):
     filename = "tex/pinSets"
     try: # delete old files 
         os.remove(filename+".tex")
@@ -1472,6 +1621,8 @@ def makeTex( title, avgStrings, loopStrings, colors ):
                "\\usepackage{float}\n"+\
                "\\usepackage{graphicx}\n"+\
                "\\usepackage[shortlabels]{enumitem}\n"+\
+               "\\usepackage{hyperref}\n"+\
+               "\\usepackage[nottoc,numbib]{tocbibind}\n"+\
                "\\geometry{tmargin=2cm,lmargin=2cm,rmargin=2cm,bmargin=2cm}%\n"+\
                "%\n%\n%\n"
     for color in colors:
@@ -1480,17 +1631,32 @@ def makeTex( title, avgStrings, loopStrings, colors ):
                         +str( colors[color][key]["rgb"][0] ) +\
                         ","+str( colors[color][key]["rgb"][1] )+","+\
                         str( colors[color][key]["rgb"][2] )+"}\n"
+    #"\\usepackage{biblatex}\n"+\
+    #"\\addbibresource{catalog_ref.bib}\n"+\
     preamble += "%\n%\n%\n"
     preamble += "\\pdfsuppresswarningpagegroup=1\n\n" #surpresses annoying pagegroup warning which triggers on every page of the catalog
     preamble += "\\setcounter{tocdepth}{2}\n\n"
     preamble += "\\title{"+title+"}\n\n"
     preamble += "\\author{Christopher-Lloyd Simon and Ben Stucky}\n\n"
-    doc = preamble + "\\begin{document}%\n\\maketitle\n\n\\tableofcontents\n\n\\small\n\n"#note the font size change
+    doc = preamble + "\\begin{document}%\n\\maketitle\n\n\\tableofcontents\n\n"
 
-    doc += "\\section{Statistics}"
+    intro = open( "tex/catalogIntro.txt", 'r' )
+    doc += intro.read()+"\n\n"
+    intro.close()
+
+    doc += "\\section{Statistics by number of crossings}\n\\label{sec:byCrossing}\n\n"
     for key in loopStrings:        
         doc += "\\subsection{$"+str(key)+"$ crossings}\n\n"+avgStrings[key]+"\n\n"
-    doc += "\\newpage\n\n\\section{Loops}"
+
+    doc += "\\section{Statistic by pinning number}\n\\label{sec:byPinning}\n\n"
+    for pinnum in avgStringsPinNum:        
+        doc += "\\subsection{Pinning number $"+str(pinnum)+"$}\n\n"+avgStringsPinNum[pinnum]+"\n\n"
+
+    doc += "\\bibliographystyle{alpha}\n\\bibliography{tex/catalog_ref}\n\n"
+
+    doc += "\\small\n\n"#note the font size change
+        
+    doc += "\\newpage\n\n\\section{Multiloops}\n\\label{sec:multiloops}\n\n"
     for key in loopStrings:
         doc += "\\subsection{$"+str(key)+"$ crossings}\n\n"
         for loopstring in loopStrings[key]:
@@ -1500,6 +1666,10 @@ def makeTex( title, avgStrings, loopStrings, colors ):
     f.write( doc )
     f.close()
     call(['pdflatex', '--shell-escape', '-halt-on-error', '-output-directory', filename.split("/")[0], filename+".tex"])
+    #call twice to fix references
+    call(['bibtex',filename])
+    call(['pdflatex', '--shell-escape', '-halt-on-error', '-output-directory', filename.split("/")[0], filename+".tex"])
+    call(['pdflatex', '--shell-escape', '-halt-on-error', '-output-directory', filename.split("/")[0], filename+".tex"]) 
     try:
         os.remove(filename+".aux")
         os.remove(filename+".log")
@@ -1525,9 +1695,7 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     doc += "{\\normalsize "+col1+"}\n"
     doc += "\\columnbreak\n\n"
     doc += "{\\normalsize "+col2+"}\n"
-    doc += "\\end{multicols}\n\n"
-
-   
+    doc += "\\end{multicols}\n\n"   
     
     #from sage.misc.latex import latex_examples     
     #foo = latex_examples.diagram()
@@ -1536,6 +1704,8 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     #doc += "\\includesvg[width=30pt]{"+plinkImg+"}\n\n"
 
     # "\\def\\svgscale{0.7}\n"+\
+    
+    # "\\input{"+posetImg+"}\n"+\
 
     if imSepPage:
         pass#doc += "\\newpage\n\n"
@@ -1553,7 +1723,7 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
         doc += "\\columnbreak\n\n"
     doc += "\\begin{figure}[H]\n"+\
            "\\centering\n"+\
-           "\\input{"+posetImg+"}\n"+\
+           "\\scalebox{0.8}{\\input{"+posetImg+"}}\n"+\
            "\\caption{Minimal join semilattice of pinning sets.}\n"+\
            "\\label{fig:"+posetImg+"}\n\\end{figure}\n"
     if sideBySide:
@@ -1595,7 +1765,7 @@ def posetPlot( sageObject, heights, colors, vertlabels, edgeColors, filename ):
     if filename is None:
         filename = getUnusedFileName( "pgf", "tex/img/" )
     else:
-        filename = "tex/img/"+filename+".pgf"
+        filename = "tex/img/"+filename[:200]+".pgf"
     #print( filename )
 
     f = open( filename, 'w' )
@@ -2105,6 +2275,125 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
 
 ####################### DATA STRUCTURES ####################################
 
+class Spherimultiloop:
+    """Keeps track of all the data associated to a loop in the sphere,
+    given as a PD code or plantri embedding."""
+
+    def __init__( self, plantriCode ):
+        self.plantriCode = plantriCode
+        self.pd, self.sigma, self.components = self.planarData()
+        
+    #def __init__( self, pdCode ):
+    #    # getting sigma from the pdCode is basically done in Surface Graph
+    #    # so that code can be moved here
+    #    pass
+
+    def planarData( self ):
+        """Converts a plantri graph to sigma and pd code, and calculates the number of loop components.
+           There may be ambiguity if parallel edges,
+           so we note from plantri documentation:
+           
+          In case there are parallel edges, there might be more than one graph
+          whose PLANAR CODE is the same up to rotation of the neighbour lists. 
+          To resolve this ambiguity, plantri makes the following convention:
+          for each vertex v except for the first vertex, if the least numbered
+          vertex that has v as a neighbour is w, then the first w in the section
+          for v represents the same edge as the first v in the section for w."""
+
+        if self.plantriCode == [[0,0,0,0]]: #lemniscate is an edge case
+            return [[1,2,2,1]], [[-1,-2,2,1]], 1
+        if self.plantriCode == [[1, 1, 1, 1], [0, 0, 0, 0]]: #hopf link is an edge case
+            return [[1,4,2,3],[3,2,4,1]], [[-1,-4,2,3],[-3,-2,4,1]], 2
+        # this covers all cases of 4 parallel edges
+        # but you might have to worry about other edge cases where there are 3 parallel edges
+        # then again those may all be NOT irreducible indecomposible
+        coordsVisited = 0
+        startvert,startpos = 0,3
+        curvert,curpos = startvert,startpos
+
+
+        pdcode = []
+        sigma = []
+        graph = self.plantriCode
+        for i in range( len( graph ) ):
+            pdcode.append( ([None]*4).copy() )
+            sigma.append( ([None]*4).copy() )
+        #sigma = pdcode.copy()
+
+        numComponents = 1
+        while True:
+            while True:
+                nextvert = graph[curvert][curpos]        
+                outchoices = [curpos]
+                inchoices = []
+                for inchoice in range( len( graph[nextvert] ) ):
+                    if graph[nextvert][inchoice] == curvert:
+                        inchoices.append( inchoice )
+                if len( inchoices ) == 2:
+                    for outchoice in range( len( graph[curvert] ) ):
+                        if graph[curvert][outchoice] == nextvert and outchoice not in outchoices:
+                            outchoices.append( outchoice )
+                    assert( len( outchoices ) == 2 )
+                    outchoices.sort()
+                    inchoices.sort()
+                    
+                    lowestNeighborOfCurrent = min( graph[ curvert ] )
+                    lowestNeighborOfNext = min( graph[ nextvert ] )
+                    if (lowestNeighborOfCurrent != nextvert and lowestNeighborOfNext != curvert) or curvert==nextvert:#  and
+                        #print( "reversing" )
+                        inchoices.reverse()
+                    if outchoices[0] == curpos:
+                        nextpos = (inchoices[0]+2)%4
+                    else:
+                        nextpos = (inchoices[1]+2)%4
+                else:
+                    if not ( len( inchoices ) == 1 ):
+                        #print( graph )
+                        #input()
+                        assert( False )
+                    nextpos = (inchoices[0]+2)%4
+
+                
+                coordsVisited += 1
+                pdcode[curvert][curpos] = coordsVisited
+                pdcode[nextvert][(nextpos-2)%4] = coordsVisited
+                sigma[curvert][curpos] = coordsVisited
+                sigma[nextvert][(nextpos-2)%4] = -coordsVisited
+                    
+                
+                curvert,curpos=nextvert,nextpos
+
+                if (nextvert,nextpos) == (startvert,startpos):
+                    break
+            if coordsVisited == 2*len( graph ):
+                break
+            else:        
+                found = False
+                for i in range( len( pdcode ) ):
+                    for j in range( len( pdcode[i] ) ):
+                        if pdcode[i][j] is None:
+                            startvert,startpos = i,j
+                            curvert,curpos = startvert,startpos
+                            found = True
+                            numComponents += 1
+                            break
+                    if found:
+                        break
+
+        # to get a consistent pd code (first entry in cycle is always an understrand),
+        # try shifting so every cycle starts with a negative
+        for i in range( len( sigma ) ):
+            for firstNegIndex in range( 4 ):
+                if sigma[i][firstNegIndex] > 0:
+                    continue
+                else:
+                    sigma[i] = sigma[i][firstNegIndex:]+sigma[i][:firstNegIndex]
+                    pdcode[i] = pdcode[i][firstNegIndex:]+pdcode[i][:firstNegIndex]
+                    break
+
+        return pdcode, sigma, numComponents
+
+
 class SurfaceGraph:
     """Encodes a local embedding of an ideal graph in a punctured surface S
     via local order of edges around each puncture.
@@ -2538,6 +2827,7 @@ class Word:
         else:
             rootself, powself = self, 1
             rootother, powother = other, 1
+            warnings.warn( "WARNING: input may not be primitive" )
 
         if verbose:
             print( "Computing cross/val for each shift of", self, "along", other )
@@ -2837,7 +3127,7 @@ def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets,\
     if filename is None:
         filename = getUnusedFileName( "svg", "tex/img/" )
     else:
-        filename = "tex/img/"+filename +".svg"
+        filename = "tex/img/"+filename[:200] +".svg"
     words = {}
     for key in wordDict:
         words[key] = wordDict[key].seq
