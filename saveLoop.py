@@ -363,7 +363,7 @@ if bufferFrac is not None:
 else:
     leftbuffer = gridLength*1/15
 topbuffer = leftbuffer
-dotTopBuffer = labelFontSize+2*topbuffer
+
 if diamFrac is not None:
     diam = gridLength*diamFrac #1/4 
 else:
@@ -392,6 +392,7 @@ for dct in [corners,crosses]:
 # plot the appropriate pinning sets in each region
 
 for reg in regBoundaries:
+    
     #dReg1 = 42
     #dReg2 = 84
     topLeft = regBoundaries[reg]["coords"][0]
@@ -420,8 +421,15 @@ for reg in regBoundaries:
     else:
         anchor1 = bottomLeft
 
-    c.create_text(anchor1[0]+leftbuffer,anchor1[1]+topbuffer,text=regLabels[reg], fill="black", anchor="nw", font = ("Helvetica", labelFontSize, "bold" ))
     #font.families()[0], 36, "bold") )#, font="Arial 10 bold")
+
+    
+    if regLabels[reg] == "":
+        dotTopBuffer = topbuffer
+    else:
+        dotTopBuffer = labelFontSize+2*topbuffer
+        c.create_text(anchor1[0]+leftbuffer,anchor1[1]+topbuffer,text=regLabels[reg],\
+                      fill="black", anchor="nw", font = ("Helvetica", labelFontSize, "bold" ))    
 
     if minPinSets is not None:
         # compute matrix of colored dots for this region corresponding to the pinning sets it belongs to
@@ -462,3 +470,18 @@ for reg in regBoundaries:
 # save file
 LE.save_as_svg(filename)
 LE.done()
+
+# remove arrowheads by editing the svg file directly and removing all the <polygon> tags
+# remove the component labels while you're at it
+# https://stackoverflow.com/questions/42206123/python-remove-html-tag-with-regex
+# https://stackoverflow.com/questions/3951660/how-to-replace-the-first-occurrence-of-a-regular-expression-in-python
+
+import re
+f = open( filename, 'r' )
+toParse = f.read()
+f.close()
+removedArrows = re.sub(r'<polygon.+?/>', '',toParse)
+removedComponentLabels = re.sub(r'<text.+?<circle', '<circle',removedArrows,1)
+f = open( filename, 'w' )
+f.write( removedComponentLabels )
+f.close()

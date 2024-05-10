@@ -42,6 +42,7 @@ from subprocess import call #used for running external scripts
 from subprocess import check_output
 from latextable_lite import utils
 import mysql.connector
+import matplotlib.pyplot as plt
 
 
 #import pylatex as p
@@ -163,7 +164,7 @@ def main():
     #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
     #createCatalog( "Some counterexamples to naive gonality conjectures" , loops )
    
-    plantriCatalog( n=6, numComponents = "any" )
+    plantriCatalog( 12, 4, numComponents = 1, multiloopPlotThreshold = 10 )
 
 def smallMonorBigonlessPinningSets():
     a = smallMonorbigonLess
@@ -385,11 +386,13 @@ def fig1():
 
     
 
-def plantriCatalog( n = 5, generatePDF = True, includeReflections = False, primeOnly = True, numComponents = "any" ):
+def plantriCatalog( regmax, regmin, generatePDF = True, includeReflections = False, primeOnly = True, numComponents = "any",
+                    multiloopPlotThreshold = None):
     #n = 5
     #includeReflections = False #False for UU
     #primeOnly = True
     #numComponents = 2
+    n = regmax
     loops = {}
     numLoops = 0
     db = mysql.connector.connect( username=os.environ.get('MYSQL_USER'), password=os.environ.get('MYSQL_PASS') )
@@ -415,11 +418,12 @@ def plantriCatalog( n = 5, generatePDF = True, includeReflections = False, prime
     """
     
     cursor.execute(create_table)
-    for k in range(4, n+1 ):
+    for k in range(regmin, n+1 ):
         loops[k] = []
-        for loop in generateMultiloops( k, numComponents = numComponents,\
+        data, seq = generateMultiloops( k, numComponents = numComponents,\
                                         includeReflections = includeReflections, primeOnly = primeOnly,\
-                                        db = db, cursor = cursor ):
+                                        db = db, cursor = cursor )
+        for loop in data:
             #print( loop["pd"] )
             loops[k].append( loop )
             #break
@@ -429,12 +433,17 @@ def plantriCatalog( n = 5, generatePDF = True, includeReflections = False, prime
             del loops[k]
     if generatePDF:
         if numComponents == "any":
-            numComponents = "any number of"
+            numComponents = "any number of components "
+        if numComponents == 1:
+            numComponents = "one component "
+        else:
+            numComponents = str(numComponents)+" components "
         input( "Ready to build catalog with "+str(numLoops)+" entries. Press any key to begin." )
-        title = "Pinning sets of all irreducible, indecomposable spherimultiloops with "+str(numComponents)+\
-                " components and at most "+str(n)+" regions"
+        title = "Pinning set data for all irreducible, indecomposable spherimultiloops with "+numComponents+\
+                " and at most "+str(n)+" regions"
         #title = "Weird pinning sets - applying the loop algorithm to multiloops"
-        createCatalog( title , loops, plantriMode = True )
+        createCatalog( title , loops, oeisSeq=seq, plantriMode = True,\
+                       multiloopPlotThreshold = multiloopPlotThreshold )
     
     
 def generateMultiloops( regions, numComponents = 1, includeReflections = False, primeOnly = True, db = None, cursor = None ):
@@ -458,31 +467,39 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
 
     if case == 0: #FFF - UU prime loops, should match https://oeis.org/A264759
         out = check_output(["knotshadow", str(regions), "-m2c2qGd"]).split(b'>>planar_code<<')[1]
+        seq = "A264759"
         
     elif case == 1: #FFT - UU prime+composite loops, should match https://oeis.org/A008989
         out = check_output(["knotshadow", str(regions), "-QGd"]).split(b'>>planar_code<<')[1]
+        seq = "A008989"
         #warnings.warn( "This case may need debugging - sigma might be wrong" ) # fixed, I think
         
     elif case == 2: #FTF - UO prime loops, should match https://oeis.org/A264760
         out = check_output(["knotshadow", str(regions), "-m2c2qGdo"]).split(b'>>planar_code<<')[1]
+        seq = "A264760"
         
     elif case == 3: #FTT - UO prime+composite loops, should match https://oeis.org/A008987
         out = check_output(["knotshadow", str(regions), "-QGdo"]).split(b'>>planar_code<<')[1]
         warnings.warn( "This case may need debugging - sigma might be wrong" )
+        seq = "A008987"
         
     elif case == 4: #TFF - UU prime multiloops, should match https://oeis.org/A113201
         out = check_output(["plantri", str(regions), "-Gqc2m2d"]).split(b'>>planar_code<<')[1]
+        seq = "A113201"
         
     elif case == 5: #TFT - UU prime+composite multiloops
         out = check_output(["plantri", str(regions), "-Gqd"]).split(b'>>planar_code<<')[1]
         warnings.warn( "This option has not been verified to behave as expected." )
+        seq = "unknown"
     
     elif case == 6: #TTF - UO prime multiloops, should match https://oeis.org/A113202
         out = check_output(["plantri", str(regions), "-Gqoc2m2d"]).split(b'>>planar_code<<')[1]
+        seq = "A113202"
         
     elif case == 7: #TTT - UO prime+composite multiloops
         out = check_output(["plantri", str(regions), "-Gqdo"]).split(b'>>planar_code<<')[1]
         warnings.warn( "This option has not been verified to behave as expected." )
+        seq = "unknown"
         #raise( "Not yet supported" )    
     
     #out = check_output(["plantri", str(n+2), "-Gqoc2m2d"]).split(b'>>planar_code<<')[1] #this get UO irr indecomp
@@ -570,7 +587,7 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
         #print()
     #print( countLoops )
 
-    return multiloops
+    return multiloops, seq
         
     """#print( len( block ) )
     #print( blocks )
@@ -1166,8 +1183,17 @@ def test12():
 
     
 
-def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode = False ):
-    """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice"""
+def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
+                   debug = False, plantriMode = False, regLabelMode = "none",
+                   multiloopPlotThreshold = None ):
+    """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice
+    regLabelMode = "numeric" --> regions labeled by numbers
+    regLabelMode = "gonality" --> regions labeled by gonality
+    regLabelMode = "none" --> don't label regions
+
+    multiloopPlotThreshold is a positive integer representing the max number of regions for which to plot
+    including the pinning set data in the tex file (as opposed to simply including it as tabular data).
+    If equal to None, tex every multiloop"""
 
     alldata = {}
     numOptimals = set()
@@ -1176,12 +1202,10 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
     skipped = 0
     loopStrings = {}
 
-    
-
     for key in links:
         loopStrings[key] = []
         data = {}
-        print( "Analyzing", key, "crossing (multi)loops" )
+        print( "Analyzing", key, "region (multi)loops" )
         counter = 1
         for link in links[key]:
             print( "link", link )
@@ -1189,7 +1213,10 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
                 graph = link.plantriCode#["plantrigraph"]
                 #data[str(link["pd"])]["graph"] = 
                 link = link.pd#["pd"]
-            drawnpd = plinkPD( link )
+            if key <= multiloopPlotThreshold:
+                drawnpd = plinkPD( link )
+            else:
+                drawnpd = link
             #while True:
             #    drawnpd = plinkPD( link )
             #    break #comment to test the one below
@@ -1263,13 +1290,29 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
     # dictionary which organizes data by pinning number
     # key = pinning number
     """value = {"count":number with this pinning number,
-        "crossings":list of crossing numbers,
+        "regions":list of crossing numbers,
         "percentagesNeedingPinPinnum:"
         "avgOptimalGonalitiesPinnum":
         "avgMinimalGonalitiesPinnum":
         "avgGonalitiesPinnum":
         """
     pinData = {}
+
+
+    numloopsByRegion = []
+    avgPinNumsByRegion = []
+    avgsPercentageNeedingPinByRegion = []
+    optgonsByRegion = []
+    mingonsByRegion = []
+    allgonsByRegion = []
+
+    regTable = [["Number of regions", "Number of multiloops with this number of regions", "Average pinning number",\
+                    "Average pinning number/number of regions", "Average optimal pinning set degree",\
+                    "Average minimal pinning set degree","Average overall pinning set degree"]]
+
+    pinNumTable = [["Pinning number", "Number of multiloops with this pinning number", "Average number of regions",\
+                    "Average pinning number/number of regions", "Average optimal pinning set degree",\
+                    "Average minimal pinning set degree","Average overall pinning set degree"]]
 
     for key in alldata:
 
@@ -1314,12 +1357,12 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
 
             #### for organizing by pinning number
             if minlen not in pinData:
-                pinData[minlen] = { "count":1,"regions":[key+2],"percentagesNeedingPinPinNum":[minlen/numRegions],\
+                pinData[minlen] = { "count":1,"regions":[key],"percentagesNeedingPinPinNum":[minlen/numRegions],\
                                     "avgOptimalGonalitiesPinNum":[],"avgMinimalGonalitiesPinNum":[],\
                                     "avgGonalitiesPinNum":[] }
             else:
                 pinData[minlen]["count"]+=1
-                pinData[minlen]["regions"].append(key+2)
+                pinData[minlen]["regions"].append(key)
                 pinData[minlen]["percentagesNeedingPinPinNum"].append(minlen/numRegions)
             ##########
             
@@ -1332,7 +1375,7 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
 
             # build table of pinning sets and average gonality by cardinal
             rows = [[],[],[],[],[]]
-            caption = "Pinning sets/average gonality by cardinal"
+            caption = "Pinning sets/average degree by cardinal"
             rows[0].append( "Cardinal" )
            
 
@@ -1372,7 +1415,7 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
             rows[3].append( str( tot ) )
 
 
-            rows[4].append( "Average gonality" )
+            rows[4].append( "Average degree" )
             cardDict = {}
             tot = 0
             for elt in alldata[key][str(link)]["gonalityDict"]:
@@ -1411,9 +1454,9 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
             pinData[minlen]["avgGonalitiesPinNum"].append(avgOverallGonality)
             ##########
             
-            col2 += "\\noindent\\textbf{Average optimal gonality:} "+str( round( avgOptimalGonality, 2 ))+"\n\n"
-            col2 += "\\noindent\\textbf{Average minimal gonality:} "+str( round( avgMinGonality, 2 ))+"\n\n"
-            col2 += "\\noindent\\textbf{Average overall gonality:} "+str( round( avgOverallGonality, 2 ))+"\n\n"
+            col2 += "\\noindent\\textbf{Average optimal degree:} "+str( round( avgOptimalGonality, 2 ))+"\n\n"
+            col2 += "\\noindent\\textbf{Average minimal degree:} "+str( round( avgMinGonality, 2 ))+"\n\n"
+            col2 += "\\noindent\\textbf{Average overall degree:} "+str( round( avgOverallGonality, 2 ))+"\n\n"
             
             tablestrings = [tableString(rows=rows,caption=caption)]
 
@@ -1421,7 +1464,7 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
             rows = []
             caption = "Pinning set data"
             rows.append( ["Pinning set", "Pindicator","Regions","Card",\
-                       "Gonality seq", "Average gonality"] )
+                       "Degree seq", "Average degree"] )
 
             regionLabels = {}
             regList = list( alldata[key][link]["fullRegSet"].copy() )
@@ -1506,19 +1549,32 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
             #tolerance = 0.0000001
             #print( "Calling saveloop with link=", link, "and drawnpd=", drawnpd, "and components=", pdToComponents( drawnpd ) )
             #input()
+
+            #quick and dirty way to overwrite region labels and label by gonality
+            if regLabelMode == "gonality":
+                regionLabels = {}
+                for reg in alldata[key][link]["fullRegSet"]:
+                    regionLabels[reg] = len( alldata[key][link]["G"].wordDict[reg] )
+            if regLabelMode == "none":
+                regionLabels = {}
+                for reg in alldata[key][link]["fullRegSet"]:
+                    regionLabels[reg] = ""
             
-            plinkFile = plinkImgFile( link, alldata[key][link]["drawnpd"], alldata[key][link]["G"].adjDict,\
-                                      alldata[key][link]["G"].wordDict,\
-                                      alldata[key][link]["minPinSets"], minPinSetDict,\
-                                      regionLabels, pdToComponents( alldata[key][link]["drawnpd"] ), filename = link, debug=debug )
-            posetFile = drawLattice( alldata[key][link]["pinSets"], alldata[key][link]["minPinSets"],\
-                                     alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
+            #regionLabels = alldata[key][link]["gonalityDict"]
+            #print( regionLabels )
 
-            loopStrings[key].append( texPinSet(linkstr, col1, col2, tablestrings, plinkFile,\
-                                          posetFile, sideBySide = True, imSepPage = True, drawnpd = alldata[key][link]["drawnpd"],\
-                                        graph = alldata[key][link]["graph"]  ) )
+            if key <= multiloopPlotThreshold:
+            
+                plinkFile = plinkImgFile( link, alldata[key][link]["drawnpd"], alldata[key][link]["G"].adjDict,\
+                                          alldata[key][link]["G"].wordDict,\
+                                          alldata[key][link]["minPinSets"], minPinSetDict,\
+                                          regionLabels, pdToComponents( alldata[key][link]["drawnpd"] ), filename = link, debug=debug )
+                posetFile = drawLattice( alldata[key][link]["pinSets"], alldata[key][link]["minPinSets"],\
+                                         alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
 
-        
+                loopStrings[key].append( texPinSet(linkstr, col1, col2, tablestrings, plinkFile,\
+                                              posetFile, sideBySide = True, imSepPage = True, drawnpd = alldata[key][link]["drawnpd"],\
+                                            graph = alldata[key][link]["graph"]  ) )        
     
         optgon = sum( avgOptimalGonalities )/len( alldata[key] )
         mingon = sum( avgMinimalGonalities )/len( alldata[key] )
@@ -1526,13 +1582,93 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
         avgPinNum = sum( pinningNumbers )/len( alldata[key] )
         avgPercentageNeedingPin = sum( percentagesNeedingPin )/len( alldata[key] )
 
+        numloopsByRegion.append( len( alldata[key] ) )
+        avgPinNumsByRegion.append( avgPinNum )
+        avgsPercentageNeedingPinByRegion.append( avgPercentageNeedingPin )
+        optgonsByRegion.append( optgon )
+        mingonsByRegion.append( mingon )
+        allgonsByRegion.append( allgon )
+
+        
+
+        regTable.append( ["${}$".format( str(key) ), "${}$".format(str( len( alldata[key] ) )), "${:.6g}$".format( avgPinNum ),\
+                            "${:.6g}$".format(avgPercentageNeedingPin ), "${:.6g}$".format( optgon ),\
+                          "${:.6g}$".format( mingon ), "${:.6g}$".format( allgon ) ] )
+
         avgStrings[key] = ""
-        avgStrings[key] += "\\noindent\\textbf{Number of multiloops with this number of crossings in this dataset:} $"+str( len( alldata[key] ) )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Number of multiloops with this number of regions in this dataset:} $"\
+                           +str( len( alldata[key] ) )+"$\n\n"
         avgStrings[key] += "\\noindent\\textbf{Average pinning number:} $"+str( avgPinNum )+"$\n\n"
-        avgStrings[key] += "\\noindent\\textbf{Average pinning number/number of regions:} $"+str( avgPercentageNeedingPin )+"$\n\n"
-        avgStrings[key] += "\\noindent\\textbf{Average optimal pinning set gonality:} $"+str( optgon )+"$\n\n"
-        avgStrings[key] += "\\noindent\\textbf{Average minimal pinning set gonality:} $"+str( mingon )+"$\n\n"
-        avgStrings[key] += "\\noindent\\textbf{Average overall pinning set gonality:} $"+str(  allgon )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average pinning number/number of regions:} $"\
+                           +str( avgPercentageNeedingPin )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average optimal pinning set degree:} $"+str( optgon )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average minimal pinning set degree:} $"+str( mingon )+"$\n\n"
+        avgStrings[key] += "\\noindent\\textbf{Average overall pinning set degree:} $"+str(  allgon )+"$\n\n"
+
+
+
+
+    regTableStr = tableString(rows = regTable, caption = "Statistical overview by number of regions (decimals shown to at most $6$ significant figures).")
+    
+    regNumsSorted = list( alldata.keys() )
+    regNumsSorted.sort()
+
+    regNumsFigs = ""
+    
+    numLoopsFile = linePlot( {"Number of regions":regNumsSorted},\
+                            {"Number of multiloops":{"color":"green","values":numloopsByRegion}},\
+                             "numRegionsNumloops" )
+
+    
+    numRegionsFile = linePlot( {"Number of regions":regNumsSorted},\
+                            {"Average pinning number":{"color":"green","values":avgPinNumsByRegion}},\
+                             "numRegionsAvgPinNum" )
+
+    percentRegionsFile = linePlot( {"Number of regions":regNumsSorted},\
+                            {"Average pinning number/number of regions":\
+                             {"color":"green","values":avgsPercentageNeedingPinByRegion}},\
+                             "numRegionsAvgsPercentages" )
+
+    #print( "hey" )
+    
+    gonsFile = linePlot( {"Number of regions":regNumsSorted},\
+                            {"Average optimal pinning set degree":\
+                             {"color":"red","values":optgonsByRegion},\
+                             "Average minimal pinning set degree":\
+                             {"color":"green","values":mingonsByRegion},\
+                             "Average overall pinning set degree":\
+                             {"color":"blue","values":allgonsByRegion}},\
+                             "numRegionsGonalities" )
+
+
+    regNumsFigs += "\\begin{multicols}{2}\n"
+    regNumsFigs += "\\begin{figure}[H]\n"+\
+           "\\centering\n"+\
+           "\\scalebox{0.6}{\\input{"+numLoopsFile+"}}\n"+\
+           "\\caption{Number of multiloops by number of regions.}\n"+\
+           "\\label{fig:"+numLoopsFile+"}\n\\end{figure}\n"
+    regNumsFigs += "\\columnbreak\n\n"
+    regNumsFigs += "\\begin{figure}[H]\n"+\
+           "\\centering\n"+\
+           "\\scalebox{0.6}{\\input{"+numRegionsFile+"}}\n"+\
+           "\\caption{Average pinning number by number of regions.}\n"+\
+           "\\label{fig:"+numRegionsFile+"}\n\\end{figure}\n"
+    regNumsFigs += "\\end{multicols}\n\n"
+    regNumsFigs += "\\begin{multicols}{2}\n"
+    regNumsFigs += "\\begin{figure}[H]\n"+\
+           "\\centering\n"+\
+           "\\scalebox{0.6}{\\input{"+percentRegionsFile+"}}\n"+\
+           "\\caption{Average pinning number/number of regions by number of regions.}\n"+\
+           "\\label{fig:"+percentRegionsFile+"}\n\\end{figure}\n"
+    regNumsFigs += "\\columnbreak\n\n"
+    regNumsFigs += "\\begin{figure}[H]\n"+\
+           "\\centering\n"+\
+           "\\scalebox{0.6}{\\input{"+gonsFile+"}}\n"+\
+           "\\caption{Average pinning set degree data by number of regions.}\n"+\
+           "\\label{fig:"+gonsFile+"}\n\\end{figure}\n"
+    regNumsFigs += "\\end{multicols}\n\n"
+
+    
 
     #### for organizing by pinning number
 
@@ -1541,23 +1677,99 @@ def createCatalog( title, links, skipTrivial = False, debug = False, plantriMode
     #                                "avgGonalitiesPinNum":[] }
 
     avgStringsPinNum = {}
-    for pinNum in pinData:
+    pinNumsSorted = list( pinData.keys() )
+    pinNumsSorted.sort()
+    numloops = []
+    optgons = []
+    mingons = []
+    allgons = []
+    avgsRegions = []
+    avgsPercentageNeedingPin = []
+    for pinNum in pinNumsSorted:
+        numloops.append( pinData[pinNum]["count"] )
         optgon = sum( pinData[pinNum]["avgOptimalGonalitiesPinNum"] )/pinData[pinNum]["count"]
+        optgons.append( optgon )
         mingon = sum( pinData[pinNum]["avgMinimalGonalitiesPinNum"] )/pinData[pinNum]["count"]
+        mingons.append( mingon )
         allgon = sum( pinData[pinNum]["avgGonalitiesPinNum"] )/pinData[pinNum]["count"]
+        allgons.append( allgon )
         avgRegions = sum( pinData[pinNum]["regions"] )/pinData[pinNum]["count"]
+        avgsRegions.append( avgRegions )
         avgPercentageNeedingPin = sum( pinData[pinNum]["percentagesNeedingPinPinNum"] )/pinData[pinNum]["count"]
+        avgsPercentageNeedingPin.append( avgPercentageNeedingPin )
         avgStringsPinNum[pinNum] = ""
         avgStringsPinNum[pinNum] += "\\noindent\\textbf{Number of multiloops with this pinning number in this dataset:} $"\
                                     +str( pinData[pinNum]["count"] )+"$\n\n"
         avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average number of regions:} $"+str( avgRegions )+"$\n\n"
         avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average pinning number/number of regions:} $"+str( avgPercentageNeedingPin )+"$\n\n"
-        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average optimal pinning set gonality:} $"+str( optgon )+"$\n\n"
-        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average minimal pinning set gonality:} $"+str( mingon )+"$\n\n"
-        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average overall pinning set gonality:} $"+str( allgon )+"$\n\n"
-        
+        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average optimal pinning set degree:} $"+str( optgon )+"$\n\n"
+        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average minimal pinning set degree:} $"+str( mingon )+"$\n\n"
+        avgStringsPinNum[pinNum] += "\\noindent\\textbf{Average overall pinning set degree:} $"+str( allgon )+"$\n\n"
 
-    makeTex( title, avgStrings, avgStringsPinNum, loopStrings, pinSetColors )
+        pinNumTable.append( ["${}$".format( pinNum ), "${}$".format(pinData[pinNum]["count"]), "${:.6g}$".format( avgRegions ),\
+                            "${:.6g}$".format(avgPercentageNeedingPin ), "${:.6g}$".format( optgon ),\
+                          "${:.6g}$".format( mingon ), "${:.6g}$".format( allgon ) ] )
+    pinNumTableStr = tableString(rows = pinNumTable, caption = "Statistical overview by pinning number (decimals shown to at most $6$ significant figures).")
+
+    pinNumsFigs = ""
+    
+    numLoopsFile = linePlot( {"Pinning number":pinNumsSorted},\
+                            {"Number of multiloops":{"color":"green","values":numloops}},\
+                             "pinNumsNumloops" )
+
+    
+    numRegionsFile = linePlot( {"Pinning number":pinNumsSorted},\
+                            {"Average number of regions":{"color":"green","values":avgsRegions}},\
+                             "pinNumsAvgsRegions" )
+
+    percentRegionsFile = linePlot( {"Pinning number":pinNumsSorted},\
+                            {"Average pinning number/number of regions":\
+                             {"color":"green","values":avgsPercentageNeedingPin}},\
+                             "pinNumsAvgsPercentages" )
+
+    #print( "hey" )
+    
+    gonsFile = linePlot( {"Pinning number":pinNumsSorted},\
+                            {"Average optimal pinning set degree":\
+                             {"color":"red","values":optgons},\
+                             "Average minimal pinning set degree":\
+                             {"color":"green","values":mingons},\
+                             "Average overall pinning set degree":\
+                             {"color":"blue","values":allgons}},\
+                             "pinNumsGonalities" )
+
+    #print( "hi" )
+    pinNumsFigs += "\\begin{multicols}{2}\n"
+    pinNumsFigs += "\\begin{figure}[H]\n"+\
+           "\\centering\n"+\
+           "\\scalebox{0.6}{\\input{"+numLoopsFile+"}}\n"+\
+           "\\caption{Number of multiloops by pinning number.}\n"+\
+           "\\label{fig:"+numLoopsFile+"}\n\\end{figure}\n"
+    pinNumsFigs += "\\columnbreak\n\n"
+    pinNumsFigs += "\\begin{figure}[H]\n"+\
+           "\\centering\n"+\
+           "\\scalebox{0.6}{\\input{"+numRegionsFile+"}}\n"+\
+           "\\caption{Average number of regions by pinning number.}\n"+\
+           "\\label{fig:"+numRegionsFile+"}\n\\end{figure}\n"
+    pinNumsFigs += "\\end{multicols}\n\n"
+    pinNumsFigs += "\\begin{multicols}{2}\n"
+    pinNumsFigs += "\\begin{figure}[H]\n"+\
+           "\\centering\n"+\
+           "\\scalebox{0.6}{\\input{"+percentRegionsFile+"}}\n"+\
+           "\\caption{Average pinning number/number of regions by pinning number.}\n"+\
+           "\\label{fig:"+percentRegionsFile+"}\n\\end{figure}\n"
+    pinNumsFigs += "\\columnbreak\n\n"
+    pinNumsFigs += "\\begin{figure}[H]\n"+\
+           "\\centering\n"+\
+           "\\scalebox{0.6}{\\input{"+gonsFile+"}}\n"+\
+           "\\caption{Average pinning set degree data by pinning number.}\n"+\
+           "\\label{fig:"+gonsFile+"}\n\\end{figure}\n"
+    pinNumsFigs += "\\end{multicols}\n\n"
+    
+    makeTex( title, oeisSeq, avgStrings, regTableStr, avgStringsPinNum, pinNumTableStr,\
+             regNumsFigs, pinNumsFigs, loopStrings, pinSetColors, multiloopPlotThreshold )
+
+    #print( "yo" )
 
     return skipped
 
@@ -1593,7 +1805,8 @@ def computeRGBColors( range1, range2 ):
         colors["mins"][i] = {"label": "green"+str(i), "rgb":(lightness,startHue+i*step2,lightness)}
     return colors    
 
-def makeTex( title, avgStrings, avgStringsPinNum, loopStrings, colors ):
+def makeTex( title, oeisSeq, avgStrings, regTableStr, avgStringsPinNum,\
+             pinNumTableStr, regNumsFigs, pinNumsFigs, loopStrings, colors, multiloopPlotThreshold ):
     filename = "tex/pinSets"
     try: # delete old files 
         os.remove(filename+".tex")
@@ -1638,29 +1851,43 @@ def makeTex( title, avgStrings, avgStringsPinNum, loopStrings, colors ):
     preamble += "\\setcounter{tocdepth}{2}\n\n"
     preamble += "\\title{"+title+"}\n\n"
     preamble += "\\author{Christopher-Lloyd Simon and Ben Stucky}\n\n"
-    doc = preamble + "\\begin{document}%\n\\maketitle\n\n\\tableofcontents\n\n"
+    doc = preamble + "\\begin{document}%\n\\maketitle\n\n\\tableofcontents\n\n\\newpage\n\n"
 
     intro = open( "tex/catalogIntro.txt", 'r' )
-    doc += intro.read()+"\n\n"
+    doc += intro.read().format( title.lower(), oeisSeq, multiloopPlotThreshold ) +"\n\n"
     intro.close()
 
-    doc += "\\section{Statistics by number of crossings}\n\\label{sec:byCrossing}\n\n"
-    for key in loopStrings:        
-        doc += "\\subsection{$"+str(key)+"$ crossings}\n\n"+avgStrings[key]+"\n\n"
-
-    doc += "\\section{Statistic by pinning number}\n\\label{sec:byPinning}\n\n"
-    for pinnum in avgStringsPinNum:        
-        doc += "\\subsection{Pinning number $"+str(pinnum)+"$}\n\n"+avgStringsPinNum[pinnum]+"\n\n"
-
-    doc += "\\bibliographystyle{alpha}\n\\bibliography{tex/catalog_ref}\n\n"
+    doc += "\n\n\\bibliographystyle{alpha}\n\\bibliography{tex/catalog_ref}\n\n"
 
     doc += "\\small\n\n"#note the font size change
+
+    doc += "\\newpage\n\n\\section{Statistical overview}\n\\label{sec:stats}\n\n"
+
+    doc += "\\subsection{By number of regions - tabular data}\n\\label{sec:byRegions}\n\n"
+    #for key in loopStrings:        
+    #    doc += "\\subsection{$"+str(key)+"$ regions}\n\n"+avgStrings[key]+"\n\n"
+
+    doc += regTableStr+"\n\n"
+
+    doc += "\\newpage\n\n\\subsection{By pinning number - tabular data}\n\\label{sec:byPinning}\n\n"
+
+    doc += pinNumTableStr+"\n\n"    
+
+    doc += "\\newpage\n\n\\subsection{By number of regions - graphical data}\n\\label{sec:byNumRegionsGraph}\n\n"\
+           + regNumsFigs+"\n\n"    
+
+    #for pinnum in avgStringsPinNum:        
+    #    doc += "\\subsection{Pinning number $"+str(pinnum)+"$}\n\n"+avgStringsPinNum[pinnum]+"\n\n"
+
+    doc += "\\newpage\n\n\\subsection{By pinning number - graphical data}\n\\label{sec:byPinningGraph}\n\n"\
+           + pinNumsFigs+"\n\n"
         
-    doc += "\\newpage\n\n\\section{Multiloops}\n\\label{sec:multiloops}\n\n"
+    doc += "\\newpage\n\n\\section{Spherimultiloops}\n\\label{sec:multiloops}\n\n"
     for key in loopStrings:
-        doc += "\\subsection{$"+str(key)+"$ crossings}\n\n"
-        for loopstring in loopStrings[key]:
-            doc += loopstring
+        if key <= multiloopPlotThreshold:
+            doc += "\\subsection{$"+str(key)+"$ regions}\n\n"
+            for loopstring in loopStrings[key]:
+                doc += loopstring
 
     doc += "\n\\end{document}"
     f.write( doc )
@@ -1671,9 +1898,9 @@ def makeTex( title, avgStrings, avgStringsPinNum, loopStrings, colors ):
     call(['pdflatex', '--shell-escape', '-halt-on-error', '-output-directory', filename.split("/")[0], filename+".tex"])
     call(['pdflatex', '--shell-escape', '-halt-on-error', '-output-directory', filename.split("/")[0], filename+".tex"]) 
     try:
-        os.remove(filename+".aux")
-        os.remove(filename+".log")
-        os.remove(filename+".toc")
+        #os.remove(filename+".aux")
+        #os.remove(filename+".log")
+        #os.remove(filename+".toc")
         shutil.rmtree( "svg-inkscape/" )
     except FileNotFoundError:
         pass
@@ -1686,16 +1913,18 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     doc = "\\subsubsection{"+linkstr+"}\n\n"
 
     if drawnpd is not None:
-        doc += "{\\small\\noindent PD code drawn by snappy: $"+str( drawnpd )+"$}\n\n"
+        doc += "{\\small\\noindent PD code drawn by \\texttt{SnapPy}: $"+str( drawnpd )+"$}\n\n"
 
     if graph is not None:
-        doc += "{\\small\\noindent Planar representation generated by plantri: $"+str( graph )+"$}\n\n"
+        doc += "{\\small\\noindent Planar representation generated by \\texttt{plantri}: $"+str( graph )+"$}\n\n"
 
     doc += "\\begin{multicols}{2}\n"
     doc += "{\\normalsize "+col1+"}\n"
     doc += "\\columnbreak\n\n"
     doc += "{\\normalsize "+col2+"}\n"
-    doc += "\\end{multicols}\n\n"   
+    doc += "\\end{multicols}\n\n"
+
+    doc += tableStrings[0]+"\n\n"
     
     #from sage.misc.latex import latex_examples     
     #foo = latex_examples.diagram()
@@ -1717,25 +1946,25 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     doc += "\\begin{figure}[H]\n"+\
            "\\centering\n"+\
            "\\includesvg[inkscapelatex=false,width=250pt]{"+plinkImg+"}\n"+\
-           "\\caption{Snappy loop plot.}\n"+\
+           "\\caption{\\texttt{SnapPy} multiloop plot.}\n"+\
            "\\label{fig:"+plinkImg+"}\n\\end{figure}\n"
     if sideBySide:
         doc += "\\columnbreak\n\n"
     doc += "\\begin{figure}[H]\n"+\
            "\\centering\n"+\
            "\\scalebox{0.8}{\\input{"+posetImg+"}}\n"+\
-           "\\caption{Minimal join semilattice of pinning sets.}\n"+\
+           "\\caption{Minimal join sub-semi-lattice of minimal pinning sets.}\n"+\
            "\\label{fig:"+posetImg+"}\n\\end{figure}\n"
     if sideBySide:
         doc += "\\end{multicols}\n\n"
    
 
-    doc += tableStrings[0]+"\n\n"
+    
 
     doc += "\\newpage\n\n"
      
-    doc += tableStrings[1]+"\n\n"
-    doc += "\\newpage\n\n"
+    #doc += tableStrings[1]+"\n\n"
+    #doc += "\\newpage\n\n"
 
     return doc
 
@@ -1752,6 +1981,49 @@ def getUnusedFileName( ext, directory = "./" ):
         except FileNotFoundError:
             break
     return filename
+
+####################### CREATING LATEX LINE PLOTS WITH MATPLOTLIB ####################################
+def linePlot( xdata, ydata, filename ):
+    """Create latex line graph to be imported with pgf package.
+    Uses matplotlib.pyplot
+    Assumes xdata = {label:[values]} (has 1 key)
+    and ydata = {label:{'color':c,'values':[values]}} (can have many keys)"""
+    if filename is None:
+        filename = getUnusedFileName( "pgf", "tex/img/" )
+    else:
+        filename = "tex/img/"+filename[:200]+".pgf"
+    plt.rcParams.update({"pgf.texsystem": "pdflatex"})
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    #ax2 = plt.figure().gca()
+    ax.xaxis.get_major_locator().set_params(integer=True)
+    ax.yaxis.get_major_locator().set_params(integer=True)
+    
+    xkey = getKey(xdata)
+    ax.set_xlabel(xkey)
+    counter = 0
+    ms = 4
+    lw = 2
+    for key in ydata:        
+        counter += 1
+        #print( xdata[xkey] )
+        #print( ydata[key]['values'] )
+        ax.plot(xdata[xkey], ydata[key]['values'], color = ydata[key]['color'],\
+                marker = 'o', linestyle ='--', label = key, linewidth=lw, markersize=ms)
+        lw *= 0.8
+        ms *= 0.8
+        #print( counter, key )
+    #ax.plot([4,5,6,7,8,9], [8,7,6,5,4,3], 'ro--', label = "Average optimal gonality", linewidth=2, markersize=12)
+    #print( "sup2" )
+    if len( ydata.keys() ) > 1:
+        ax.legend()
+    else:
+        ax.set_ylabel(getKey(ydata))
+    #print( "sup3" )
+    plt.savefig(filename, backend='pgf') # save as PGF file which can be used in your document via `\input`
+    plt.close()
+    return filename
+
 
 ####################### CREATING PINNING POSET WITH SAGE ####################################
 
@@ -1774,8 +2046,8 @@ def posetPlot( sageObject, heights, colors, vertlabels, edgeColors, filename ):
     return filename
 
     
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+#import matplotlib.pyplot as plt
+#import matplotlib.image as mpimg
 
 #trying to convert to tikz
 #from matplotlib.backends.backend_pgf import _tex_escape as mpl_common_texification
@@ -1784,9 +2056,9 @@ import matplotlib.image as mpimg
 #i haven't tried downgrading matplotlib to 3.6 because I'm afraid it could be break sage
 #nevermind i downgraded so the import at works, but it's not doing anything i want it to
 
-def posetPlotOld( sageObject, heights, colors, vertlabels, edgeColors, filename ):
-    """A workaround function for getting a sage object to show via matplotlib
-    since sageObject.plot() does not produce visible output when run from script"""
+"""def posetPlotOld( sageObject, heights, colors, vertlabels, edgeColors, filename ):
+    #A workaround function for getting a sage object to show via matplotlib
+    #since sageObject.plot() does not produce visible output when run from script
     p = sageObject.plot( layout = "ranked",\
                          vertex_colors = colors, edge_thickness = 2,
                          edge_style = "-", heights = heights, vertex_labels = vertlabels,
@@ -1810,7 +2082,7 @@ def posetPlotOld( sageObject, heights, colors, vertlabels, edgeColors, filename 
     plt.close()
     #mpl.rcParams.update(mpl.rcParamsDefault)
     #os.remove(filename)
-    return filename
+    return filename"""
 
 def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, filename = None ):
     elts, top = minJoinSemilatticeContaining( minPinSets )
