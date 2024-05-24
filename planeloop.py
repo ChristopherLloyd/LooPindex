@@ -163,6 +163,9 @@ Kinoshita_Terasaka_K11n42  = [(22,5,1,6),(1,9,2,8),(4,9,5,10),(7,15,8,14),(6,15,
 Conway_K11n34 = [(22,5,1,6),(6,12,7,11),(7,12,8,13),(8,14,9,13),(1,15,2,14),(4,15,5,16),(9,19,10,18),\
                  (10,17,11,18),(2,20,3,19),(3,20,4,21),(16,22,17,21)]
 
+missing = [[5, 8, 6, 1], [4, 20, 5, 9], [7, 19, 8, 20], [6, 19, 7, 18],\
+           [1, 16, 2, 15], [9, 3, 10, 4], [17, 12, 18, 13], [16, 12, 17, 11], [2, 14, 3, 15], [10, 14, 11, 13]]
+
 #L = snappy.Link('DT: [4,   8, -14,   2,  20, -16,  -6, -18, -12,  22,  10]')
 #M = snappy.Link('DT: [4,   8, -14,   2,  -20, 16,  -6, 18, 12,  -22,  -10]')
 
@@ -198,6 +201,7 @@ def main():
     #return
     #monorbigonFig()
     #smallMonorBigonlessPinningSets()
+
     #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
     #createCatalog( "Some counterexamples to naive gonality conjectures" , loops )
 
@@ -212,7 +216,8 @@ def main():
 
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
-    plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
+    #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
+    createCatalog( "Missing multiloop" , {12:[missing]} )
 
 def smallMonorBigonlessPinningSets():
     a = smallMonorbigonLess

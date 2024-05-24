@@ -2,7 +2,7 @@ import snappy
 import sys
 from tkinter import font
 from plinkpd2 import getLEwithPD
-from sage.all import Polyhedron
+from sage.all import Polyhedron, QQ
 
 #print( len( sys.argv ) )
 
@@ -320,7 +320,7 @@ regPolysSage = {}
 
 for reg in regPolys:
     #c.create_polygon(regPolys[reg], outline = "blue", fill = "orange", width = 2)
-    regPolysSage[reg] = Polyhedron(vertices = regPolys[reg])
+    regPolysSage[reg] = Polyhedron(vertices = regPolys[reg],backend='ppl', base_ring=QQ)
 
 infRegion = reg
 
