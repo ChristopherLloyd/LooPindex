@@ -141,6 +141,31 @@ flype2 = [(3,10,4,11),(11,4,12,5),(13,9,14,8),(9,17,10,16),\
          (1,24,2,25),(25,32,26,1),(23,27,24,26),(27,3,28,2),\
          (5,29,6,28),(29,18,30,19),(7,30,8,31),(31,21,32,20)]
 
+memoryTest = [[[24, 21, 1, 22], [22, 18, 23, 17], [23, 16, 24, 17], [20, 7, 21, 8],\
+              [1, 7, 2, 6], [18, 6, 19, 5], [15, 10, 16, 11], [8, 14, 9, 13], [19, 2, 20, 3],\
+              [4, 11, 5, 12], [9, 14, 10, 15], [12, 3, 13, 4]],\
+[[17, 24, 18, 1], [21, 16, 22, 17], [23, 14, 24, 15], [18, 8, 19, 7], [1, 7, 2, 6], [20, 5, 21, 6],\
+ [15, 22, 16, 23], [13, 8, 14, 9], [19, 3, 20, 2], [11, 4, 12, 5], [9, 12, 10, 13], [3, 10, 4, 11]],\
+[[17, 24, 18, 1], [21, 16, 22, 17], [23, 14, 24, 15], [18, 7, 19, 8], [1, 8, 2, 9], [9, 20, 10, 21],\
+ [15, 22, 16, 23], [6, 13, 7, 14], [19, 3, 20, 2], [10, 5, 11, 6], [12, 3, 13, 4], [4, 11, 5, 12]],\
+[[24, 21, 1, 22], [22, 18, 23, 17], [23, 16, 24, 17], [20, 9, 21, 10], [1, 9, 2, 8], [18, 8, 19, 7],\
+ [15, 10, 16, 11], [19, 2, 20, 3], [6, 11, 7, 12], [14, 3, 15, 4], [12, 5, 13, 6], [4, 13, 5, 14]],\
+[[11, 24, 12, 1], [7, 10, 8, 11], [8, 23, 9, 24], [12, 18, 13, 17], [1, 17, 2, 16], [6, 15, 7, 16],\
+ [22, 9, 23, 10], [18, 22, 19, 21], [13, 3, 14, 2], [14, 5, 15, 6], [19, 5, 20, 4], [20, 3, 21, 4]]]
+
+r3one =  [(1,7,2,6),(24,7,1,8),(5,10,6,11),(4,12,5,11),(9,15,10,14),(8,15,9,16),(13,18,14,19),\
+          (12,20,13,19),(2,22,3,21),(3,20,4,21),(17,23,18,22),(16,23,17,24)]
+r3two = [(1,7,2,6),(24,7,1,8),(5,10,6,11),(3,13,4,12),(9,15,10,14),(8,15,9,16),(13,18,14,19),\
+         (4,19,5,20),(2,22,3,21),(11,21,12,20),(17,23,18,22),(16,23,17,24)]
+
+Kinoshita_Terasaka_K11n42  = [(22,5,1,6),(1,9,2,8),(4,9,5,10),(7,15,8,14),(6,15,7,16),(11,16,12,17),\
+                              (12,18,13,17),(2,20,3,19),(13,18,14,19),(3,20,4,21),(10,22,11,21)]
+Conway_K11n34 = [(22,5,1,6),(6,12,7,11),(7,12,8,13),(8,14,9,13),(1,15,2,14),(4,15,5,16),(9,19,10,18),\
+                 (10,17,11,18),(2,20,3,19),(3,20,4,21),(16,22,17,21)]
+
+#L = snappy.Link('DT: [4,   8, -14,   2,  20, -16,  -6, -18, -12,  22,  10]')
+#M = snappy.Link('DT: [4,   8, -14,   2,  -20, 16,  -6, 18, 12,  -22,  -10]')
+
 # Main
 
 def main():
@@ -172,7 +197,7 @@ def main():
     #irrPrime( n = 10 )
     #return
     #monorbigonFig()
-    #smallMonorBigonlessPinningSets()
+    smallMonorBigonlessPinningSets()
     #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
     #createCatalog( "Some counterexamples to naive gonality conjectures" , loops )
 
@@ -180,11 +205,18 @@ def main():
     #loops = {16:[flype1,flype2]}
     #createCatalog( "Flype conjecture" , loops )
 
-    plantriCatalog( 14, 4, numComponents = 1, multiloopPlotThreshold = 12 )
+    #loops={13:[Kinoshita_Terasaka_K11n42, Conway_K11n34]}
+    #createCatalog( "Testing mutants" , loops )
+
+    #createCatalog( "Reidemeister III demo" , {12:[r3one,r3two]} )
+
+    #createCatalog( "Testing memory usage" , {12:memoryTest} )
+
+    #plantriCatalog( 14, 4, numComponents = 1, multiloopPlotThreshold = 12 )
 
 def smallMonorBigonlessPinningSets():
     a = smallMonorbigonLess
-    loops = {6:[a[0]],8:[a[1]],9:[a[2]],10:[a[3],a[4],a[5]]}
+    loops = {8:[a[0]],10:[a[1]],11:[a[2]],12:[a[3],a[4],a[5]]}
     print( loops )
     createCatalog( "Pinning sets of all spherimultiloops with at most $12$ regions and no monorbigons" , loops )
 
@@ -403,7 +435,7 @@ def fig1():
     
 
 def plantriCatalog( regmax, regmin, generatePDF = True, includeReflections = False, primeOnly = True, numComponents = "any",
-                    multiloopPlotThreshold = None):
+                    multiloopPlotThreshold = None, dbMode = False):
     #n = 5
     #includeReflections = False #False for UU
     #primeOnly = True
@@ -411,29 +443,33 @@ def plantriCatalog( regmax, regmin, generatePDF = True, includeReflections = Fal
     n = regmax
     loops = {}
     numLoops = 0
-    db = mysql.connector.connect( username=os.environ.get('MYSQL_USER'), password=os.environ.get('MYSQL_PASS') )
-    cursor = db.cursor()
-    try:
-        cursor.execute("DROP DATABASE multiloops") #hangs sometimes, if this happens:
-        # run and kill the hanging processes with
-        # sudo mysqladmin processlist -u root -p
-        # sudo mysqladmin kill [pid]
-    except: #DatabaseError
-        pass
+    db = None
+    cursor = None
+    if dbMode:
+        db = mysql.connector.connect( username=os.environ.get('MYSQL_USER'), password=os.environ.get('MYSQL_PASS') )
+        cursor = db.cursor()
+        try:
+            cursor.execute("DROP DATABASE multiloops") #hangs sometimes, if this happens:
+            # run and kill the hanging processes with
+            # sudo mysqladmin processlist -u root -p
+            # sudo mysqladmin kill [pid]
+        except: #DatabaseError
+            pass
     
-    cursor.execute("CREATE DATABASE multiloops")
-    cursor.execute("USE multiloops")
-    create_table = """
-        CREATE TABLE mloops(
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        pc VARCHAR(500),
-        pd VARCHAR(500),
-        sigma VARCHAR(500),
-        components INT
-        )
-    """
-    
-    cursor.execute(create_table)
+        cursor.execute("CREATE DATABASE multiloops")
+        cursor.execute("USE multiloops")
+        create_table = """
+            CREATE TABLE mloops(
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            pc VARCHAR(500),
+            pd VARCHAR(500),
+            sigma VARCHAR(500),
+            components INT
+            )
+        """
+        
+        cursor.execute(create_table)
+        
     for k in range(regmin, n+1 ):
         loops[k] = []
         data, seq = generateMultiloops( k, numComponents = numComponents,\
@@ -588,7 +624,9 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
         insert_entry = insert_entry[:-2]
         cursor.execute(insert_entry)
 
-    db.commit()
+    if db is not None:
+
+        db.commit()
             #countLoops += 1
         #     multiloops.append( data )
         #multiloops.append(  )#, loopsOnly ) )
@@ -1224,7 +1262,7 @@ def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
         print( "Analyzing", key, "region (multi)loops" )
         counter = 1
         for link in links[key]:
-            print( "link", link )
+            
             if plantriMode:
                 graph = link.plantriCode#["plantrigraph"]
                 #data[str(link["pd"])]["graph"] = 
@@ -1234,6 +1272,7 @@ def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
                 drawnpd = plinkPD( link )
             else:
                 drawnpd = link
+            print( "current link:", link )
             #while True:
             #    drawnpd = plinkPD( link )
             #    break #comment to test the one below
@@ -2901,7 +2940,8 @@ class SurfaceGraph:
             #except KeyError:
             #    pass
 
-        copyword.freeReduce()
+        #copyword.freeReduce()
+        copyword.cycReduce()
         return copyword, source
     
     def dfs( self, curVert=0, spanningTree = True ):
@@ -3088,7 +3128,7 @@ class Word:
                     return seg, power
         return self.copy(), 1
     
-    def si( self, order, bypassCycReduce = False, verbose = False ):
+    def si( self, order, bypassCycReduce = True, verbose = False ):
         """Counts self intersections of self with respect to a global cylic order
         EXPECTS INPUT TO BE CYCLICALLY REDUCED
         set bypassCycReduce to True to skip this check"""
@@ -3108,7 +3148,8 @@ class Word:
             self.cycReduce()
             other.cycReduce()
         else:
-            warnings.warn( "WARNING: input may not be cyclically reduced")
+            #warnings.warn( "WARNING: input may not be cyclically reduced")
+            pass
 
         # compute primitive roots by default
         if not assumePrimitive:            
