@@ -322,6 +322,11 @@ for reg in regPolys:
     #c.create_polygon(regPolys[reg], outline = "blue", fill = "orange", width = 2)
     regPolysSage[reg] = Polyhedron(vertices = regPolys[reg],backend='ppl', base_ring=QQ)
 
+# https://groups.google.com/g/sage-support/c/lsUODuV47kc
+# Polyhedron constructor has an issue with the multiloop below - that is why the kwargs are added
+# [[5, 8, 6, 1], [4, 20, 5, 9], [7, 19, 8, 20], [6, 19, 7, 18],[1, 16, 2, 15],\
+# [9, 3, 10, 4], [17, 12, 18, 13], [16, 12, 17, 11], [2, 14, 3, 15], [10, 14, 11, 13]]
+
 infRegion = reg
 
 #print( regPolysSage )

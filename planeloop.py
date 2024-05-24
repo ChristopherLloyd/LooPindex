@@ -141,6 +141,11 @@ flype2 = [(3,10,4,11),(11,4,12,5),(13,9,14,8),(9,17,10,16),\
          (1,24,2,25),(25,32,26,1),(23,27,24,26),(27,3,28,2),\
          (5,29,6,28),(29,18,30,19),(7,30,8,31),(31,21,32,20)]
 
+flype_mutation1 =  [ [ 7, 14, 8, 1] , [ 6, 11, 7, 12] , [ 13, 10, 14, 11] , [ 8, 3, 9, 4] ,\
+             [ 1, 4, 2, 5] , [ 12, 5, 13, 6] , [ 2, 9, 3, 10] ]
+flype_mutation2 =  [ [ 5, 14, 6, 1] , [ 4, 11, 5, 12] , [ 13, 10, 14, 11] , [ 6, 10, 7, 9] ,\
+            [ 1, 9, 2, 8] , [ 12, 3, 13, 4] , [ 7, 3, 8, 2] ] 
+
 memoryTest = [[[24, 21, 1, 22], [22, 18, 23, 17], [23, 16, 24, 17], [20, 7, 21, 8],\
               [1, 7, 2, 6], [18, 6, 19, 5], [15, 10, 16, 11], [8, 14, 9, 13], [19, 2, 20, 3],\
               [4, 11, 5, 12], [9, 14, 10, 15], [12, 3, 13, 4]],\
@@ -163,8 +168,8 @@ Kinoshita_Terasaka_K11n42  = [(22,5,1,6),(1,9,2,8),(4,9,5,10),(7,15,8,14),(6,15,
 Conway_K11n34 = [(22,5,1,6),(6,12,7,11),(7,12,8,13),(8,14,9,13),(1,15,2,14),(4,15,5,16),(9,19,10,18),\
                  (10,17,11,18),(2,20,3,19),(3,20,4,21),(16,22,17,21)]
 
-missing = [[5, 8, 6, 1], [4, 20, 5, 9], [7, 19, 8, 20], [6, 19, 7, 18],\
-           [1, 16, 2, 15], [9, 3, 10, 4], [17, 12, 18, 13], [16, 12, 17, 11], [2, 14, 3, 15], [10, 14, 11, 13]]
+missing = [[5, 8, 6, 1], [4, 20, 5, 9], [7, 19, 8, 20], [6, 19, 7, 18],[1, 16, 2, 15], [9, 3, 10, 4],\
+           [17, 12, 18, 13], [16, 12, 17, 11], [2, 14, 3, 15], [10, 14, 11, 13]]
 
 #L = snappy.Link('DT: [4,   8, -14,   2,  20, -16,  -6, -18, -12,  22,  10]')
 #M = snappy.Link('DT: [4,   8, -14,   2,  -20, 16,  -6, 18, 12,  -22,  -10]')
@@ -205,19 +210,19 @@ def main():
     #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
     #createCatalog( "Some counterexamples to naive gonality conjectures" , loops )
 
-    #loops = {5:[flypeExample,flypeExample2]}
+    loops = {9:[flype_mutation1,flype_mutation2]}
     #loops = {16:[flype1,flype2]}
-    #createCatalog( "Flype conjecture" , loops )
+    createCatalog( "Pinning posets changes drastically under flypes and mutations" , loops )
 
     #loops={13:[Kinoshita_Terasaka_K11n42, Conway_K11n34]}
     #createCatalog( "Testing mutants" , loops )
 
-    #createCatalog( "Reidemeister III demo" , {12:[r3one,r3two]} )
+    #createCatalog( "Pinning poset changes drastically under Reidemeister III" , {12:[r3one,r3two]} )
 
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
     #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
-    createCatalog( "Missing multiloop" , {12:[missing]} )
+    #createCatalog( "Missing multiloop" , {12:[missing]} )
 
 def smallMonorBigonlessPinningSets():
     a = smallMonorbigonLess
@@ -1244,7 +1249,7 @@ def test12():
 
 def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
                    debug = False, plantriMode = False, regLabelMode = "none",
-                   multiloopPlotThreshold = None ):
+                   multiloopPlotThreshold = None, includeIntro = False ):
     """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice
     regLabelMode = "numeric" --> regions labeled by numbers
     regLabelMode = "gonality" --> regions labeled by gonality
@@ -1829,7 +1834,7 @@ def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
     pinNumsFigs += "\\end{multicols}\n\n"
     
     makeTex( title, oeisSeq, avgStrings, regTableStr, avgStringsPinNum, pinNumTableStr,\
-             regNumsFigs, pinNumsFigs, loopStrings, pinSetColors, multiloopPlotThreshold )
+             regNumsFigs, pinNumsFigs, loopStrings, pinSetColors, multiloopPlotThreshold, includeIntro )
 
     #print( "yo" )
 
@@ -1868,7 +1873,7 @@ def computeRGBColors( range1, range2 ):
     return colors    
 
 def makeTex( title, oeisSeq, avgStrings, regTableStr, avgStringsPinNum,\
-             pinNumTableStr, regNumsFigs, pinNumsFigs, loopStrings, colors, multiloopPlotThreshold ):
+             pinNumTableStr, regNumsFigs, pinNumsFigs, loopStrings, colors, multiloopPlotThreshold, includeIntro ):
     filename = "tex/pinSets"
     try: # delete old files 
         os.remove(filename+".tex")
@@ -1913,43 +1918,50 @@ def makeTex( title, oeisSeq, avgStrings, regTableStr, avgStringsPinNum,\
     preamble += "\\setcounter{tocdepth}{2}\n\n"
     preamble += "\\title{"+title+"}\n\n"
     preamble += "\\author{Christopher-Lloyd Simon and Ben Stucky}\n\n"
-    doc = preamble + "\\begin{document}%\n\\maketitle\n\n\\tableofcontents\n\n\\newpage\n\n"
+    doc = preamble + "\\begin{document}%\n\n"
 
-    intro = open( "tex/catalogIntro.txt", 'r' )
-    doc += intro.read().format( title.lower(), oeisSeq, multiloopPlotThreshold ) +"\n\n"
-    intro.close()
+    if includeIntro:
+        doc += "\\maketitle\n\n"
+        intro = open( "tex/catalogIntro.txt", 'r' )
+        doc += intro.read().format( title.lower(), oeisSeq, multiloopPlotThreshold ) +"\n\n"
+        intro.close()
 
-    doc += "\n\n\\bibliographystyle{alpha}\n\\bibliography{tex/catalog_ref}\n\n"
+        doc += "\\tableofcontents\n\n\\newpage\n\n"
 
-    doc += "\\small\n\n"#note the font size change
+        doc += "\n\n\\bibliographystyle{alpha}\n\\bibliography{tex/catalog_ref}\n\n"
 
-    doc += "\\newpage\n\n\\section{Statistical overview}\n\\label{sec:stats}\n\n"
+        doc += "\\small\n\n"#note the font size change
 
-    doc += "\\subsection{By number of regions - tabular data}\n\\label{sec:byRegions}\n\n"
-    #for key in loopStrings:        
-    #    doc += "\\subsection{$"+str(key)+"$ regions}\n\n"+avgStrings[key]+"\n\n"
+        doc += "\\newpage\n\n\\section{Statistical overview}\n\\label{sec:stats}\n\n"
 
-    doc += regTableStr+"\n\n"
+        doc += "\\subsection{By number of regions - tabular data}\n\\label{sec:byRegions}\n\n"
+        #for key in loopStrings:        
+        #    doc += "\\subsection{$"+str(key)+"$ regions}\n\n"+avgStrings[key]+"\n\n"
 
-    doc += "\\newpage\n\n\\subsection{By pinning number - tabular data}\n\\label{sec:byPinning}\n\n"
+        doc += regTableStr+"\n\n"
 
-    doc += pinNumTableStr+"\n\n"    
+        doc += "\\newpage\n\n\\subsection{By pinning number - tabular data}\n\\label{sec:byPinning}\n\n"
 
-    doc += "\\newpage\n\n\\subsection{By number of regions - graphical data}\n\\label{sec:byNumRegionsGraph}\n\n"\
-           + regNumsFigs+"\n\n"    
+        doc += pinNumTableStr+"\n\n"    
 
-    #for pinnum in avgStringsPinNum:        
-    #    doc += "\\subsection{Pinning number $"+str(pinnum)+"$}\n\n"+avgStringsPinNum[pinnum]+"\n\n"
+        doc += "\\newpage\n\n\\subsection{By number of regions - graphical data}\n\\label{sec:byNumRegionsGraph}\n\n"\
+               + regNumsFigs+"\n\n"    
 
-    doc += "\\newpage\n\n\\subsection{By pinning number - graphical data}\n\\label{sec:byPinningGraph}\n\n"\
-           + pinNumsFigs+"\n\n"
-        
-    doc += "\\newpage\n\n\\section{Spherimultiloops}\n\\label{sec:multiloops}\n\n"
+        #for pinnum in avgStringsPinNum:        
+        #    doc += "\\subsection{Pinning number $"+str(pinnum)+"$}\n\n"+avgStringsPinNum[pinnum]+"\n\n"
+
+        doc += "\\newpage\n\n\\subsection{By pinning number - graphical data}\n\\label{sec:byPinningGraph}\n\n"\
+               + pinNumsFigs+"\n\n"
+            
+        doc += "\\newpage\n\n\\section{Spherimultiloops}\n\\label{sec:multiloops}\n\n"
+
+    else:
+        doc += "\\section{"+title+"}\n\n"
     for key in loopStrings:
-        if multiloopPlotThreshold is None or key <= multiloopPlotThreshold:
+        if includeIntro and ( multiloopPlotThreshold is None or key <= multiloopPlotThreshold ):
             doc += "\\subsection{$"+str(key)+"$ regions}\n\n"
-            for loopstring in loopStrings[key]:
-                doc += loopstring
+        for loopstring in loopStrings[key]:
+            doc += loopstring
 
     doc += "\n\\end{document}"
     f.write( doc )
