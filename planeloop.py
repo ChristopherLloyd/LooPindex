@@ -197,7 +197,7 @@ def main():
     #irrPrime( n = 10 )
     #return
     #monorbigonFig()
-    smallMonorBigonlessPinningSets()
+    #smallMonorBigonlessPinningSets()
     #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
     #createCatalog( "Some counterexamples to naive gonality conjectures" , loops )
 
@@ -212,7 +212,7 @@ def main():
 
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
-    #plantriCatalog( 14, 4, numComponents = 1, multiloopPlotThreshold = 12 )
+    plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
 
 def smallMonorBigonlessPinningSets():
     a = smallMonorbigonLess

@@ -1,4 +1,5 @@
 from subprocess import call #used for running external scripts
+import shutil
 filename = "tex/spheriloops"
 call(['pdflatex', '--shell-escape', '-halt-on-error', '-output-directory', filename.split("/")[0], filename+".tex"])
 #call twice to fix references
