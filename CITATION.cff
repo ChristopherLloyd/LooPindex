@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software or reference examples from the catalogs, please cite as below."
+authors:
+- family-names: "Simon"
+  given-names: "Christopher-Lloyd"
+  orcid: "https://orcid.org/0000-0002-8195-2550"
+- family-names: "Stucky"
+  given-names: "Ben"
+  orcid: "https://orcid.org/0000-0003-4293-6475"
+title: "LooPin - Code to accompany 'Pin the loop taut : a one-player topologame'"
+version: 0.0.1
+doi: Pinone
+date-released: 2023-05-24
+url: "https://github.com/ChristopherLloyd/LooPin"
