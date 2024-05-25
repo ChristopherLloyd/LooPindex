@@ -1,1 +1,1 @@
-The pinning semi-lattice .pgf files for this catalog are too large for the LaTeX file to handle. They need to be excluded from the .tex file prior to compiling. In the meantime the .svg files in the img folder contain the minimal pinning sets for these loops.
+The pinning semi-lattice .pgf files for this catalog are too large for the LaTeX compiler to handle. They need to be excluded from the .tex file prior to compiling. In the meantime the .svg files in the img folder contain the minimal pinning sets for these loops.
