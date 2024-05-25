@@ -210,8 +210,8 @@ def main():
 
     #saveLoops( [naiveGonalityCounterExample,strongerCounterEx9,strongerCounterEx10,sumCounterEx] )
 
-    loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
-    createCatalog( "Some counterexamples to naive degree conjectures", loops, detailTables = True, includeIntro = False )
+    #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
+    #createCatalog( "Some counterexamples to naive degree conjectures", loops, detailTables = True, includeIntro = False )
 
     #loops = {9:[flype_mutation1,flype_mutation2]}
     #loops = {16:[flype1,flype2]}
@@ -225,7 +225,16 @@ def main():
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
     #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
-    #createCatalog( "Missing multiloop" , {12:[missing]} )
+
+    print( "hi" )
+    smallMonorBigonLessCatalog( 16 )    
+
+def smallMonorBigonLessCatalog( n ):
+    data = findMonorbigonLess( n )
+    #input( "Ready to create catalog with "+str( data[1])+" entries. Press any key to begin." )
+    createCatalog( "Pinning sets of all spherimultiloops with at most $"+str(n)+"$ regions and no monorbigon regions",\
+                   data[0], oeisSeq = "A078666")
+    
 
 def smallMonorBigonlessPinningSets():
     a = smallMonorbigonLess
@@ -285,19 +294,19 @@ def saveLoops( loops ):
     
 
 
-def findMonorbigonLess():
+def findMonorbigonLess( n ):
     
     primeOnly = True
     includeReflections = False
     numComponents = "any"
     numLoops = 0
-    n=14
+    #n=14
     loops = {}
-    for k in range(13, n+1 ):
+    for k in range(4, n+1 ):
         loops[k] = []
-        for loop in generateMultiloops( crossings = k, numComponents = numComponents, includeReflections = includeReflections, primeOnly = primeOnly ):
-            #print( loop["pd"] )
-            loops[k].append( loop["pd"] )
+        for loop in generateMultiloops( k, numComponents = numComponents, includeReflections = includeReflections, primeOnly = primeOnly )[0]:
+            #print( loop )
+            loops[k].append( loop.pd )
             #break
             #return
         numLoops += len( loops[k] )
@@ -305,25 +314,38 @@ def findMonorbigonLess():
             del loops[k]
 
     
-    monorbigonLess = []
+    monorbigonLess = {}
     regLabels = {}
+    numLoops = 0
     for crossNum in loops:
-        print( "Crossing number:", crossNum )
+        #print( "Number of regions:", crossNum )
         counter = 1
         for loop in loops[crossNum]:
-            #print( "Checking loop", counter )
+            #print( "Checking loop", loop )
             
             #drawnpd = plinkPD( loop )
             G = SurfaceGraphFromPD( loop )
+            #print( G )
+            #print( G.wordDict )
             moveOn = False
             for word in G.wordDict:
-                if len( G.wordDict[word] ) < 4:
+                #print( G.wordDict[word] )
+                #input()
+                if len( G.wordDict[word] ) < 3:
                     #print( G.wordDict[word] )
                     moveOn = True
                     break
             if moveOn:
                 continue
+            numLoops += 1
+            if crossNum not in monorbigonLess:
+                monorbigonLess[crossNum] = [loop]
+            else:
+                monorbigonLess[crossNum].append( loop )
+            continue
             #print( loop )
+
+            #assert( False )
             
             #print( regLabels )
                  #drawnpd = plinkPD( loop )
@@ -343,6 +365,7 @@ def findMonorbigonLess():
     #print( len( monorbigonLess ) )
     
             #input()
+    return monorbigonLess, numLoops
 
 def fig1():
     """Plots some pinning sets for a single multiloop (snappy svg)."""
