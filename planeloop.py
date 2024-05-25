@@ -59,6 +59,7 @@ import matplotlib.pyplot as plt
 # Global constants
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"*5 # generator alphabet, used for readable output only. Inverses are upper case
+alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 # SOME OF OUR FAVORITE LOOPS FOR TESTING
 
@@ -207,12 +208,14 @@ def main():
     #monorbigonFig()
     #smallMonorBigonlessPinningSets()
 
-    #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
-    #createCatalog( "Some counterexamples to naive gonality conjectures" , loops )
+    #saveLoops( [naiveGonalityCounterExample,strongerCounterEx9,strongerCounterEx10,sumCounterEx] )
 
-    loops = {9:[flype_mutation1,flype_mutation2]}
+    loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
+    createCatalog( "Some counterexamples to naive degree conjectures", loops, detailTables = True, includeIntro = False )
+
+    #loops = {9:[flype_mutation1,flype_mutation2]}
     #loops = {16:[flype1,flype2]}
-    createCatalog( "Pinning posets changes drastically under flypes and mutations" , loops )
+    #createCatalog( "Pinning posets changes drastically under flypes and mutations" , loops )
 
     #loops={13:[Kinoshita_Terasaka_K11n42, Conway_K11n34]}
     #createCatalog( "Testing mutants" , loops )
@@ -269,15 +272,14 @@ def monorbigonFig():
     #findMonorbigonLess()
     #plantriCatalog()
 
-def saveLoops():
-    loops = smallMonorbigonLess
-
+def saveLoops( loops ):
+    #loops = smallMonorbigonLess
     counter = 1    
     for loop in loops:
         plinkFile = plinkImgFile( str(loop), None, None,\
                                       [],\
                                       None, None,\
-                                      None, pdToComponents( loop ), filename = "monorbigonless"+str(counter))
+                                      None, pdToComponents( loop ), filename = str(loop) )#"monorbigonless"+str(counter))
         counter += 1
 
     
@@ -427,7 +429,10 @@ def fig1():
             minPinSetDict[elt]["color"] = pinSetColors[dictkey][colorvar]["rgb"]
             if key1 != minlen:
                 j+=1
-            letterLabel = chr(ord(letterLabel) + 1)
+            if letterLabel.isupper():
+                letterLabel = alphabet[ (alphabet.index( letterLabel.lower())+1)%len(alphabet) ].upper() # chr(ord(letterLabel) + 1)
+            else:
+                letterLabel = alphabet[ (alphabet.index( letterLabel)+1)%len(alphabet) ]
 
         
     plinkFile = plinkImgFile( str(loop), drawnpd, pinSets["G"].adjDict,\
@@ -1249,7 +1254,7 @@ def test12():
 
 def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
                    debug = False, plantriMode = False, regLabelMode = "none",
-                   multiloopPlotThreshold = None, includeIntro = False ):
+                   multiloopPlotThreshold = None, includeIntro = True, detailTables = False ):
     """Create the pdf catalog of loops, their minimal pinning sets, and their minimal join semilattice
     regLabelMode = "numeric" --> regions labeled by numbers
     regLabelMode = "gonality" --> regions labeled by gonality
@@ -1283,6 +1288,8 @@ def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
             else:
                 drawnpd = link
             print( "current link:", link )
+            #print( sumCounterEx )
+            #input()
             #while True:
             #    drawnpd = plinkPD( link )
             #    break #comment to test the one below
@@ -1606,7 +1613,11 @@ def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
       
                     if key1 != minlen:
                         j+=1
-                    letterLabel = chr(ord(letterLabel) + 1)
+                    if letterLabel.isupper():
+                        letterLabel = alphabet[ (alphabet.index( letterLabel.lower())+1)%len(alphabet) ].upper() # chr(ord(letterLabel) + 1)
+                    else:
+                        letterLabel = alphabet[ (alphabet.index( letterLabel)+1)%len(alphabet) ]
+                    #letterLabel = chr(ord(letterLabel) + 1)
                     rows.append( row )
             col3 +=  "\\end{enumerate}\n"
 
@@ -1621,7 +1632,7 @@ def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
                 regionLabels = {}
                 for reg in alldata[key][link]["fullRegSet"]:
                     regionLabels[reg] = len( alldata[key][link]["G"].wordDict[reg] )
-            if regLabelMode == "none":
+            if regLabelMode == "none" and not detailTables:
                 regionLabels = {}
                 for reg in alldata[key][link]["fullRegSet"]:
                     regionLabels[reg] = ""
@@ -1638,10 +1649,14 @@ def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
                                           regionLabels, pdToComponents( alldata[key][link]["drawnpd"] ), filename = link, debug=debug )
                 posetFile = drawLattice( alldata[key][link]["pinSets"], alldata[key][link]["minPinSets"],\
                                          alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
+                if link == str(sumCounterEx):
+                    print( "Setting poset file to none" )
+                    input()
+                    posetFile = None
 
                 loopStrings[key].append( texPinSet(linkstr, col1, col2, tablestrings, plinkFile,\
                                               posetFile, sideBySide = True, imSepPage = True, drawnpd = alldata[key][link]["drawnpd"],\
-                                            graph = alldata[key][link]["graph"]  ) )        
+                                            graph = alldata[key][link]["graph"], detailTable = detailTables  ) )        
     
         optgon = sum( avgOptimalGonalities )/len( alldata[key] )
         mingon = sum( avgMinimalGonalities )/len( alldata[key] )
@@ -1980,7 +1995,7 @@ def makeTex( title, oeisSeq, avgStrings, regTableStr, avgStringsPinNum,\
         pass
     return    
 
-def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide = True, imSepPage = True, drawnpd = None, graph = None):
+def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide = True, imSepPage = True, drawnpd = None, graph = None, detailTable = False):
     """Generating and viewing a TeX file illustrating pinning sets"""
     
 
@@ -2024,11 +2039,14 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
            "\\label{fig:"+plinkImg+"}\n\\end{figure}\n"
     if sideBySide:
         doc += "\\columnbreak\n\n"
-    doc += "\\begin{figure}[H]\n"+\
-           "\\centering\n"+\
-           "\\scalebox{0.8}{\\input{"+posetImg+"}}\n"+\
-           "\\caption{Minimal join sub-semi-lattice of minimal pinning sets.}\n"+\
-           "\\label{fig:"+posetImg+"}\n\\end{figure}\n"
+    if posetImg is not None:
+        doc += "\\begin{figure}[H]\n"+\
+               "\\centering\n"+\
+               "\\scalebox{0.8}{\\input{"+posetImg+"}}\n"+\
+               "\\caption{Minimal join sub-semi-lattice of minimal pinning sets.}\n"+\
+               "\\label{fig:"+posetImg+"}\n\\end{figure}\n"
+    else:
+        doc += "The minimal join sub-semi lattice of minimal pinning sets is too large to display."
     if sideBySide:
         doc += "\\end{multicols}\n\n"
    
@@ -2036,9 +2054,10 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     
 
     doc += "\\newpage\n\n"
-     
-    #doc += tableStrings[1]+"\n\n"
-    #doc += "\\newpage\n\n"
+
+    if detailTable:     
+        doc += tableStrings[1]+"\n\n"
+        doc += "\\newpage\n\n"
 
     return doc
 

@@ -6,6 +6,21 @@ from sage.all import Polyhedron, QQ
 
 #print( len( sys.argv ) )
 
+# remove arrowheads by editing the svg file directly and removing all the <polygon> tags
+# remove the component labels while you're at it
+# https://stackoverflow.com/questions/42206123/python-remove-html-tag-with-regex
+# https://stackoverflow.com/questions/3951660/how-to-replace-the-first-occurrence-of-a-regular-expression-in-python
+import re
+def cleanFile():
+    f = open( filename, 'r' )
+    toParse = f.read()
+    f.close()
+    removedArrows = re.sub(r'<polygon.+?/>', '',toParse)
+    removedComponentLabels = re.sub(r'<text.+?<circle', '<circle',removedArrows,1)
+    f = open( filename, 'w' )
+    f.write( removedComponentLabels )
+    f.close()
+
 if len( sys.argv ) > 2:
     # get args from command line
     data = eval( sys.argv[1] )
@@ -226,6 +241,7 @@ for a in LE.Arrows:
 if regLabels is None:
     LE.save_as_svg(filename)
     LE.done()
+    cleanFile()
     raise( "All done" )
 
 
@@ -302,6 +318,7 @@ for cross in crosses:
 if len( sys.argv ) <= 2:   
     input("Press any key to close the window")
     LE.done()
+    #cleanFile()
     assert( False )
 
 
@@ -475,18 +492,6 @@ for reg in regBoundaries:
 # save file
 LE.save_as_svg(filename)
 LE.done()
+cleanFile()
 
-# remove arrowheads by editing the svg file directly and removing all the <polygon> tags
-# remove the component labels while you're at it
-# https://stackoverflow.com/questions/42206123/python-remove-html-tag-with-regex
-# https://stackoverflow.com/questions/3951660/how-to-replace-the-first-occurrence-of-a-regular-expression-in-python
 
-import re
-f = open( filename, 'r' )
-toParse = f.read()
-f.close()
-removedArrows = re.sub(r'<polygon.+?/>', '',toParse)
-removedComponentLabels = re.sub(r'<text.+?<circle', '<circle',removedArrows,1)
-f = open( filename, 'w' )
-f.write( removedComponentLabels )
-f.close()

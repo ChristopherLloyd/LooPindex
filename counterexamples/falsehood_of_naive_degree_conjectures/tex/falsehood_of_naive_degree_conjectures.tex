@@ -1,0 +1,518 @@
+\documentclass{article}%
+\usepackage[T1]{fontenc}%
+\usepackage[utf8]{inputenc}%
+\usepackage{lmodern}%
+\usepackage{textcomp}%
+\usepackage{lastpage}%
+\usepackage{geometry}%
+\usepackage{tabularx}%
+\usepackage{booktabs}%
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usepackage{tkz-graph}
+\usepackage{tkz-berge}
+\usetikzlibrary{arrows,shapes}
+\usepackage[matrix,arrow,curve,cmtip]{xy}
+\usepackage{svg}
+\usepackage{multicol}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[shortlabels]{enumitem}
+\usepackage{hyperref}
+\usepackage[nottoc,numbib]{tocbibind}
+\geometry{tmargin=2cm,lmargin=2cm,rmargin=2cm,bmargin=2cm}%
+%
+%
+%
+\definecolor{red0}{rgb}{1.0,0,0}
+\definecolor{red1}{rgb}{0.8,0,0}
+\definecolor{red2}{rgb}{0.6,0,0}
+\definecolor{red3}{rgb}{0.3999999999999999,0,0}
+\definecolor{green0}{rgb}{0,1.0,0}
+\definecolor{green1}{rgb}{0,0.9893333333333333,0}
+\definecolor{green2}{rgb}{0,0.9786666666666667,0}
+\definecolor{green3}{rgb}{0,0.968,0}
+\definecolor{green4}{rgb}{0,0.9573333333333334,0}
+\definecolor{green5}{rgb}{0,0.9466666666666667,0}
+\definecolor{green6}{rgb}{0,0.9359999999999999,0}
+\definecolor{green7}{rgb}{0,0.9253333333333333,0}
+\definecolor{green8}{rgb}{0,0.9146666666666666,0}
+\definecolor{green9}{rgb}{0,0.904,0}
+\definecolor{green10}{rgb}{0,0.8933333333333333,0}
+\definecolor{green11}{rgb}{0,0.8826666666666667,0}
+\definecolor{green12}{rgb}{0,0.872,0}
+\definecolor{green13}{rgb}{0,0.8613333333333333,0}
+\definecolor{green14}{rgb}{0,0.8506666666666667,0}
+\definecolor{green15}{rgb}{0,0.84,0}
+\definecolor{green16}{rgb}{0,0.8293333333333333,0}
+\definecolor{green17}{rgb}{0,0.8186666666666667,0}
+\definecolor{green18}{rgb}{0,0.8079999999999999,0}
+\definecolor{green19}{rgb}{0,0.7973333333333333,0}
+\definecolor{green20}{rgb}{0,0.7866666666666666,0}
+\definecolor{green21}{rgb}{0,0.776,0}
+\definecolor{green22}{rgb}{0,0.7653333333333333,0}
+\definecolor{green23}{rgb}{0,0.7546666666666666,0}
+\definecolor{green24}{rgb}{0,0.744,0}
+\definecolor{green25}{rgb}{0,0.7333333333333333,0}
+\definecolor{green26}{rgb}{0,0.7226666666666666,0}
+\definecolor{green27}{rgb}{0,0.712,0}
+\definecolor{green28}{rgb}{0,0.7013333333333334,0}
+\definecolor{green29}{rgb}{0,0.6906666666666667,0}
+\definecolor{green30}{rgb}{0,0.6799999999999999,0}
+\definecolor{green31}{rgb}{0,0.6693333333333333,0}
+\definecolor{green32}{rgb}{0,0.6586666666666666,0}
+\definecolor{green33}{rgb}{0,0.6479999999999999,0}
+\definecolor{green34}{rgb}{0,0.6373333333333333,0}
+\definecolor{green35}{rgb}{0,0.6266666666666666,0}
+\definecolor{green36}{rgb}{0,0.6159999999999999,0}
+\definecolor{green37}{rgb}{0,0.6053333333333333,0}
+\definecolor{green38}{rgb}{0,0.5946666666666667,0}
+\definecolor{green39}{rgb}{0,0.584,0}
+\definecolor{green40}{rgb}{0,0.5733333333333333,0}
+\definecolor{green41}{rgb}{0,0.5626666666666666,0}
+\definecolor{green42}{rgb}{0,0.5519999999999999,0}
+\definecolor{green43}{rgb}{0,0.5413333333333332,0}
+\definecolor{green44}{rgb}{0,0.5306666666666666,0}
+\definecolor{green45}{rgb}{0,0.52,0}
+\definecolor{green46}{rgb}{0,0.5093333333333332,0}
+\definecolor{green47}{rgb}{0,0.4986666666666666,0}
+\definecolor{green48}{rgb}{0,0.488,0}
+\definecolor{green49}{rgb}{0,0.4773333333333333,0}
+\definecolor{green50}{rgb}{0,0.46666666666666656,0}
+\definecolor{green51}{rgb}{0,0.45599999999999996,0}
+\definecolor{green52}{rgb}{0,0.44533333333333325,0}
+\definecolor{green53}{rgb}{0,0.43466666666666665,0}
+\definecolor{green54}{rgb}{0,0.42399999999999993,0}
+\definecolor{green55}{rgb}{0,0.4133333333333332,0}
+\definecolor{green56}{rgb}{0,0.4026666666666666,0}
+\definecolor{green57}{rgb}{0,0.3919999999999999,0}
+\definecolor{green58}{rgb}{0,0.3813333333333333,0}
+\definecolor{green59}{rgb}{0,0.3706666666666666,0}
+\definecolor{green60}{rgb}{0,0.3599999999999999,0}
+\definecolor{green61}{rgb}{0,0.3493333333333333,0}
+\definecolor{green62}{rgb}{0,0.33866666666666656,0}
+\definecolor{green63}{rgb}{0,0.32799999999999996,0}
+\definecolor{green64}{rgb}{0,0.31733333333333325,0}
+\definecolor{green65}{rgb}{0,0.30666666666666653,0}
+\definecolor{green66}{rgb}{0,0.29599999999999993,0}
+\definecolor{green67}{rgb}{0,0.2853333333333332,0}
+\definecolor{green68}{rgb}{0,0.2746666666666666,0}
+\definecolor{green69}{rgb}{0,0.2639999999999999,0}
+\definecolor{green70}{rgb}{0,0.2533333333333332,0}
+\definecolor{green71}{rgb}{0,0.2426666666666666,0}
+\definecolor{green72}{rgb}{0,0.23199999999999987,0}
+\definecolor{green73}{rgb}{0,0.22133333333333327,0}
+\definecolor{green74}{rgb}{0,0.21066666666666656,0}
+%
+%
+%
+\pdfsuppresswarningpagegroup=1
+
+\setcounter{tocdepth}{2}
+
+\title{Some counterexamples to naive degree conjectures}
+
+\author{Christopher-Lloyd Simon and Ben Stucky}
+
+\begin{document}%
+
+\section{Some counterexamples to naive degree conjectures}
+
+\subsubsection{[(12, 1, 13, 2), (6, 3, 7, 4), (10, 5, 11, 6), (14, 7, 15, 8), (4, 9, 5, 10), (16, 11, 1, 12), (8, 13, 9, 14), (2, 15, 3, 16)]}
+
+{\small\noindent PD code drawn by \texttt{SnapPy}: [(3, 16, 4, 1), (7, 2, 8, 3), (11, 4, 12, 5), (1, 6, 2, 7), (13, 8, 14, 9), (5, 10, 6, 11), (15, 12, 16, 13), (9, 14, 10, 15)]}
+
+{\small\noindent Planar representation generated by \texttt{plantri}: -}
+
+\begin{multicols}{2}
+{\normalsize \noindent\textbf{Total optimal pinning sets:} 1
+
+\noindent\textbf{Total minimal pinning sets:} 6
+
+\noindent\textbf{Total pinning sets:} 104
+
+\noindent\textbf{Pinning number:} 4
+
+}
+\columnbreak
+
+{\normalsize \noindent\textbf{Average optimal degree:} 2.5
+
+\noindent\textbf{Average minimal degree:} 2.48
+
+\noindent\textbf{Average overall degree:} 2.92
+
+}
+\end{multicols}
+
+\begin{table}[ht]
+	\caption{Pinning sets/average degree by cardinal}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXXXXX}
+		\toprule
+			Cardinal & 4 & 5 & 6 & 7 & 8 & 9 & 10 & Total\\
+			\hline
+			Optimal pinning sets & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+			Minimal (suboptimal) pinning sets & 0 & 5 & 0 & 0 & 0 & 0 & 0 & 5 \\
+			Nonminimal pinning sets & 0 & 6 & 29 & 34 & 21 & 7 & 1 & 98 \\
+			Average degree & 2.5 & 2.62 & 2.83 & 2.97 & 3.07 & 3.14 & 3.2 &  \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\begin{multicols}{2}
+\begin{figure}[H]
+\centering
+\includesvg[inkscapelatex=false,width=250pt]{tex/img/[(12, 1, 13, 2), (6, 3, 7, 4), (10, 5, 11, 6), (14, 7, 15, 8), (4, 9, 5, 10), (16, 11, 1, 12), (8, 13, 9, 14), (2, 15, 3, 16)].svg}
+\caption{\texttt{SnapPy} multiloop plot.}
+\label{fig:tex/img/[(12, 1, 13, 2), (6, 3, 7, 4), (10, 5, 11, 6), (14, 7, 15, 8), (4, 9, 5, 10), (16, 11, 1, 12), (8, 13, 9, 14), (2, 15, 3, 16)].svg}
+\end{figure}
+\columnbreak
+
+\begin{figure}[H]
+\centering
+\scalebox{0.8}{\input{tex/img/[(12, 1, 13, 2), (6, 3, 7, 4), (10, 5, 11, 6), (14, 7, 15, 8), (4, 9, 5, 10), (16, 11, 1, 12), (8, 13, 9, 14), (2, 15, 3, 16)].pgf}}
+\caption{Minimal join sub-semi-lattice of minimal pinning sets.}
+\label{fig:tex/img/[(12, 1, 13, 2), (6, 3, 7, 4), (10, 5, 11, 6), (14, 7, 15, 8), (4, 9, 5, 10), (16, 11, 1, 12), (8, 13, 9, 14), (2, 15, 3, 16)].pgf}
+\end{figure}
+\end{multicols}
+
+\newpage
+
+\begin{table}[ht]
+	\caption{Pinning set data}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXX}
+		\toprule
+			Pinning set & Pindicator & Regions & Card & Degree seq & Average degree\\
+			\hline
+			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{1,3,5,10\}$ & 4 & [2, 2, 2, 4] & 2.5 \\
+			a (minimal) & {\Huge\textcolor{green0}{\textbullet}} & $\{1,3,5,8,9\}$ & 5 & [2, 2, 2, 3, 3] & 2.4 \\
+			b (minimal) & {\Huge\textcolor{green15}{\textbullet}} & $\{1,3,4,5,8\}$ & 5 & [2, 2, 4, 2, 3] & 2.6 \\
+			c (minimal) & {\Huge\textcolor{green30}{\textbullet}} & $\{1,2,3,5,8\}$ & 5 & [2, 3, 2, 2, 3] & 2.4 \\
+			d (minimal) & {\Huge\textcolor{green45}{\textbullet}} & $\{1,2,3,5,7\}$ & 5 & [2, 3, 2, 2, 4] & 2.6 \\
+			e (minimal) & {\Huge\textcolor{green60}{\textbullet}} & $\{1,2,3,5,9\}$ & 5 & [2, 3, 2, 2, 3] & 2.4 \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\newpage
+
+\subsubsection{[[1, 4, 18, 3], [1, 12, 2, 13], [4, 10, 5, 9], [18, 9, 17, 8], [3, 11, 2, 12], [13, 11, 14, 10], [5, 14, 6, 15], [17, 7, 16, 8], [6, 16, 7, 15]]}
+
+{\small\noindent PD code drawn by \texttt{SnapPy}: [(16, 1, 17, 2), (5, 14, 6, 15), (15, 6, 16, 7), (7, 2, 8, 3), (8, 11, 9, 12), (9, 18, 10, 1), (17, 10, 18, 11), (3, 12, 4, 13), (13, 4, 14, 5)]}
+
+{\small\noindent Planar representation generated by \texttt{plantri}: -}
+
+\begin{multicols}{2}
+{\normalsize \noindent\textbf{Total optimal pinning sets:} 1
+
+\noindent\textbf{Total minimal pinning sets:} 5
+
+\noindent\textbf{Total pinning sets:} 100
+
+\noindent\textbf{Pinning number:} 5
+
+}
+\columnbreak
+
+{\normalsize \noindent\textbf{Average optimal degree:} 2.4
+
+\noindent\textbf{Average minimal degree:} 2.35
+
+\noindent\textbf{Average overall degree:} 2.93
+
+}
+\end{multicols}
+
+\begin{table}[ht]
+	\caption{Pinning sets/average degree by cardinal}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXXXXX}
+		\toprule
+			Cardinal & 5 & 6 & 7 & 8 & 9 & 10 & 11 & Total\\
+			\hline
+			Optimal pinning sets & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+			Minimal (suboptimal) pinning sets & 0 & 4 & 0 & 0 & 0 & 0 & 0 & 4 \\
+			Nonminimal pinning sets & 0 & 6 & 27 & 33 & 21 & 7 & 1 & 95 \\
+			Average degree & 2.4 & 2.53 & 2.79 & 2.98 & 3.11 & 3.2 & 3.27 &  \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\begin{multicols}{2}
+\begin{figure}[H]
+\centering
+\includesvg[inkscapelatex=false,width=250pt]{tex/img/[[1, 4, 18, 3], [1, 12, 2, 13], [4, 10, 5, 9], [18, 9, 17, 8], [3, 11, 2, 12], [13, 11, 14, 10], [5, 14, 6, 15], [17, 7, 16, 8], [6, 16, 7, 15]].svg}
+\caption{\texttt{SnapPy} multiloop plot.}
+\label{fig:tex/img/[[1, 4, 18, 3], [1, 12, 2, 13], [4, 10, 5, 9], [18, 9, 17, 8], [3, 11, 2, 12], [13, 11, 14, 10], [5, 14, 6, 15], [17, 7, 16, 8], [6, 16, 7, 15]].svg}
+\end{figure}
+\columnbreak
+
+\begin{figure}[H]
+\centering
+\scalebox{0.8}{\input{tex/img/[[1, 4, 18, 3], [1, 12, 2, 13], [4, 10, 5, 9], [18, 9, 17, 8], [3, 11, 2, 12], [13, 11, 14, 10], [5, 14, 6, 15], [17, 7, 16, 8], [6, 16, 7, 15]].pgf}}
+\caption{Minimal join sub-semi-lattice of minimal pinning sets.}
+\label{fig:tex/img/[[1, 4, 18, 3], [1, 12, 2, 13], [4, 10, 5, 9], [18, 9, 17, 8], [3, 11, 2, 12], [13, 11, 14, 10], [5, 14, 6, 15], [17, 7, 16, 8], [6, 16, 7, 15]].pgf}
+\end{figure}
+\end{multicols}
+
+\newpage
+
+\begin{table}[ht]
+	\caption{Pinning set data}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXX}
+		\toprule
+			Pinning set & Pindicator & Regions & Card & Degree seq & Average degree\\
+			\hline
+			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{2,3,4,9,10\}$ & 5 & [2, 2, 2, 4, 2] & 2.4 \\
+			a (minimal) & {\Huge\textcolor{green0}{\textbullet}} & $\{1,2,3,4,10,11\}$ & 6 & [3, 2, 2, 2, 2, 3] & 2.33 \\
+			b (minimal) & {\Huge\textcolor{green18}{\textbullet}} & $\{2,3,4,8,10,11\}$ & 6 & [2, 2, 2, 3, 2, 3] & 2.33 \\
+			c (minimal) & {\Huge\textcolor{green37}{\textbullet}} & $\{1,2,3,4,6,10\}$ & 6 & [3, 2, 2, 2, 3, 2] & 2.33 \\
+			d (minimal) & {\Huge\textcolor{green56}{\textbullet}} & $\{2,3,4,6,8,10\}$ & 6 & [2, 2, 2, 3, 3, 2] & 2.33 \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\newpage
+
+\subsubsection{[[1, 5, 20, 6], [1, 14, 2, 15], [5, 11, 4, 12], [20, 12, 19, 13], [6, 13, 7, 14], [2, 9, 3, 10], [15, 10, 16, 11], [4, 16, 3, 17], [19, 8, 18, 7], [9, 18, 8, 17]]}
+
+{\small\noindent PD code drawn by \texttt{SnapPy}: [(3, 18, 4, 19), (16, 5, 17, 6), (20, 7, 1, 8), (13, 8, 14, 9), (9, 2, 10, 3), (10, 17, 11, 18), (4, 11, 5, 12), (19, 12, 20, 13), (14, 1, 15, 2), (6, 15, 7, 16)]}
+
+{\small\noindent Planar representation generated by \texttt{plantri}: -}
+
+\begin{multicols}{2}
+{\normalsize \noindent\textbf{Total optimal pinning sets:} 1
+
+\noindent\textbf{Total minimal pinning sets:} 8
+
+\noindent\textbf{Total pinning sets:} 536
+
+\noindent\textbf{Pinning number:} 4
+
+}
+\columnbreak
+
+{\normalsize \noindent\textbf{Average optimal degree:} 3.0
+
+\noindent\textbf{Average minimal degree:} 2.83
+
+\noindent\textbf{Average overall degree:} 3.19
+
+}
+\end{multicols}
+
+\begin{table}[ht]
+	\caption{Pinning sets/average degree by cardinal}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXXXXXXX}
+		\toprule
+			Cardinal & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & Total\\
+			\hline
+			Optimal pinning sets & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+			Minimal (suboptimal) pinning sets & 0 & 6 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 7 \\
+			Nonminimal pinning sets & 0 & 8 & 60 & 127 & 157 & 115 & 49 & 11 & 1 & 528 \\
+			Average degree & 3.0 & 2.97 & 3.06 & 3.14 & 3.21 & 3.26 & 3.3 & 3.32 & 3.33 &  \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\begin{multicols}{2}
+\begin{figure}[H]
+\centering
+\includesvg[inkscapelatex=false,width=250pt]{tex/img/[[1, 5, 20, 6], [1, 14, 2, 15], [5, 11, 4, 12], [20, 12, 19, 13], [6, 13, 7, 14], [2, 9, 3, 10], [15, 10, 16, 11], [4, 16, 3, 17], [19, 8, 18, 7], [9, 18, 8, 17]].svg}
+\caption{\texttt{SnapPy} multiloop plot.}
+\label{fig:tex/img/[[1, 5, 20, 6], [1, 14, 2, 15], [5, 11, 4, 12], [20, 12, 19, 13], [6, 13, 7, 14], [2, 9, 3, 10], [15, 10, 16, 11], [4, 16, 3, 17], [19, 8, 18, 7], [9, 18, 8, 17]].svg}
+\end{figure}
+\columnbreak
+
+\begin{figure}[H]
+\centering
+\scalebox{0.8}{\input{tex/img/[[1, 5, 20, 6], [1, 14, 2, 15], [5, 11, 4, 12], [20, 12, 19, 13], [6, 13, 7, 14], [2, 9, 3, 10], [15, 10, 16, 11], [4, 16, 3, 17], [19, 8, 18, 7], [9, 18, 8, 17]].pgf}}
+\caption{Minimal join sub-semi-lattice of minimal pinning sets.}
+\label{fig:tex/img/[[1, 5, 20, 6], [1, 14, 2, 15], [5, 11, 4, 12], [20, 12, 19, 13], [6, 13, 7, 14], [2, 9, 3, 10], [15, 10, 16, 11], [4, 16, 3, 17], [19, 8, 18, 7], [9, 18, 8, 17]].pgf}
+\end{figure}
+\end{multicols}
+
+\newpage
+
+\begin{table}[ht]
+	\caption{Pinning set data}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXX}
+		\toprule
+			Pinning set & Pindicator & Regions & Card & Degree seq & Average degree\\
+			\hline
+			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{1,4,8,10\}$ & 4 & [3, 2, 3, 4] & 3.0 \\
+			a (minimal) & {\Huge\textcolor{green0}{\textbullet}} & $\{1,2,4,8,11\}$ & 5 & [3, 3, 2, 3, 3] & 2.8 \\
+			b (minimal) & {\Huge\textcolor{green10}{\textbullet}} & $\{2,3,4,8,11\}$ & 5 & [3, 3, 2, 3, 3] & 2.8 \\
+			c (minimal) & {\Huge\textcolor{green21}{\textbullet}} & $\{1,4,8,9,11\}$ & 5 & [3, 2, 3, 3, 3] & 2.8 \\
+			d (minimal) & {\Huge\textcolor{green32}{\textbullet}} & $\{1,2,4,7,8\}$ & 5 & [3, 3, 2, 3, 3] & 2.8 \\
+			e (minimal) & {\Huge\textcolor{green42}{\textbullet}} & $\{1,4,5,7,9\}$ & 5 & [3, 2, 3, 3, 3] & 2.8 \\
+			f (minimal) & {\Huge\textcolor{green53}{\textbullet}} & $\{1,4,7,8,9\}$ & 5 & [3, 2, 3, 3, 3] & 2.8 \\
+			g (minimal) & {\Huge\textcolor{green64}{\textbullet}} & $\{2,3,4,5,7,9,11\}$ & 7 & [3, 3, 2, 3, 3, 3, 3] & 2.86 \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\newpage
+
+\subsubsection{[(5, 8, 6, 9), (2, 12, 3, 11), (1, 16, 2, 17), (12, 16, 13, 15), (4, 20, 5, 19), (9, 18, 10, 19), (6, 22, 7, 21), (7, 22, 8, 23), (20, 24, 21, 23), (3, 24, 4, 25), (10, 26, 11, 25), (17, 26, 18, 27), (30, 28, 1, 27), (13, 28, 14, 29), (14, 30, 15, 29)]}
+
+{\small\noindent PD code drawn by \texttt{SnapPy}: [(2, 5, 3, 6), (8, 29, 9, 30), (12, 9, 13, 10), (28, 13, 29, 14), (6, 15, 7, 16), (16, 1, 17, 2), (18, 3, 19, 4), (4, 19, 5, 20), (20, 17, 21, 18), (30, 21, 1, 22), (22, 7, 23, 8), (14, 23, 15, 24), (24, 27, 25, 28), (10, 25, 11, 26), (26, 11, 27, 12)]}
+
+{\small\noindent Planar representation generated by \texttt{plantri}: -}
+
+\begin{multicols}{2}
+{\normalsize \noindent\textbf{Total optimal pinning sets:} 4
+
+\noindent\textbf{Total minimal pinning sets:} 79
+
+\noindent\textbf{Total pinning sets:} 12936
+
+\noindent\textbf{Pinning number:} 6
+
+}
+\columnbreak
+
+{\normalsize \noindent\textbf{Average optimal degree:} 3.08
+
+\noindent\textbf{Average minimal degree:} 2.93
+
+\noindent\textbf{Average overall degree:} 3.36
+
+}
+\end{multicols}
+
+\begin{table}[ht]
+	\caption{Pinning sets/average degree by cardinal}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXXXXXXXXXX}
+		\toprule
+			Cardinal & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16 & 17 & Total\\
+			\hline
+			Optimal pinning sets & 4 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 4 \\
+			Minimal (suboptimal) pinning sets & 0 & 46 & 29 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 75 \\
+			Nonminimal pinning sets & 0 & 44 & 539 & 1706 & 2970 & 3300 & 2464 & 1266 & 447 & 105 & 15 & 1 & 12857 \\
+			Average degree & 3.08 & 3.04 & 3.13 & 3.23 & 3.32 & 3.38 & 3.43 & 3.46 & 3.48 & 3.5 & 3.52 & 3.53 &  \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\begin{multicols}{2}
+\begin{figure}[H]
+\centering
+\includesvg[inkscapelatex=false,width=250pt]{tex/img/[(5, 8, 6, 9), (2, 12, 3, 11), (1, 16, 2, 17), (12, 16, 13, 15), (4, 20, 5, 19), (9, 18, 10, 19), (6, 22, 7, 21), (7, 22, 8, 23), (20, 24, 21, 23), (3, 24, 4, 25), (10, 26, 11, 25), (17, 26, 18, 27), .svg}
+\caption{\texttt{SnapPy} multiloop plot.}
+\label{fig:tex/img/[(5, 8, 6, 9), (2, 12, 3, 11), (1, 16, 2, 17), (12, 16, 13, 15), (4, 20, 5, 19), (9, 18, 10, 19), (6, 22, 7, 21), (7, 22, 8, 23), (20, 24, 21, 23), (3, 24, 4, 25), (10, 26, 11, 25), (17, 26, 18, 27), .svg}
+\end{figure}
+\columnbreak
+
+The minimal join sub-semi lattice of minimal pinning sets is too large to display.\end{multicols}
+
+\newpage
+
+\begin{table}[ht]
+	\caption{Pinning set data}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXX}
+		\toprule
+			Pinning set & Pindicator & Regions & Card & Degree seq & Average degree\\
+			\hline
+			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{2,4,8,9,13,16\}$ & 6 & [2, 4, 3, 2, 4, 3] & 3.0 \\
+			B (optimal) & {\Huge\textcolor{red1}{\textbullet}} & $\{2,4,7,9,12,14\}$ & 6 & [2, 4, 4, 2, 3, 3] & 3.0 \\
+			C (optimal) & {\Huge\textcolor{red2}{\textbullet}} & $\{2,4,7,9,13,15\}$ & 6 & [2, 4, 4, 2, 4, 4] & 3.33 \\
+			D (optimal) & {\Huge\textcolor{red3}{\textbullet}} & $\{1,2,6,9,13,15\}$ & 6 & [3, 2, 3, 2, 4, 4] & 3.0 \\
+			a (minimal) & {\Huge\textcolor{green0}{\textbullet}} & $\{2,5,6,9,12,14,16\}$ & 7 & [2, 3, 3, 2, 3, 3, 3] & 2.71 \\
+			b (minimal) & {\Huge\textcolor{green1}{\textbullet}} & $\{2,5,6,9,13,14,16\}$ & 7 & [2, 3, 3, 2, 4, 3, 3] & 2.86 \\
+			c (minimal) & {\Huge\textcolor{green2}{\textbullet}} & $\{2,5,6,9,10,14,16\}$ & 7 & [2, 3, 3, 2, 3, 3, 3] & 2.71 \\
+			d (minimal) & {\Huge\textcolor{green3}{\textbullet}} & $\{2,5,6,9,13,15,16\}$ & 7 & [2, 3, 3, 2, 4, 4, 3] & 3.0 \\
+			e (minimal) & {\Huge\textcolor{green4}{\textbullet}} & $\{2,5,6,8,9,13,16\}$ & 7 & [2, 3, 3, 3, 2, 4, 3] & 2.86 \\
+			f (minimal) & {\Huge\textcolor{green5}{\textbullet}} & $\{2,5,6,7,9,12,14\}$ & 7 & [2, 3, 3, 4, 2, 3, 3] & 2.86 \\
+			g (minimal) & {\Huge\textcolor{green6}{\textbullet}} & $\{2,5,6,7,9,13,15\}$ & 7 & [2, 3, 3, 4, 2, 4, 4] & 3.14 \\
+			h (minimal) & {\Huge\textcolor{green7}{\textbullet}} & $\{2,3,5,7,9,12,14\}$ & 7 & [2, 3, 3, 4, 2, 3, 3] & 2.86 \\
+			i (minimal) & {\Huge\textcolor{green8}{\textbullet}} & $\{2,3,5,7,9,13,15\}$ & 7 & [2, 3, 3, 4, 2, 4, 4] & 3.14 \\
+			j (minimal) & {\Huge\textcolor{green9}{\textbullet}} & $\{2,4,6,9,12,14,16\}$ & 7 & [2, 4, 3, 2, 3, 3, 3] & 2.86 \\
+			k (minimal) & {\Huge\textcolor{green10}{\textbullet}} & $\{2,4,6,9,13,14,16\}$ & 7 & [2, 4, 3, 2, 4, 3, 3] & 3.0 \\
+			l (minimal) & {\Huge\textcolor{green11}{\textbullet}} & $\{2,4,6,9,10,14,16\}$ & 7 & [2, 4, 3, 2, 3, 3, 3] & 2.86 \\
+			m (minimal) & {\Huge\textcolor{green12}{\textbullet}} & $\{2,4,6,9,13,15,16\}$ & 7 & [2, 4, 3, 2, 4, 4, 3] & 3.14 \\
+			n (minimal) & {\Huge\textcolor{green13}{\textbullet}} & $\{2,4,8,9,11,12,16\}$ & 7 & [2, 4, 3, 2, 3, 3, 3] & 2.86 \\
+			o (minimal) & {\Huge\textcolor{green14}{\textbullet}} & $\{2,4,8,9,12,14,16\}$ & 7 & [2, 4, 3, 2, 3, 3, 3] & 2.86 \\
+			p (minimal) & {\Huge\textcolor{green15}{\textbullet}} & $\{2,4,8,9,10,14,16\}$ & 7 & [2, 4, 3, 2, 3, 3, 3] & 2.86 \\
+			q (minimal) & {\Huge\textcolor{green16}{\textbullet}} & $\{2,4,7,9,11,12,15\}$ & 7 & [2, 4, 4, 2, 3, 3, 4] & 3.14 \\
+			r (minimal) & {\Huge\textcolor{green17}{\textbullet}} & $\{2,4,7,9,10,11,15\}$ & 7 & [2, 4, 4, 2, 3, 3, 4] & 3.14 \\
+			s (minimal) & {\Huge\textcolor{green18}{\textbullet}} & $\{2,4,7,9,10,14,15\}$ & 7 & [2, 4, 4, 2, 3, 3, 4] & 3.14 \\
+			t (minimal) & {\Huge\textcolor{green19}{\textbullet}} & $\{2,4,7,9,13,14,16\}$ & 7 & [2, 4, 4, 2, 4, 3, 3] & 3.14 \\
+			u (minimal) & {\Huge\textcolor{green20}{\textbullet}} & $\{2,4,7,9,10,14,16\}$ & 7 & [2, 4, 4, 2, 3, 3, 3] & 3.0 \\
+			v (minimal) & {\Huge\textcolor{green21}{\textbullet}} & $\{2,4,7,8,9,11,12\}$ & 7 & [2, 4, 4, 3, 2, 3, 3] & 3.0 \\
+			w (minimal) & {\Huge\textcolor{green22}{\textbullet}} & $\{2,4,7,8,9,12,13\}$ & 7 & [2, 4, 4, 3, 2, 3, 4] & 3.14 \\
+			x (minimal) & {\Huge\textcolor{green23}{\textbullet}} & $\{1,2,6,9,11,12,15\}$ & 7 & [3, 2, 3, 2, 3, 3, 4] & 2.86 \\
+			y (minimal) & {\Huge\textcolor{green24}{\textbullet}} & $\{1,2,6,9,10,11,15\}$ & 7 & [3, 2, 3, 2, 3, 3, 4] & 2.86 \\
+			z (minimal) & {\Huge\textcolor{green25}{\textbullet}} & $\{1,2,6,9,12,14,15\}$ & 7 & [3, 2, 3, 2, 3, 3, 4] & 2.86 \\
+			a (minimal) & {\Huge\textcolor{green26}{\textbullet}} & $\{1,2,6,9,10,14,15\}$ & 7 & [3, 2, 3, 2, 3, 3, 4] & 2.86 \\
+			b (minimal) & {\Huge\textcolor{green27}{\textbullet}} & $\{1,2,6,9,12,14,16\}$ & 7 & [3, 2, 3, 2, 3, 3, 3] & 2.71 \\
+			c (minimal) & {\Huge\textcolor{green28}{\textbullet}} & $\{1,2,6,9,13,14,16\}$ & 7 & [3, 2, 3, 2, 4, 3, 3] & 2.86 \\
+			d (minimal) & {\Huge\textcolor{green29}{\textbullet}} & $\{1,2,6,9,10,14,16\}$ & 7 & [3, 2, 3, 2, 3, 3, 3] & 2.71 \\
+			e (minimal) & {\Huge\textcolor{green30}{\textbullet}} & $\{1,2,6,8,9,11,12\}$ & 7 & [3, 2, 3, 3, 2, 3, 3] & 2.71 \\
+			f (minimal) & {\Huge\textcolor{green31}{\textbullet}} & $\{1,2,6,8,9,12,13\}$ & 7 & [3, 2, 3, 3, 2, 3, 4] & 2.86 \\
+			g (minimal) & {\Huge\textcolor{green32}{\textbullet}} & $\{1,2,6,8,9,12,14\}$ & 7 & [3, 2, 3, 3, 2, 3, 3] & 2.71 \\
+			h (minimal) & {\Huge\textcolor{green33}{\textbullet}} & $\{1,2,6,8,9,13,16\}$ & 7 & [3, 2, 3, 3, 2, 4, 3] & 2.86 \\
+			i (minimal) & {\Huge\textcolor{green34}{\textbullet}} & $\{1,2,6,7,9,12,14\}$ & 7 & [3, 2, 3, 4, 2, 3, 3] & 2.86 \\
+			j (minimal) & {\Huge\textcolor{green35}{\textbullet}} & $\{1,2,3,8,9,11,12\}$ & 7 & [3, 2, 3, 3, 2, 3, 3] & 2.71 \\
+			k (minimal) & {\Huge\textcolor{green36}{\textbullet}} & $\{1,2,3,8,9,12,13\}$ & 7 & [3, 2, 3, 3, 2, 3, 4] & 2.86 \\
+			l (minimal) & {\Huge\textcolor{green37}{\textbullet}} & $\{1,2,3,8,9,12,14\}$ & 7 & [3, 2, 3, 3, 2, 3, 3] & 2.71 \\
+			m (minimal) & {\Huge\textcolor{green38}{\textbullet}} & $\{1,2,3,8,9,13,15\}$ & 7 & [3, 2, 3, 3, 2, 4, 4] & 3.0 \\
+			n (minimal) & {\Huge\textcolor{green39}{\textbullet}} & $\{1,2,3,8,9,13,16\}$ & 7 & [3, 2, 3, 3, 2, 4, 3] & 2.86 \\
+			o (minimal) & {\Huge\textcolor{green40}{\textbullet}} & $\{1,2,3,7,9,12,14\}$ & 7 & [3, 2, 3, 4, 2, 3, 3] & 2.86 \\
+			p (minimal) & {\Huge\textcolor{green41}{\textbullet}} & $\{1,2,3,7,9,13,15\}$ & 7 & [3, 2, 3, 4, 2, 4, 4] & 3.14 \\
+			q (minimal) & {\Huge\textcolor{green42}{\textbullet}} & $\{1,2,4,8,9,11,12\}$ & 7 & [3, 2, 4, 3, 2, 3, 3] & 2.86 \\
+			r (minimal) & {\Huge\textcolor{green43}{\textbullet}} & $\{1,2,4,8,9,12,13\}$ & 7 & [3, 2, 4, 3, 2, 3, 4] & 3.0 \\
+			s (minimal) & {\Huge\textcolor{green44}{\textbullet}} & $\{1,2,4,8,9,12,14\}$ & 7 & [3, 2, 4, 3, 2, 3, 3] & 2.86 \\
+			t (minimal) & {\Huge\textcolor{green45}{\textbullet}} & $\{1,2,4,8,9,13,15\}$ & 7 & [3, 2, 4, 3, 2, 4, 4] & 3.14 \\
+			u (minimal) & {\Huge\textcolor{green46}{\textbullet}} & $\{2,5,6,9,11,12,15,16\}$ & 8 & [2, 3, 3, 2, 3, 3, 4, 3] & 2.88 \\
+			v (minimal) & {\Huge\textcolor{green47}{\textbullet}} & $\{2,5,6,9,10,11,15,16\}$ & 8 & [2, 3, 3, 2, 3, 3, 4, 3] & 2.88 \\
+			w (minimal) & {\Huge\textcolor{green48}{\textbullet}} & $\{2,5,6,8,9,11,12,16\}$ & 8 & [2, 3, 3, 3, 2, 3, 3, 3] & 2.75 \\
+			x (minimal) & {\Huge\textcolor{green49}{\textbullet}} & $\{2,5,6,7,9,11,12,15\}$ & 8 & [2, 3, 3, 4, 2, 3, 3, 4] & 3.0 \\
+			y (minimal) & {\Huge\textcolor{green50}{\textbullet}} & $\{2,5,6,7,9,10,11,15\}$ & 8 & [2, 3, 3, 4, 2, 3, 3, 4] & 3.0 \\
+			z (minimal) & {\Huge\textcolor{green51}{\textbullet}} & $\{2,5,6,7,9,10,14,15\}$ & 8 & [2, 3, 3, 4, 2, 3, 3, 4] & 3.0 \\
+			a (minimal) & {\Huge\textcolor{green52}{\textbullet}} & $\{2,5,6,7,8,9,11,12\}$ & 8 & [2, 3, 3, 4, 3, 2, 3, 3] & 2.88 \\
+			b (minimal) & {\Huge\textcolor{green53}{\textbullet}} & $\{2,5,6,7,8,9,12,13\}$ & 8 & [2, 3, 3, 4, 3, 2, 3, 4] & 3.0 \\
+			c (minimal) & {\Huge\textcolor{green54}{\textbullet}} & $\{2,3,5,7,9,11,12,15\}$ & 8 & [2, 3, 3, 4, 2, 3, 3, 4] & 3.0 \\
+			d (minimal) & {\Huge\textcolor{green55}{\textbullet}} & $\{2,3,5,7,9,10,11,15\}$ & 8 & [2, 3, 3, 4, 2, 3, 3, 4] & 3.0 \\
+			e (minimal) & {\Huge\textcolor{green56}{\textbullet}} & $\{2,3,5,7,9,10,14,15\}$ & 8 & [2, 3, 3, 4, 2, 3, 3, 4] & 3.0 \\
+			f (minimal) & {\Huge\textcolor{green57}{\textbullet}} & $\{2,3,5,7,9,13,14,16\}$ & 8 & [2, 3, 3, 4, 2, 4, 3, 3] & 3.0 \\
+			g (minimal) & {\Huge\textcolor{green58}{\textbullet}} & $\{2,3,5,7,9,10,14,16\}$ & 8 & [2, 3, 3, 4, 2, 3, 3, 3] & 2.88 \\
+			h (minimal) & {\Huge\textcolor{green59}{\textbullet}} & $\{2,3,5,7,8,9,11,12\}$ & 8 & [2, 3, 3, 4, 3, 2, 3, 3] & 2.88 \\
+			i (minimal) & {\Huge\textcolor{green60}{\textbullet}} & $\{2,3,5,7,8,9,12,13\}$ & 8 & [2, 3, 3, 4, 3, 2, 3, 4] & 3.0 \\
+			j (minimal) & {\Huge\textcolor{green61}{\textbullet}} & $\{2,3,5,7,8,9,13,16\}$ & 8 & [2, 3, 3, 4, 3, 2, 4, 3] & 3.0 \\
+			k (minimal) & {\Huge\textcolor{green62}{\textbullet}} & $\{2,4,6,9,11,12,15,16\}$ & 8 & [2, 4, 3, 2, 3, 3, 4, 3] & 3.0 \\
+			l (minimal) & {\Huge\textcolor{green63}{\textbullet}} & $\{2,4,6,9,10,11,15,16\}$ & 8 & [2, 4, 3, 2, 3, 3, 4, 3] & 3.0 \\
+			m (minimal) & {\Huge\textcolor{green64}{\textbullet}} & $\{2,4,8,9,10,11,15,16\}$ & 8 & [2, 4, 3, 2, 3, 3, 4, 3] & 3.0 \\
+			n (minimal) & {\Huge\textcolor{green65}{\textbullet}} & $\{1,2,3,8,9,10,11,15\}$ & 8 & [3, 2, 3, 3, 2, 3, 3, 4] & 2.88 \\
+			o (minimal) & {\Huge\textcolor{green66}{\textbullet}} & $\{1,2,3,8,9,10,14,15\}$ & 8 & [3, 2, 3, 3, 2, 3, 3, 4] & 2.88 \\
+			p (minimal) & {\Huge\textcolor{green67}{\textbullet}} & $\{1,2,3,8,9,10,14,16\}$ & 8 & [3, 2, 3, 3, 2, 3, 3, 3] & 2.75 \\
+			q (minimal) & {\Huge\textcolor{green68}{\textbullet}} & $\{1,2,3,7,9,11,12,15\}$ & 8 & [3, 2, 3, 4, 2, 3, 3, 4] & 3.0 \\
+			r (minimal) & {\Huge\textcolor{green69}{\textbullet}} & $\{1,2,3,7,9,10,11,15\}$ & 8 & [3, 2, 3, 4, 2, 3, 3, 4] & 3.0 \\
+			s (minimal) & {\Huge\textcolor{green70}{\textbullet}} & $\{1,2,3,7,9,10,14,15\}$ & 8 & [3, 2, 3, 4, 2, 3, 3, 4] & 3.0 \\
+			t (minimal) & {\Huge\textcolor{green71}{\textbullet}} & $\{1,2,3,7,9,13,14,16\}$ & 8 & [3, 2, 3, 4, 2, 4, 3, 3] & 3.0 \\
+			u (minimal) & {\Huge\textcolor{green72}{\textbullet}} & $\{1,2,3,7,9,10,14,16\}$ & 8 & [3, 2, 3, 4, 2, 3, 3, 3] & 2.88 \\
+			v (minimal) & {\Huge\textcolor{green73}{\textbullet}} & $\{1,2,4,8,9,10,11,15\}$ & 8 & [3, 2, 4, 3, 2, 3, 3, 4] & 3.0 \\
+			w (minimal) & {\Huge\textcolor{green74}{\textbullet}} & $\{1,2,4,8,9,10,14,15\}$ & 8 & [3, 2, 4, 3, 2, 3, 3, 4] & 3.0 \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
+
+\newpage
+
+
+\end{document}
