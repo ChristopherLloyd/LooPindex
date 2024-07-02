@@ -210,8 +210,11 @@ def main():
 
     #saveLoops( [naiveGonalityCounterExample,strongerCounterEx9,strongerCounterEx10,sumCounterEx] )
 
-    #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
-    #createCatalog( "Some counterexamples to naive degree conjectures", loops, detailTables = True, includeIntro = False )
+    #loops = {8:[naiveGonalityCounterExample],10:[missing]}
+    #createCatalog( "Debugging some rendering errors in saveLoops", loops, detailTables = True, includeIntro = False )
+
+    loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
+    createCatalog( "Some counterexamples to naive degree conjectures", loops, detailTables = True, includeIntro = False )
 
     #loops = {9:[flype_mutation1,flype_mutation2]}
     #loops = {16:[flype1,flype2]}
@@ -226,8 +229,8 @@ def main():
 
     #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
 
-    print( "hi" )
-    smallMonorBigonLessCatalog( 16 )    
+    #print( "hi" )
+    #smallMonorBigonLessCatalog( 16 )    
 
 def smallMonorBigonLessCatalog( n ):
     data = findMonorbigonLess( n )

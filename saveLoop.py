@@ -1,8 +1,9 @@
 import snappy
 import sys
+import traceback
 from tkinter import font
 from plinkpd2 import getLEwithPD
-from sage.all import Polyhedron, QQ
+from sage.all import Polyhedron, QQ, ZZ, RDF
 
 #print( len( sys.argv ) )
 
@@ -336,8 +337,27 @@ for reg in regToSegCoords:
 regPolysSage = {}
 
 for reg in regPolys:
-    #c.create_polygon(regPolys[reg], outline = "blue", fill = "orange", width = 2)
-    regPolysSage[reg] = Polyhedron(vertices = regPolys[reg],backend='ppl', base_ring=QQ)
+    #print( regLabels[reg], type( regLabels[reg] ) )
+    #if regLabels[reg]== 4:
+    #    c.create_polygon(regPolys[reg], outline = "purple", fill = "", width = 2)
+    #if regLabels[reg]== 7:
+    #    c.create_polygon(regPolys[reg], outline = "green", fill = "", width = 3)
+    #if regLabels[reg]== 11:
+    #    c.create_polygon(regPolys[reg], outline = "orange", fill = "", width = 4)
+    #if regLabels[reg]== 12:
+    #    c.create_polygon(regPolys[reg], outline = "black", fill = "", width = 5)
+    try:
+        regPolysSage[reg] = Polyhedron(vertices = regPolys[reg], base_ring=RDF)
+    except ValueError as e:
+        traceback.print_exc()
+        regPolysSage[reg] = Polyhedron(vertices = regPolys[reg], backend='ppl', base_ring=QQ )
+        warningCaption = "Floating point error likely. Take this figure with a grain of salt."
+        p = regPolysSage[reg].center()
+        repPoint = (float( p[0] ), float( p[1] ) )
+        #c.create_polygon(regPolys[reg], outline = "orange", fill = "", width = 4) #cleanFile() deletes this
+        c.create_text( repPoint[0],repPoint[1],text=warningCaption,\
+                      fill="orange", anchor="nw", font = ("Helvetica", 6, "bold" ))  
+        #raise( e )
 
 # https://groups.google.com/g/sage-support/c/lsUODuV47kc
 # Polyhedron constructor has an issue with the multiloop below - that is why the kwargs are added
@@ -345,18 +365,36 @@ for reg in regPolys:
 # [9, 3, 10, 4], [17, 12, 18, 13], [16, 12, 17, 11], [2, 14, 3, 15], [10, 14, 11, 13]]
 
 infRegion = reg
+#print( "New infinite region:", regLabels[reg] )
 
 #print( regPolysSage )
 
 # find infinite region using polygon containment
 for reg in regPolysSage:
+    #p = regPolysSage[reg].representative_point()
+    #repPoint = (float( p[0] ), float( p[1] ) )
+    #print( repPoint )
+    #print( type( repPoint ) )
+    #print( type( repPoint[0] ) )
+    #print( type( float( repPoint[0] ) ) )
+    #c.create_oval( repPoint[0]-1, repPoint[1]-1,repPoint[0]+1,repPoint[1]+1,
+    #                       outline ="red", fill = "red", width = 10 )
+    #c.create_text( repPoint[0],repPoint[1],text=regLabels[reg],\
+    #                  fill="green", anchor="nw", font = ("Helvetica", 12, "bold" ))   
     bigger = True
     for vert in regPolys[infRegion]:
-        if vert not in regPolysSage[reg]:
+        if not regPolysSage[reg].contains( vert ): #vert not in regPolysSage[reg]:
+            #if regLabels[reg]== 12:
+                #print( "hi" )
+                #c.create_oval( vert[0]-1, vert[1]-1,vert[0]+1,vert[1]+1,\
+                #           outline ="green", fill = "green", width = 10 )
             bigger = False
-            break
+            #break
     if bigger:
         infRegion = reg
+        #print( "New infinite region:", regLabels[reg] )
+
+#print( "here" )
 
 #c.create_polygon(regPolys[infRegion], outline = "blue", fill = "orange", width = 2)
 
@@ -414,6 +452,8 @@ for dct in [corners,crosses]:
 # plot the appropriate pinning sets in each region
 
 for reg in regBoundaries:
+
+    #print( reg, regLabels[ reg ] )
     
     #dReg1 = 42
     #dReg2 = 84
