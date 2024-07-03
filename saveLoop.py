@@ -3,7 +3,7 @@ import sys
 import traceback
 from tkinter import font
 from plinkpd2 import getLEwithPD
-from sage.all import Polyhedron, QQ, ZZ, RDF
+from sage.all import Polyhedron, QQ, Rational, RDF
 
 #print( len( sys.argv ) )
 
@@ -335,6 +335,7 @@ for reg in regToSegCoords:
 #print( regPolys )
 
 regPolysSage = {}
+regPolyType = {}
 
 for reg in regPolys:
     #print( regLabels[reg], type( regLabels[reg] ) )
@@ -346,18 +347,21 @@ for reg in regPolys:
     #    c.create_polygon(regPolys[reg], outline = "orange", fill = "", width = 4)
     #if regLabels[reg]== 12:
     #    c.create_polygon(regPolys[reg], outline = "black", fill = "", width = 5)
-    try:
-        regPolysSage[reg] = Polyhedron(vertices = regPolys[reg], base_ring=RDF)
-    except ValueError as e:
-        traceback.print_exc()
-        regPolysSage[reg] = Polyhedron(vertices = regPolys[reg], backend='ppl', base_ring=QQ )
-        warningCaption = "Floating point error likely. Take this figure with a grain of salt."
-        p = regPolysSage[reg].center()
-        repPoint = (float( p[0] ), float( p[1] ) )
-        #c.create_polygon(regPolys[reg], outline = "orange", fill = "", width = 4) #cleanFile() deletes this
-        c.create_text( repPoint[0],repPoint[1],text=warningCaption,\
-                      fill="orange", anchor="nw", font = ("Helvetica", 6, "bold" ))  
-        #raise( e )
+    regPolysSage[reg] = Polyhedron(vertices = regPolys[reg], backend='ppl', base_ring=QQ )
+    #try:
+    #    regPolysSage[reg] = Polyhedron(vertices = regPolys[reg], backend='ppl', base_ring=QQ )#base_ring=RDF)
+    #    regPolyType[reg]=float
+    #except ValueError as e:
+    #    traceback.print_exc()
+    #    regPolysSage[reg] = Polyhedron(vertices = regPolys[reg], backend='ppl', base_ring=QQ )
+    #    warningCaption = "Floating point error likely. Take this figure with a grain of salt."
+    #    p = regPolysSage[reg].center()
+    #    repPoint = (float( p[0] ), float( p[1] ) )
+    #    #c.create_polygon(regPolys[reg], outline = "orange", fill = "", width = 4) #cleanFile() deletes this
+    #    c.create_text( repPoint[0],repPoint[1],text=warningCaption,\
+    #                  fill="orange", anchor="nw", font = ("Helvetica", 6, "bold" ))
+    #    regPolyType[reg]=Rational
+    #    #raise( e )
 
 # https://groups.google.com/g/sage-support/c/lsUODuV47kc
 # Polyhedron constructor has an issue with the multiloop below - that is why the kwargs are added
@@ -382,7 +386,7 @@ for reg in regPolysSage:
     #c.create_text( repPoint[0],repPoint[1],text=regLabels[reg],\
     #                  fill="green", anchor="nw", font = ("Helvetica", 12, "bold" ))   
     bigger = True
-    for vert in regPolys[infRegion]:
+    for vert in regPolysSage[infRegion].vertices():
         if not regPolysSage[reg].contains( vert ): #vert not in regPolysSage[reg]:
             #if regLabels[reg]== 12:
                 #print( "hi" )

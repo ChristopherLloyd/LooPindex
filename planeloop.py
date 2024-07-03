@@ -213,8 +213,8 @@ def main():
     #loops = {8:[naiveGonalityCounterExample],10:[missing]}
     #createCatalog( "Debugging some rendering errors in saveLoops", loops, detailTables = True, includeIntro = False )
 
-    loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
-    createCatalog( "Some counterexamples to naive degree conjectures", loops, detailTables = True, includeIntro = False )
+    #loops = {8:[naiveGonalityCounterExample],9:[strongerCounterEx9],10:[strongerCounterEx10],15:[sumCounterEx]}
+    #createCatalog( "Some counterexamples to naive degree conjectures", loops, detailTables = True, includeIntro = False )
 
     #loops = {9:[flype_mutation1,flype_mutation2]}
     #loops = {16:[flype1,flype2]}
@@ -228,9 +228,10 @@ def main():
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
     #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
+    plantriCatalog( 9, 9, numComponents = "any", multiloopPlotThreshold = 9, detailTables = True )
 
     #print( "hi" )
-    #smallMonorBigonLessCatalog( 16 )    
+    #smallMonorBigonLessCatalog( 16 )
 
 def smallMonorBigonLessCatalog( n ):
     data = findMonorbigonLess( n )
@@ -293,9 +294,6 @@ def saveLoops( loops ):
                                       None, None,\
                                       None, pdToComponents( loop ), filename = str(loop) )#"monorbigonless"+str(counter))
         counter += 1
-
-    
-
 
 def findMonorbigonLess( n ):
     
@@ -476,7 +474,7 @@ def fig1():
     
 
 def plantriCatalog( regmax, regmin, generatePDF = True, includeReflections = False, primeOnly = True, numComponents = "any",
-                    multiloopPlotThreshold = None, dbMode = False):
+                    multiloopPlotThreshold = None, dbMode = False, detailTables = False):
     #n = 5
     #includeReflections = False #False for UU
     #primeOnly = True
@@ -536,7 +534,7 @@ def plantriCatalog( regmax, regmin, generatePDF = True, includeReflections = Fal
                 " and at most "+str(n)+" regions"
         #title = "Weird pinning sets - applying the loop algorithm to multiloops"
         createCatalog( title , loops, oeisSeq=seq, plantriMode = True,\
-                       multiloopPlotThreshold = multiloopPlotThreshold )
+                       multiloopPlotThreshold = multiloopPlotThreshold, detailTables=detailTables )
     
     
 def generateMultiloops( regions, numComponents = 1, includeReflections = False, primeOnly = True, db = None, cursor = None ):
