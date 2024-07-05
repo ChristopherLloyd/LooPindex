@@ -23,9 +23,11 @@ def cleanFile():
     f.close()
 
 if len( sys.argv ) > 2:
+    
     # get args from command line
     data = eval( sys.argv[1] )
     link = eval( data["link"] )
+    print( data )
     drawnpd = data["drawnpd"]
     adjDict = data["adjDict"]
     regWords = data["regWords"]

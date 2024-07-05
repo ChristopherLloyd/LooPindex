@@ -228,10 +228,36 @@ def main():
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
     #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
-    plantriCatalog( 9, 9, numComponents = "any", multiloopPlotThreshold = 9, detailTables = True )
+    #plantriCatalog( 9, 9, numComponents = "any", multiloopPlotThreshold = 9, detailTables = True )
 
     #print( "hi" )
     #smallMonorBigonLessCatalog( 16 )
+
+    #loops = []
+
+    #findMonorbigonLess( 10 )
+    #return
+
+    for i in range( 10, 11 ):
+        saveLoops( i )
+        
+        #loops.append( loop.pd )
+    #saveLoops( loops )
+
+def saveLoops( numRegions ):
+    counter = 1
+    for loop in generateMultiloops( numRegions, numComponents = 1, includeReflections = False, primeOnly = True )[0]:
+        drawnpd = plinkPD( loop.pd )
+        G = SurfaceGraphFromPD( drawnpd )
+        fullRegList = list( G.wordDict.copy().keys() )
+        regLabels = {}
+        for i in range( len( fullRegList ) ):
+            regLabels[fullRegList[i]] = i+1
+        plinkFile = plinkImgFile( str(loop.pd), drawnpd, G.adjDict, G.wordDict,\
+                                  [],None,\
+                                  regLabels, pdToComponents( drawnpd ), filename = str( numRegions )+"_"+str( counter ) )
+        counter += 1
+        
 
 def smallMonorBigonLessCatalog( n ):
     data = findMonorbigonLess( n )
@@ -285,15 +311,15 @@ def monorbigonFig():
     #findMonorbigonLess()
     #plantriCatalog()
 
-def saveLoops( loops ):
-    #loops = smallMonorbigonLess
-    counter = 1    
-    for loop in loops:
-        plinkFile = plinkImgFile( str(loop), None, None,\
-                                      [],\
-                                      None, None,\
-                                      None, pdToComponents( loop ), filename = str(loop) )#"monorbigonless"+str(counter))
-        counter += 1
+#def saveLoops( loops ):
+#    #loops = smallMonorbigonLess
+#    counter = 1    
+#    for loop in loops:
+#        plinkFile = plinkImgFile( str(loop), None, None,\
+#                                      [],\
+#                                      None, None,\
+#                                      None, pdToComponents( loop ), filename = str(loop) )#"monorbigonless"+str(counter))
+#        counter += 1
 
 def findMonorbigonLess( n ):
     
@@ -360,7 +386,7 @@ def findMonorbigonLess( n ):
                                       [],None,\
                                       regLabels, pdToComponents( drawnpd ), filename = "m_"+str(crossNum)+"_"+str(counter))
             counter += 1
-            monorbigonLess.append( loop )
+            #monorbigonLess.append( loop )
 
             #snappy.Link( loop ).view()
     #print( len( monorbigonLess ) )
