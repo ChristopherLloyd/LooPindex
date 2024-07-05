@@ -238,7 +238,7 @@ def main():
     #findMonorbigonLess( 10 )
     #return
 
-    for i in range( 10, 11 ):
+    for i in range( 8, 9 ):
         saveLoops( i )
         
         #loops.append( loop.pd )
@@ -246,6 +246,11 @@ def main():
 
 def saveLoops( numRegions ):
     counter = 1
+    webStr = """    <div class="float">
+        <a href="img/loops/{}.svg" title=""><img alt="" src="img/loops/{}.svg" decoding="async" width="100px" height="100px" /></a>
+        <span><m>{}</m></span>
+    </div>"""
+    f = open( "output.txt", 'w' )
     for loop in generateMultiloops( numRegions, numComponents = 1, includeReflections = False, primeOnly = True )[0]:
         drawnpd = plinkPD( loop.pd )
         G = SurfaceGraphFromPD( drawnpd )
@@ -253,10 +258,13 @@ def saveLoops( numRegions ):
         regLabels = {}
         for i in range( len( fullRegList ) ):
             regLabels[fullRegList[i]] = i+1
+        name = str( numRegions )+"_"+str( counter )
         plinkFile = plinkImgFile( str(loop.pd), drawnpd, G.adjDict, G.wordDict,\
                                   [],None,\
-                                  regLabels, pdToComponents( drawnpd ), filename = str( numRegions )+"_"+str( counter ) )
+                                  regLabels, pdToComponents( drawnpd ), filename = name )
+        f.write( webStr.format( name, name, name )+"\n" )
         counter += 1
+    f.close()    
         
 
 def smallMonorBigonLessCatalog( n ):
