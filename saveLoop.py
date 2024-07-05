@@ -18,8 +18,9 @@ def cleanFile():
     f.close()
     removedArrows = re.sub(r'<polygon.+?/>', '',toParse)
     removedComponentLabels = re.sub(r'<text.+?<circle', '<circle',removedArrows,1)
+    thickened = re.sub(r'stroke-width="3.0"', 'stroke-width="6.0"',removedComponentLabels )
     f = open( filename, 'w' )
-    f.write( removedComponentLabels )
+    f.write( thickened )
     f.close()
 
 if len( sys.argv ) > 2:

@@ -238,19 +238,17 @@ def main():
     #findMonorbigonLess( 10 )
     #return
 
-    for i in range( 8, 9 ):
+    for i in range( 11, 12 ):
         saveLoops( i )
         
-        #loops.append( loop.pd )
-    #saveLoops( loops )
 
 def saveLoops( numRegions ):
     counter = 1
     webStr = """    <div class="float">
         <a href="img/loops/{}.svg" title=""><img alt="" src="img/loops/{}.svg" decoding="async" width="100px" height="100px" /></a>
-        <span><m>{}</m></span>
+        <span>${}$</span>
     </div>"""
-    f = open( "output.txt", 'w' )
+    f = open( "htmloutput.txt", 'w' )
     for loop in generateMultiloops( numRegions, numComponents = 1, includeReflections = False, primeOnly = True )[0]:
         drawnpd = plinkPD( loop.pd )
         G = SurfaceGraphFromPD( drawnpd )
@@ -259,10 +257,11 @@ def saveLoops( numRegions ):
         for i in range( len( fullRegList ) ):
             regLabels[fullRegList[i]] = i+1
         name = str( numRegions )+"_"+str( counter )
+        texName = str( numRegions )+"_{"+str( counter )+"}"
         plinkFile = plinkImgFile( str(loop.pd), drawnpd, G.adjDict, G.wordDict,\
                                   [],None,\
                                   regLabels, pdToComponents( drawnpd ), filename = name )
-        f.write( webStr.format( name, name, name )+"\n" )
+        f.write( webStr.format( name, name, texName )+"\n" )
         counter += 1
     f.close()    
         
