@@ -227,6 +227,8 @@ def main():
 
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
+    createCatalog( "Web experiment" , {8:[link8]}, detailTables = True )
+
     #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
     #plantriCatalog( 9, 9, numComponents = "any", multiloopPlotThreshold = 9, detailTables = True )
 
@@ -238,8 +240,8 @@ def main():
     #findMonorbigonLess( 10 )
     #return
 
-    for i in range( 11, 12 ):
-        saveLoops( i )
+    #for i in range( 11, 12 ):
+    #    saveLoops( i )
         
 
 def saveLoops( numRegions ):

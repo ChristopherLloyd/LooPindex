@@ -1,0 +1,21 @@
+\begin{table}[ht]
+	\caption{Pinning set data}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXX}
+		\toprule
+			Pinning set & Pindicator & Regions & Card & Degree seq & Average degree\\
+			\hline
+			A (optimal) & {\Huge\textcolor{red0}{\textbullet}} & $\{1,2,4,5,8\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
+			B (optimal) & {\Huge\textcolor{red1}{\textbullet}} & $\{2,4,5,8,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
+			C (optimal) & {\Huge\textcolor{red2}{\textbullet}} & $\{2,3,5,8,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
+			D (optimal) & {\Huge\textcolor{red3}{\textbullet}} & $\{1,3,4,7,8\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
+			E (optimal) & {\Huge\textcolor{red4}{\textbullet}} & $\{1,2,4,7,8\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
+			F (optimal) & {\Huge\textcolor{red5}{\textbullet}} & $\{2,3,5,7,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
+			G (optimal) & {\Huge\textcolor{red6}{\textbullet}} & $\{2,4,6,7,9\}$ & 5 & [3, 3, 4, 3, 3] & 3.2 \\
+			H (optimal) & {\Huge\textcolor{red7}{\textbullet}} & $\{1,3,5,7,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
+			I (optimal) & {\Huge\textcolor{red8}{\textbullet}} & $\{1,3,4,7,9\}$ & 5 & [3, 3, 3, 3, 3] & 3.0 \\
+			J (optimal) & {\Huge\textcolor{red9}{\textbullet}} & $\{1,3,5,8,10\}$ & 5 & [3, 3, 3, 3, 4] & 3.2 \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
