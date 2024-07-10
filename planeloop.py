@@ -227,7 +227,7 @@ def main():
 
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
-    createCatalog( "Web experiment" , {8:[link8]}, detailTables = True )
+    #createCatalog( "Web experiment" , {8:[link8]}, detailTables = True )
 
     #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
     #plantriCatalog( 9, 9, numComponents = "any", multiloopPlotThreshold = 9, detailTables = True )
@@ -242,6 +242,19 @@ def main():
 
     #for i in range( 11, 12 ):
     #    saveLoops( i )
+    
+    pgfToSvg()
+
+def pgfToSvg( inFile = "docs/10_18_lattice.pgf" ):
+    f = open( inFile, 'r' )
+    out = "\\documentclass[tikz,convert={outfile=test.svg}]{standalone}\n\\begin{document}\n"
+    out += f.read()+"\n\\end{document}\n"
+    f.close()
+    texFile = open( "out.tex", 'w' )
+    texFile.write( out )
+    texFile.close()
+    call(['latex', "out.tex"])
+    call(['dvisvgm', "out.dvi"])   
         
 
 def saveLoops( numRegions ):
