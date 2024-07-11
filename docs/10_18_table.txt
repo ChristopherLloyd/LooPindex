@@ -32,3 +32,19 @@
 		\bottomrule \\ 
 	\end{tabularx}
 \end{table}
+
+\begin{table}[ht]
+	\caption{Pinning sets/average degree by cardinal}
+	\centering
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabularx}{\textwidth}{lXXXXXXXX}
+		\toprule
+			Cardinal & 5 & 6 & 7 & 8 & 9 & 10 & Total\\
+			\hline
+			Optimal pinning sets & 10 & 0 & 0 & 0 & 0 & 0 & 10 \\
+			Minimal (suboptimal) pinning sets & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+			Nonminimal pinning sets & 0 & 42 & 60 & 37 & 10 & 1 & 150 \\
+			Average degree & 3.04 & 3.11 & 3.16 & 3.19 & 3.2 & 3.2 &  \\
+		\bottomrule \\ 
+	\end{tabularx}
+\end{table}
