@@ -245,7 +245,7 @@ def main():
     
     pgfToSvg()
 
-def pgfToSvg( inFile = "docs/10_18_lattice.pgf" ):
+def pgfToSvg( inFile = "docs/10_18_lattice.pgf", clean = True ):
     f = open( inFile, 'r' )
     out = "\\documentclass[tikz,convert={outfile=test.svg}]{standalone}\n\\begin{document}\n"
     out += f.read()+"\n\\end{document}\n"
@@ -254,8 +254,12 @@ def pgfToSvg( inFile = "docs/10_18_lattice.pgf" ):
     texFile.write( out )
     texFile.close()
     call(['latex', "out.tex"])
-    call(['dvisvgm', "out.dvi"])   
-        
+    call(['dvisvgm', "out.dvi"])
+    if clean:
+        os.remove("out.aux")
+        os.remove("out.dvi")
+        os.remove("out.log")
+        os.remove("out.tex")        
 
 def saveLoops( numRegions ):
     counter = 1
