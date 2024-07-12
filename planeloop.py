@@ -43,6 +43,7 @@ from subprocess import check_output
 from latextable_lite import utils
 import mysql.connector
 import matplotlib.pyplot as plt
+import re
 
 
 #import pylatex as p
@@ -227,13 +228,12 @@ def main():
 
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
-    #createCatalog( "Web experiment" , {8:[link8]}, detailTables = True )
+    #createCatalog( "Web experiment" , {8:[link8],9:[link9]}, detailTables = True )
 
     #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
     #plantriCatalog( 9, 9, numComponents = "any", multiloopPlotThreshold = 9, detailTables = True )
 
-    #print( "hi" )
-    #smallMonorBigonLessCatalog( 16 )
+    smallMonorBigonLessCatalog( 8 )
 
     #loops = []
 
@@ -243,7 +243,10 @@ def main():
     #for i in range( 11, 12 ):
     #    saveLoops( i )
     
-    pgfToSvg()
+    #pgfToSvg()
+
+    #loops = {8:[naiveGonalityCounterExample,link8],9:[strongerCounterEx9,link9],10:[strongerCounterEx10],12:[monalisa],15:[sumCounterEx]}
+    #createCatalog( "Some random loops", loops, detailTables = True, includeIntro = False )
 
 def pgfToSvg( inFile = "docs/10_18_lattice.pgf", clean = True ):
     f = open( inFile, 'r' )
@@ -1724,7 +1727,9 @@ def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
                                           alldata[key][link]["minPinSets"], minPinSetDict,\
                                           regionLabels, pdToComponents( alldata[key][link]["drawnpd"] ), filename = link, debug=debug )
                 posetFile = drawLattice( alldata[key][link]["pinSets"], alldata[key][link]["minPinSets"],\
-                                         alldata[key][link]["fullRegSet"], minPinSetDict, filename = link )
+                                         alldata[key][link]["fullRegSet"], minPinSetDict, labelMode = "pinning sets", \
+                                         regionLabels = regionLabels, filename = link )
+                # put labelMode = "cardinals" to make it how it was before
                 if link == str(sumCounterEx):
                     print( "Setting poset file to none" )
                     input()
@@ -2118,7 +2123,7 @@ def texPinSet(linkstr, col1, col2, tableStrings, plinkImg, posetImg, sideBySide 
     if posetImg is not None:
         doc += "\\begin{figure}[H]\n"+\
                "\\centering\n"+\
-               "\\scalebox{0.8}{\\input{"+posetImg+"}}\n"+\
+               "\\includesvg[inkscapelatex=false,width=250pt]{"+posetImg+"}\n"+\
                "\\caption{Minimal join sub-semi-lattice of minimal pinning sets.}\n"+\
                "\\label{fig:"+posetImg+"}\n\\end{figure}\n"
     else:
@@ -2197,22 +2202,82 @@ def linePlot( xdata, ydata, filename ):
 ####################### CREATING PINNING POSET WITH SAGE ####################################
 
 
-def posetPlot( sageObject, heights, colors, vertlabels, edgeColors, filename ):
+def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeColors, filename ):
     """Create latex figure of poset for use with pgf package"""
-    p = sageObject.plot( layout = "ranked",\
-                         vertex_colors = colors, edge_thickness = 2,
-                         edge_style = "-", heights = heights, vertex_labels = vertlabels,
-                         edge_colors = edgeColors)
+    sageObject.set_pos( sageObject.layout_ranked(heights=heights) )
+    positions = sageObject.get_pos()
+
+    #print( positions )
+
+    #assert( False )
+
+    # tweak positions of vertices corresponding to minimal pinning sets
+
+    balanceDict = {}
+    for height in heightsToBalance:
+        balanceDict[height] = []
+
+    minX = positions[0][0]
+    maxX = positions[0][0]
+    for pos in positions:
+        if positions[pos][0] < minX:
+            minX = positions[pos][0]
+        if positions[pos][0] > maxX:
+            maxX = positions[pos][0]
+        if positions[pos][1] in balanceDict:
+            balanceDict[positions[pos][1]].append( pos )
+
+    #print( balanceDict )
+
+    for height in balanceDict:
+        n = len( balanceDict[height] )
+        for i in range( n ):
+            pos = balanceDict[height][i]
+            positions[pos] = [minX+(i+1)*(maxX-minX)/(n+1),height]
+        
+ 
+    p = sageObject.plot( pos=positions, vertex_colors = colors, edge_thickness = 2,\
+                         edge_style = "-", vertex_labels = vertlabels,\
+                         edge_colors = edgeColors, axes = True,\
+                         ticks=[[], list(heights)], tick_formatter=[None, list(heights)], axes_labels=['',''])#["",'Cardinality'])
+
+    
     if filename is None:
-        filename = getUnusedFileName( "pgf", "tex/img/" )
+        filename = getUnusedFileName( "svg", "tex/img/" )
     else:
-        filename = "tex/img/"+filename[:200]+".pgf"
+        filename = "tex/img/"+filename[:190]+"_lattice.svg"
     #print( filename )
 
+   
+    pgftext = latex( p )
+    # make the vertex labels white instead of black
+    tojoin = pgftext.rsplit('pgfpathclose%', 1)
+    pgftext = tojoin[0]+"pgfpathclose%"+re.sub( r'definecolor{textcolor}{rgb}{0.000000,0.000000,0.000000}%', 'definecolor{textcolor}{rgb}{1,1,1}%', tojoin[1] )
+
+    # convert to svg and save
+    out = "\\documentclass[tikz,convert={outfile=test.svg}]{standalone}\n\\begin{document}\n"
+    out += pgftext+"\n\\end{document}\n"
+    texFile = open( "out.tex", 'w' )
+    texFile.write( out )
+    texFile.close()
+    call(['latex', "out.tex"])
+    svgString = check_output(['dvisvgm', "out.dvi", "-s"]).decode("utf-8")
     f = open( filename, 'w' )
-    f.write( latex( p ) )
+    f.write( svgString )
     f.close()
+    os.remove("out.aux")
+    os.remove("out.dvi")
+    os.remove("out.log")
+    os.remove("out.tex") 
     return filename
+
+#def pgfToSvg( inFile = "docs/10_18_lattice.pgf", clean = True ):
+#    f = open( inFile, 'r' )
+#    out = "\\documentclass[tikz,convert={outfile=test.svg}]{standalone}\n\\begin{document}\n"
+#    out += f.read()+"\n\\end{document}\n"
+#    f.close()
+#    texFile = open( "out.tex", 'w' )
+    
 
     
 #import matplotlib.pyplot as plt
@@ -2253,32 +2318,50 @@ def posetPlot( sageObject, heights, colors, vertlabels, edgeColors, filename ):
     #os.remove(filename)
     return filename"""
 
-def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, filename = None ):
+def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, labelMode = "cardinals", regionLabels = None, filename = None ):
+    """labelMode = "cardinals" --> print the cardinality on the rightmost vertex
+       labelMode = "pinning sets" --> print the labels on the minimal pinning sets """
     elts, top = minJoinSemilatticeContaining( minPinSets )
+    #print( "minPinSets", minPinSets )
+    #print( "minPinSetDict", minPinSetDict )
+    #print( type( elts[0] ) )
+    
     numElts = len( elts )
     #topInd = None
     fullIncluded = ( top == fullRegSet )
     if not fullIncluded:
-        eltsDict = {numElts:fullRegSet}
-    else:
-        eltsDict = {}
+        #eltsDict = {numElts:fullRegSet}
+        elts.append( fullRegSet )
+    #else:
+    #    eltsDict = {}
+    eltsDict = []
+    indexDict = {}
     rels = []
-    for subset in elts:
-        ind = elts.index( subset )
-        eltsDict[ind] = frozenset(subset)
-        if subset == top and not fullIncluded:
-            rels.append([ind,numElts])
-    for i in range( numElts-1):
-        for j in range( i+1, numElts ):
+    for i in range( len( elts ) ):
+        eltsDict.append( frozenset( elts[i] ) )
+        indexDict[ frozenset( elts[i] ) ] = i
+    #    if elts[i] == top and not fullIncluded:
+    #        rels.append([i,numElts])
+    
+    #for subset in elts:
+    #    ind = elts.index( subset )
+    #    eltsDict[ind] = frozenset(subset)
+    #    if subset == top and not fullIncluded:
+    #        rels.append([ind,numElts])
+    for i in range( len( eltsDict )-1 ):
+        for j in range( i+1, len( eltsDict ) ):
             if eltsDict[i].issubset( eltsDict[j] ):
                 rels.append([i,j])
             if eltsDict[j].issubset( eltsDict[i] ):
                 rels.append([j,i])
 
-    #print( eltsDict, rels )
+    #print( eltsDict )
 
-    M = JoinSemilattice((eltsDict, rels))
-    #print( M )
+    #print( "eltsDict, rels", eltsDict, rels )
+
+
+    M = JoinSemilattice((list( range( len(eltsDict) ) ), rels))
+    #print( "M", M )
 
     heightsDict = {}
     for elt in M.list():
@@ -2286,6 +2369,12 @@ def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, filename = None
             heightsDict[len( eltsDict[elt] )].append( elt )
         except KeyError:
             heightsDict[len( eltsDict[elt] )] = [elt]
+
+
+    heightsToBalance = set()
+    for elt in minPinSets:
+        heightsToBalance.add( len( elt ) )
+    
     defaultColor = (0.7,0.7,1)
     vertColorsDict = {defaultColor:[]}
     for elt in M.list():
@@ -2299,14 +2388,25 @@ def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, filename = None
             vertColorsDict[defaultColor].append( elt )
         
     vertLabels = {}
-    lengthsEncountered = set()
-    revList = M.list() # reversing to print the cardinality on the rightmost vertex
-    revList.reverse()
-    for elt in revList:
-        leng = len( eltsDict[elt] )
-        if leng not in lengthsEncountered:
-            vertLabels[elt]=str( leng )
-            lengthsEncountered.add( leng )
+
+    if labelMode == "cardinals":
+        lengthsEncountered = set()
+        revList = M.list() # reversing to print the cardinality on the rightmost vertex
+        revList.reverse()
+        for elt in revList:
+            leng = len( eltsDict[elt] )
+            if leng not in lengthsEncountered:
+                vertLabels[elt]=str( leng )
+                lengthsEncountered.add( leng )
+    if labelMode == "pinning sets":
+        for pinSet in minPinSetDict:
+            vertLabels[indexDict[pinSet]] = minPinSetDict[pinSet]["letterLabel"]
+        #for elt in M.list():
+        #    print( "regionLabels", regionLabels )
+        #    print( "minPinSetDict", minPinSetDict )
+        #    print( "hello", elt )
+        #    print( "hi", regionLabels[eltsDict[elt]] )
+        #    vertLabels[elt] = regionLabels[eltsDict[elt]]
         
     edgeColorsDict = {}
     #for rel in rels:
@@ -2350,8 +2450,19 @@ def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, filename = None
     #print( G.edges( labels=True) )
 
     G = Graph( G )
+
+    #for height in heightsDict:
+    #    print( height, heightsDict[height] )
+    #    for i in range( len( heightsDict[height] )-1 ):
+    #        G.add_edge((heightsDict[height][i],heightsDict[height][i+1] ))
+
+    #print( G )
+    #print( G.get_vertices() )
+    #print( G.edges() )
+
+    #assert( False )
                
-    return posetPlot( G, heightsDict, vertColorsDict, vertLabels, edgeColors, filename=filename )
+    return posetPlot( G, heightsDict, heightsToBalance, vertColorsDict, vertLabels, edgeColors, filename=filename )
 
 def minJoinSemilatticeContaining( subsets ):
     """This function takes a set of subsets and computes unions
