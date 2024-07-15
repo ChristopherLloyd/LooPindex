@@ -228,12 +228,12 @@ def main():
 
     #createCatalog( "Testing memory usage" , {12:memoryTest} )
 
-    #createCatalog( "Web experiment" , {8:[link8],9:[link9]}, detailTables = True )
+    createCatalog( "Web experiment" , {8:[link8],9:[link9]}, detailTables = True )
 
     #plantriCatalog( 13, 4, numComponents = "any", multiloopPlotThreshold = 12 )
     #plantriCatalog( 9, 9, numComponents = "any", multiloopPlotThreshold = 9, detailTables = True )
 
-    smallMonorBigonLessCatalog( 8 )
+    #smallMonorBigonLessCatalog( 8 )
 
     #loops = []
 
@@ -2201,15 +2201,14 @@ def linePlot( xdata, ydata, filename ):
 
 ####################### CREATING PINNING POSET WITH SAGE ####################################
 
+from io import StringIO 
+from matplotlib import rcParams
+rcParams['svg.fonttype'] = 'none' #to make the svg text searchable
 
 def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeColors, filename ):
     """Create latex figure of poset for use with pgf package"""
     sageObject.set_pos( sageObject.layout_ranked(heights=heights) )
     positions = sageObject.get_pos()
-
-    #print( positions )
-
-    #assert( False )
 
     # tweak positions of vertices corresponding to minimal pinning sets
 
@@ -2227,7 +2226,6 @@ def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeCo
         if positions[pos][1] in balanceDict:
             balanceDict[positions[pos][1]].append( pos )
 
-    #print( balanceDict )
 
     for height in balanceDict:
         n = len( balanceDict[height] )
@@ -2241,20 +2239,32 @@ def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeCo
                          edge_colors = edgeColors, axes = True,\
                          ticks=[[], list(heights)], tick_formatter=[None, list(heights)], axes_labels=['',''])#["",'Cardinality'])
 
-    
     if filename is None:
         filename = getUnusedFileName( "svg", "tex/img/" )
     else:
         filename = "tex/img/"+filename[:190]+"_lattice.svg"
     #print( filename )
 
-   
+    # convert to svg and save
+    p.save("temp.svg")
+    f = open( "temp.svg", 'r' )
+    svgString = f.read()
+    f.close()
+    os.remove("temp.svg")
+    # make the vertex labels white instead of black with regex
+    newsvgString = re.sub( r'middle', 'middle; fill: #FFFFFF', svgString )
+    f = open( filename, 'w' )
+    f.write( newsvgString )
+    f.close()
+
+    return filename
+
+    # another method below
+    
     pgftext = latex( p )
     # make the vertex labels white instead of black
     tojoin = pgftext.rsplit('pgfpathclose%', 1)
     pgftext = tojoin[0]+"pgfpathclose%"+re.sub( r'definecolor{textcolor}{rgb}{0.000000,0.000000,0.000000}%', 'definecolor{textcolor}{rgb}{1,1,1}%', tojoin[1] )
-
-    # convert to svg and save
     out = "\\documentclass[tikz,convert={outfile=test.svg}]{standalone}\n\\begin{document}\n"
     out += pgftext+"\n\\end{document}\n"
     texFile = open( "out.tex", 'w' )
@@ -2262,22 +2272,13 @@ def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeCo
     texFile.close()
     call(['latex', "out.tex"])
     svgString = check_output(['dvisvgm', "out.dvi", "-s"]).decode("utf-8")
-    f = open( filename, 'w' )
+    f = open( filename+"old", 'w' )
     f.write( svgString )
     f.close()
     os.remove("out.aux")
     os.remove("out.dvi")
     os.remove("out.log")
-    os.remove("out.tex") 
-    return filename
-
-#def pgfToSvg( inFile = "docs/10_18_lattice.pgf", clean = True ):
-#    f = open( inFile, 'r' )
-#    out = "\\documentclass[tikz,convert={outfile=test.svg}]{standalone}\n\\begin{document}\n"
-#    out += f.read()+"\n\\end{document}\n"
-#    f.close()
-#    texFile = open( "out.tex", 'w' )
-    
+    os.remove("out.tex")
 
     
 #import matplotlib.pyplot as plt
