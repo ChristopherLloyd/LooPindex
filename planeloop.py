@@ -688,9 +688,16 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
     
     #i = 0
     mloopStrings = []
+    indexByComponent = {}
     for graph in graphs:
         #data = planarData( graph, debug = False )
         multiloop = Spherimultiloop( graph )
+        if multiloop.components not in indexByComponent:
+            indexByComponent[multiloop.components] = 1
+        else:
+            indexByComponent[multiloop.components] += 1
+        name = str( regions )+"_"+str( indexByComponent[multiloop.components] )+\
+               "^"+str(multiloop.components)
         if numComponents == "any" or multiloop.components == numComponents:
             #ID = cursor.execute("SELECT LAST_INSERT_ID()")
             #if ID is None:
@@ -698,9 +705,9 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
             #insert_entry = """
             #INSERT INTO mloops (id, pc, pd, sigma, components)
             #VALUES
-            mloopStrings.append( """("{}", "{}", "{}", {}),\n""".format(\
-                    str( multiloop.plantriCode ), str( multiloop.pd ),\
-                    str( multiloop.sigma ), multiloop.components ) )
+            mloopStrings.append( """("{}", "{}", "{}", {}, "{}", "", {}, "{}", "", ""),\n""".format(\
+                    re.sub( r' ', '', str( multiloop.plantriCode ) ), re.sub( r' ', '', str( multiloop.pd ) ),\
+                    multiloop.sigmaToString(), multiloop.components, multiloop.epsilonToString(), regions, name ) )
             #print( insert_entry )
            
             multiloops.append( multiloop )
@@ -708,12 +715,12 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
             #i+=1
     if mloopStrings != [] and db is not None:        
         insert_entry="""
-                INSERT INTO mloops (pc, pd, sigma, components)
+                INSERT INTO mloops (pc, pd, sigma, components, epsilon, drawnpd, numRegions, name, next, prev)
                 VALUES\n"""
         for mloop in mloopStrings:
             insert_entry += mloop
 
-        print( insert_entry )
+        #print( insert_entry )
 
         insert_entry = insert_entry[:-2]
         cursor.execute(insert_entry)
@@ -2945,6 +2952,22 @@ class Spherimultiloop:
                     break
 
         return pdcode, sigma, numComponents
+
+    def sigmaToString( self ):
+        toReturn = "("
+        for quad in self.sigma:
+            toReturn += str( quad )
+        toReturn = re.sub( r'\[', '(', toReturn )
+        toReturn = re.sub( r'\]', ')', toReturn )
+        toReturn = re.sub( r' ', '', toReturn )
+        return toReturn+")"
+
+    def epsilonToString( self ):
+        toReturn = "("
+        for i in range( 1, 2*len( self.sigma) + 1 ):
+            toReturn += "("+str(-i)+","+str( i )+")"
+        return toReturn + ")"
+        
 
 
 class SurfaceGraph:
