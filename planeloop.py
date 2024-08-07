@@ -1735,7 +1735,7 @@ def createCatalog( title, links, oeisSeq = "unknown", skipTrivial = False,\
                                           alldata[key][link]["minPinSets"], minPinSetDict,\
                                           regionLabels, pdToComponents( alldata[key][link]["drawnpd"] ), filename = link, debug=debug )
                 posetFile = drawLattice( alldata[key][link]["pinSets"], alldata[key][link]["minPinSets"],\
-                                         alldata[key][link]["fullRegSet"], minPinSetDict, labelMode = "pinning sets", \
+                                         alldata[key][link]["fullRegSet"], minPinSetDict, labelMode = "pinning_sets", \
                                          regionLabels = regionLabels, filename = link )
                 # put labelMode = "cardinals" to make it how it was before
                 if link == str(sumCounterEx):
@@ -2213,7 +2213,7 @@ from io import StringIO
 from matplotlib import rcParams
 rcParams['svg.fonttype'] = 'none' #to make the svg text searchable
 
-def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeColors, filename ):
+def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeColors, filename, forWeb = False, webImFolder = None ):
     """Create latex figure of poset for use with pgf package"""
     sageObject.set_pos( sageObject.layout_ranked(heights=heights) )
     positions = sageObject.get_pos()
@@ -2247,10 +2247,13 @@ def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeCo
                          edge_colors = edgeColors, axes = True,\
                          ticks=[[], list(heights)], tick_formatter=[None, list(heights)], axes_labels=['',''])#["",'Cardinality'])
 
-    if filename is None:
-        filename = getUnusedFileName( "svg", "tex/img/" )
+    if not forWeb:
+        if filename is None:
+            filename = getUnusedFileName( "svg", "tex/img/" )
+        else:
+            filename = "tex/img/"+filename[:190]+"_lattice.svg"
     else:
-        filename = "tex/img/"+filename[:190]+"_lattice.svg"
+        filename = "docs/img/"+webImFolder+ "/"+filename+"_lattice.svg"
     #print( filename )
 
     # convert to svg and save
@@ -2327,9 +2330,9 @@ def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeCo
     #os.remove(filename)
     return filename"""
 
-def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, labelMode = "cardinals", regionLabels = None, filename = None ):
+def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, labelMode = "cardinals", regionLabels = None, filename = None, forWeb = False, webImFolder = None ):
     """labelMode = "cardinals" --> print the cardinality on the rightmost vertex
-       labelMode = "pinning sets" --> print the labels on the minimal pinning sets """
+       labelMode = "pinning_sets" --> print the labels on the minimal pinning sets """
     elts, top = minJoinSemilatticeContaining( minPinSets )
     #print( "minPinSets", minPinSets )
     #print( "minPinSetDict", minPinSetDict )
@@ -2407,7 +2410,7 @@ def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, labelMode = "ca
             if leng not in lengthsEncountered:
                 vertLabels[elt]=str( leng )
                 lengthsEncountered.add( leng )
-    if labelMode == "pinning sets":
+    if labelMode == "pinning_sets":
         for pinSet in minPinSetDict:
             vertLabels[indexDict[pinSet]] = minPinSetDict[pinSet]["letterLabel"]
         #for elt in M.list():
@@ -2471,7 +2474,7 @@ def drawLattice( pinSets, minPinSets, fullRegSet, minPinSetDict, labelMode = "ca
 
     #assert( False )
                
-    return posetPlot( G, heightsDict, heightsToBalance, vertColorsDict, vertLabels, edgeColors, filename=filename )
+    return posetPlot( G, heightsDict, heightsToBalance, vertColorsDict, vertLabels, edgeColors, filename=filename, forWeb = forWeb, webImFolder = webImFolder )
 
 def minJoinSemilatticeContaining( subsets ):
     """This function takes a set of subsets and computes unions
@@ -3702,11 +3705,14 @@ def plinkFromPD( link ):
 
 def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets,\
                  minPinSetDict, regionLabels, components, tolerance = 0.0000001,\
-                  bufferFrac = None, diamFrac = None, filename = None, debug = False ):
-    if filename is None:
-        filename = getUnusedFileName( "svg", "tex/img/" )
+                  bufferFrac = None, diamFrac = None, filename = None, debug = False, forWeb = False, webImFolder = None ):
+    if not forWeb:
+        if filename is None:
+            filename = getUnusedFileName( "svg", "tex/img/" )
+        else:
+            filename = "tex/img/"+filename[:200] +".svg"
     else:
-        filename = "tex/img/"+filename[:200] +".svg"
+        filename = "docs/img/"+webImFolder+"/"+filename+".svg"
     words = {}
     for key in wordDict:
         words[key] = wordDict[key].seq
