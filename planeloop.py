@@ -687,7 +687,7 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
     
     
     #i = 0
-    mloopStrings = []
+    mloopStrings = {}
     indexByComponent = {}
     null = None
     for graph in graphs:
@@ -706,20 +706,26 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
             #insert_entry = """
             #INSERT INTO mloops (id, pc, pd, sigma, components)
             #VALUES
-            mloopStrings.append( """("{}", "{}", "{}", {}, "{}", Null, {},  "{}", Null, Null, Null),\n""".format(\
+            if multiloop.components not in mloopStrings:
+                mloopStrings[multiloop.components] =[ """("{}", "{}", "{}", {}, "{}", Null, {},  "{}", Null, Null, Null),\n""".format(\
+                    re.sub( r' ', '', str( multiloop.plantriCode ) ), re.sub( r' ', '', str( multiloop.pd ) ),\
+                    multiloop.sigmaToString(), multiloop.components, multiloop.epsilonToString(), regions, name ) ]
+            #print( insert_entry )
+            else:
+                mloopStrings[multiloop.components].append( """("{}", "{}", "{}", {}, "{}", Null, {},  "{}", Null, Null, Null),\n""".format(\
                     re.sub( r' ', '', str( multiloop.plantriCode ) ), re.sub( r' ', '', str( multiloop.pd ) ),\
                     multiloop.sigmaToString(), multiloop.components, multiloop.epsilonToString(), regions, name ) )
-            #print( insert_entry )
            
             multiloops.append( multiloop )
             #print( i )
             #i+=1
-    if mloopStrings != [] and db is not None:        
+    if mloopStrings != {} and db is not None:        
         insert_entry="""
                 INSERT INTO mloops (pc, pd, sigma, components, epsilon, drawnpd, numRegions, name, next, prev, minPinSets)
                 VALUES\n"""
-        for mloop in mloopStrings:
-            insert_entry += mloop
+        for numComponents in sorted( mloopStrings ):
+            for mloop in mloopStrings[numComponents]:
+                insert_entry += mloop
 
         #print( insert_entry )
 

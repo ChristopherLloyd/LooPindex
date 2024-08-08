@@ -1,6 +1,7 @@
 from planeloop import *
 import mysql.connector
 import os
+import re
 # https://dev.mysql.com/doc/mysql-getting-started/en/#mysql-getting-started-basic-ops
 
 db = mysql.connector.connect( username=os.environ.get('MYSQL_USER'), password=os.environ.get('MYSQL_PASS') )
@@ -23,9 +24,14 @@ def main():
     #generateImageFilesForWeb( "10_18^1")
     #storeRefinedPinningData( "10_18^1")
 
-    generateImageFilesForWeb( "11_97^1")
-    storeMinPinSets( "11_97^1" )
-    storeRefinedPinningData( "11_97^1")
+    #generateImageFilesForWeb( "11_97^1")
+    #print( storeMinPinSets( "11_97^1" ) )
+    #print( refinedTableStr( "11_97^1") )
+    print( texName( "10_1^1" ) )
+    print( nextName( "10_1^1" ) )
+    print( prevName( "10_1^1" ) )
+
+    # things to record (now or later): max number of minimal pinning sets to which a region belongs? is it monorbigonless? is it simple? is it a counterexample?
 
 def createDatabase( maxRegions = 12 ):
     response = input( "Erase the existing database? (y/n)")    
@@ -60,6 +66,32 @@ def createDatabase( maxRegions = 12 ):
     cursor.execute(create_table)
     for k in range( 4, maxRegions+1):
         generateMultiloops( k, numComponents = "any" ,includeReflections = False, primeOnly = True, db = db, cursor = cursor )
+
+
+def nameToID( name ):
+    cursor.execute( 'select id from mloops where name = "{}";'.format( name) )
+    id = cursor.fetchall()[0][0]
+    return id
+
+def name_k_after( name, k ):
+    nextID = nameToID( name )+k
+    print( nextID )
+    cursor.execute( 'select name from mloops where id = {};'.format( nextID ) )
+    nextName = cursor.fetchall()[0][0]
+    if nextName is None:  # Null value       
+        return None
+    return nextName
+
+def texName( name ):
+    pieces = name.split( "_" )
+    morepieces = pieces[1].split( "^" )
+    return pieces[0]+"_{"+morepieces[0]+"}^{"+morepieces[1]+"}"
+
+def nextName( name ):
+    return name_k_after( name, 1 )
+
+def prevName( name ):
+    return name_k_after( name, -1 )
 
 def getFieldByName( field, name ):
     cursor.execute( 'select {} from mloops where name = "{}";'.format(field, name) )
@@ -97,51 +129,167 @@ def storeMinPinSets( name, debug = False, mode = "drawnPD" ):
         pd = getFieldByName( "pd", name)
         pinSets = getPinSets( pd, debug=debug )
     else:
-        raise( "bad mode" )
+        raise( Exception( "bad mode" ) )
    
-    print( pinSets )
+    #print( pinSets )
     setFieldByName( "minPinSets", pinSets["minPinSets"], name)
+
+    avgDegByCardTable, avgOptimalDeg, avgMinimalDeg, avgOverallDeg = avgDegByCardData( pinSets )
+
+    print( avgDegByCardTable )
+    print( "avgOptimalDeg", avgOptimalDeg )
+    print( "avgMinimalDeg", avgMinimalDeg )
+    print( "avgOverallDeg", avgOverallDeg )
+    
+     
     #printRow( name )
 
-def storeRefinedPinningData( name ):
-    minPinSets = getFieldByName( "minPinSets", name )    
+def avgDegByCardData( pinningSets ):
+    pinDict = {}
+    for elt in pinningSets["pinSets"]:
+        if len( elt ) not in pinDict:
+            pinDict[len(elt)] = [elt]
+        else:
+            pinDict[len(elt)].append( elt )
+
+    minPinDict = {}
+    for elt in pinningSets["minPinSets"]:
+        if len( elt ) not in minPinDict:
+            minPinDict[len(elt)] = [elt]
+        else:
+            minPinDict[len(elt)].append( elt )
+
+    pinningNum = min( list( minPinDict ) )
+    numOptimal = len( minPinDict[pinningNum] )
+    numMinimal = len( pinningSets["minPinSets"] )
+    #gonalityDict = {}
+    regToGonality = {}
+    avgDegreesByCardinal = {}
+    optAvgDegrees = []
+    minAvgDegrees = []
+    allAvgDegrees = []
+    for reg in pinningSets["fullRegSet"]:
+        regToGonality[reg] = len( binSet( reg ) )
+    for elt in pinningSets["pinSets"]:
+        degrees = []
+        regs = list( elt )
+        regs.sort()
+        for reg in regs:
+            degrees.append( regToGonality[reg] )
+        thisAvgDegree = sum(degrees)/len(degrees)
+        if len( elt ) not in avgDegreesByCardinal:
+            avgDegreesByCardinal[len(elt)] = [thisAvgDegree]
+        else:
+            avgDegreesByCardinal[len(elt)].append( thisAvgDegree )
+        isMinimal = ( elt in pinningSets["minPinSets"] )
+        isOptimal = isMinimal and len( elt ) == pinningNum
+        if isOptimal:
+            optAvgDegrees.append( thisAvgDegree )
+        if isMinimal:
+            minAvgDegrees.append( thisAvgDegree )
+        allAvgDegrees.append( thisAvgDegree )
+        
+        #gonalities = []
+        #for reg in regs:
+        #    gonalities.append( regToGonality[reg] )
+        
+        #gonalityDict[frozenset(elt)]={"gons":gonalities,"min":isMinimal}
+
+    tableMatrix = [["Cardinality", "Optimal pinning sets", "Minimal (suboptimal) pinning sets", "Nonminimal pinning sets", "Average average degree"]]
+
+    for cardinal in pinDict:
+        tableRow = [cardinal]
+        if cardinal == pinningNum:
+            tableRow.append( numOptimal )            
+        else:
+            tableRow.append( 0 )
+        if cardinal in minPinDict and cardinal != pinningNum:
+            tableRow.append( len( minPinDict[cardinal] ) )
+        else:
+            tableRow.append( 0 )
+        if cardinal in minPinDict:
+            tableRow.append( len(pinDict[cardinal])-len(minPinDict[cardinal]) )
+        else:
+            tableRow.append( len( pinDict[cardinal] ) )
+        tableRow.append( round( sum( avgDegreesByCardinal[cardinal] )/len( avgDegreesByCardinal[cardinal] ), 2 ) )
+        tableMatrix.append( tableRow )
+    tableMatrix.append(["Total", numOptimal, numMinimal-numOptimal, len(pinningSets["pinSets"])-numMinimal, ""])
+
+    return htmlTable( tableMatrix ), sum( optAvgDegrees )/len( optAvgDegrees ), sum( minAvgDegrees )/len( minAvgDegrees ), sum( allAvgDegrees )/len( allAvgDegrees )
+
+def refinedTableStr( name ):
+    #minPinSets = getFieldByName( "minPinSets", name )    
     labelData = getPinningSetLabelData( name )
-    drawnpd = labelData["drawnpd"]
+    #drawnpd = labelData["drawnpd"]
     minPinSetDict = labelData["minPinSetDict"]
-    regList = labelData["regList"]
+    #regList = labelData["regList"]
     numericRegionLabels = labelData["numericLabels"]
     degreeRegionLabels = labelData["degreeLabels"]
-    emptyLabels = labelData["emptyLabels"]
+    #emptyLabels = labelData["emptyLabels"]
     G = labelData["G"]
 
-    #print( minPinSetDict )
+    print( minPinSetDict )
+
+    sortedKeys = sorted( list( minPinSetDict ), key = lambda fset: minPinSetDict[fset]["label"] )
         
-    refinedPinData = []
-    for pinningSet in minPinSetDict:
-        refinedData = {}
-        refinedData["Pin label"] = minPinSetDict[pinningSet]["letterLabel"]
-        if refinedData["Pin label"].upper() == refinedData["Pin label"]:
-            refinedData["Pin label"] += " (optimal)"
+    refinedPinData = [["Pin label", "Pin color", "Regions", "Cardinality", "Degree sequence","Average degree"]]
+    for pinningSet in sortedKeys:
+        refinedData = []
+        label = minPinSetDict[pinningSet]["letterLabel"]
+        if label.upper() == label:
+            label += " (optimal)"
         else:
-            refinedData["Pin label"] += " (minimal)"
+            label += " (minimal)"
+        refinedData.append( label )
         rgb = []
         for entry in minPinSetDict[pinningSet]["color"]:
             rgb.append( entry*255 )
-        refinedData["Pin color"] = tuple( rgb )
-        refinedData["Regions"] = set()
+        refinedData.append( """<span style="font-size:100px;line-height:20px;color:rgb{};">&bull;</span>""".format( tuple( rgb ) ) )
+        regions = set()
         for reg in pinningSet:
-            refinedData["Regions"].add( numericRegionLabels[reg] )
-        refinedData["Cardinality"] = len(pinningSet)
-        refinedData["Degree sequence"] = []
+            regions.add( int( numericRegionLabels[reg] ) )
+        refinedData.append( "{"+str( sorted( regions ) )[1:-1]+"}" )
+        refinedData.append( len(pinningSet) )
+        degSeq = []
         for reg in pinningSet:
-             refinedData["Degree sequence"].append( degreeRegionLabels[reg] )
-        refinedData["Degree sequence"].sort()
-        refinedData["Average degree"] = sum( refinedData["Degree sequence"] )/len( refinedData["Degree sequence"] )
+             degSeq.append( degreeRegionLabels[reg] )
+        degSeq.sort()
+        refinedData.append( degSeq )
+        refinedData.append( "{:.2f}".format( sum( degSeq )/len( degSeq ) ) )
         refinedPinData.append( refinedData )
 
-    
-    print( eval( str( refinedPinData ) ) )
-    # todo: add to database
+    return htmlTable( refinedPinData )
+
+def htmlTable( data ):
+    """Assumes data is a list of lists where the first list is the headers"""
+
+    #print( data )
+
+    tableStr = """
+    <table class="tg" style="table-layout: fixed; width: 100%; text-align:center;">
+        <thead>
+             <tr>"""
+    for header in data[0]:
+        tableStr += """
+                <th class="tg-0pky">{}</th>""".format(header)
+    tableStr += """
+            </tr>
+        </thead>
+	<tbody>"""
+    for i in range( 1, len( data ) ):
+        tableStr += """
+            <tr>"""
+        for entry in data[i]:
+            tableStr += """
+                <td class="tg-0lax">{}</td>""".format(entry)
+        tableStr += """
+            </tr>"""
+    tableStr +=  """
+        </tbody>
+    </table>\n"""
+
+    return tableStr
+
 
 
 def generateImageFilesForWeb( name ):
