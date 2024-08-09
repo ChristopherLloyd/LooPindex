@@ -25,11 +25,21 @@ def main():
     #storeRefinedPinningData( "10_18^1")
 
     #generateImageFilesForWeb( "11_97^1")
-    #print( storeMinPinSets( "11_97^1" ) )
+
+    storeDataForWeb( "11_97^1" )
+    makeWebPage( "11_97^1" )
+    """storeDataForWeb( "10_18^1" )
+    makeWebPage( "10_18^1" )
+    storeDataForWeb( "10_19^1" )
+    makeWebPage( "10_19^1" )
+    storeDataForWeb( "10_20^1" )
+    makeWebPage( "10_20^1" )
+    storeDataForWeb( "10_21^1" )
+    makeWebPage( "10_21^1" )"""
     #print( refinedTableStr( "11_97^1") )
-    print( texName( "10_1^1" ) )
-    print( nextName( "10_1^1" ) )
-    print( prevName( "10_1^1" ) )
+    #print( texName( "10_1^1" ) )
+    #print( nextName( "10_1^1" ) )
+    #print( prevName( "10_1^1" ) )
 
     # things to record (now or later): max number of minimal pinning sets to which a region belongs? is it monorbigonless? is it simple? is it a counterexample?
 
@@ -58,9 +68,17 @@ def createDatabase( maxRegions = 12 ):
         drawnpd VARCHAR(500),        
         numRegions INT,
         name VARCHAR(20),
-        next VARCHAR(20),
-        prev VARCHAR(20),
-        minPinSets VARCHAR(1028)
+        minPinSets VARCHAR(1028),
+        degSequence VARCHAR( 500 ),
+        pinNum INT,
+        totOpt INT,
+        totMin INT,
+        totPinSets INT,
+        avgOptDeg FLOAT,
+        avgMinDeg FLOAT,
+        avgOverallDeg FLOAT,
+        refinedPinSetMat VARCHAR( 2048 ),
+        degDataMat VARCHAR( 2048 )        
         )
     """
     cursor.execute(create_table)
@@ -75,7 +93,7 @@ def nameToID( name ):
 
 def name_k_after( name, k ):
     nextID = nameToID( name )+k
-    print( nextID )
+    #print( nextID )
     cursor.execute( 'select name from mloops where id = {};'.format( nextID ) )
     nextName = cursor.fetchall()[0][0]
     if nextName is None:  # Null value       
@@ -85,7 +103,7 @@ def name_k_after( name, k ):
 def texName( name ):
     pieces = name.split( "_" )
     morepieces = pieces[1].split( "^" )
-    return pieces[0]+"_{"+morepieces[0]+"}^{"+morepieces[1]+"}"
+    return "$"+pieces[0]+"_{"+morepieces[0]+"}^{"+morepieces[1]+"}$"
 
 def nextName( name ):
     return name_k_after( name, 1 )
@@ -94,11 +112,21 @@ def prevName( name ):
     return name_k_after( name, -1 )
 
 def getFieldByName( field, name ):
-    cursor.execute( 'select {} from mloops where name = "{}";'.format(field, name) )
+    query = 'select {} from mloops where name = "{}";'.format(field, name) 
+    #print( query )
+    cursor.execute( query )
     result = cursor.fetchall()[0][0]
     if result is None:  # Null value       
         return None
-    return eval( result )
+    """if type( result ) == str:
+        try:
+            result =  eval( result )
+            return result
+        except TypeError:
+            return result
+    else:
+        return result"""
+    return result
 
 def setFieldByName( field, value, name ):
     cursor.execute( 'update mloops set {} = "{}" where name="{}";'.format(field,value,name) )
@@ -116,33 +144,69 @@ def printRow( name ):
 def storeDrawnPD( name ):
     setFieldByName( "drawnpd", plinkPD( getFieldByName( "pd", name) ), name)
 
-def storeMinPinSets( name, debug = False, mode = "drawnPD" ):
-    """Computes and stores the minimal pinning sets in the database
-    mode = "originalPD" --> Use the pd code that is computed from the plantri rep
-    mode = "drawnPD" --> Use the pd code that is drawn by snappy based on the pd code from the plantri rep """
-    
-    if mode == "drawnPD":
-        storeDrawnPD( name )
-        drawnpd = getFieldByName( "drawnpd", name)
-        pinSets = getPinSets( drawnpd, debug=debug )
-    elif mode == "originalPD":
-        pd = getFieldByName( "pd", name)
-        pinSets = getPinSets( pd, debug=debug )
-    else:
-        raise( Exception( "bad mode" ) )
-   
-    #print( pinSets )
+def storeDataForWeb( name ):
+    storeMinPinSetDataForWeb( name )
+    generateImageFilesForWeb( name )
+
+def makeWebPage( name ):
+    f = open( "docs/multiloop_page_template.html", 'r' )
+    templateStr = f.read()
+    f.close()
+    f = open( "docs/multiloops/"+name+"/"+name+".html", "w")
+    pName = prevName( name )
+    nName = nextName( name )
+    context = name.split("_")[0]+"^"+name.split("^")[1]+".html"
+
+    #print( templateStr )
+ 
+    f.write( templateStr.format( rawname = name, texname = texName( name ),\
+                                 linkprev = "../"+pName+"/"+pName+".html", \
+                                 linknext = "../"+nName+"/"+nName+".html", \
+                                 linkcontext = "../../"+context, \
+                                 pinset_svg_path = name+"-num+minpinning.svg",\
+                                 lattice_svg_path = name+"_lattice.svg",\
+                                 pinnum = getFieldByName( "pinNum", name),\
+                                 numOpt = getFieldByName( "totOpt", name),\
+                                 numMin = getFieldByName( "totMin", name),\
+                                 numTot = getFieldByName( "totPinSets", name ),\
+                                 avgOptDeg = getFieldByName( "avgOptDeg", name ),\
+                                 avgMinDeg = getFieldByName( "avgMinDeg", name ),\
+                                 avgOverallDeg = getFieldByName( "avgOverallDeg", name ),\
+                                 refinedTableStr = htmlTable( eval( getFieldByName( "refinedPinSetMat", name ) ) ),\
+                                 degTableStr = htmlTable( eval( getFieldByName( "degDataMat", name ) ) ),\
+                                 othercomments = "",\
+                                 sigma = getFieldByName( "sigma", name ),\
+                                 epsilon = getFieldByName( "epsilon", name ),\
+                                 pc = getFieldByName( "pc", name ),\
+                                 drawnpd = getFieldByName( "drawnpd", name ),\
+                                 loopdir = "." ) )
+    f.close()
+
+
+def storeMinPinSetDataForWeb( name, debug = False ):
+    """Computes and stores the minimal pinning set data in the database"""
+
+    storeDrawnPD( name )
+    drawnpd = eval( getFieldByName( "drawnpd", name) )
+    print( drawnpd )
+    pinSets = getPinSets( drawnpd, debug=debug )
+
     setFieldByName( "minPinSets", pinSets["minPinSets"], name)
 
-    avgDegByCardTable, avgOptimalDeg, avgMinimalDeg, avgOverallDeg = avgDegByCardData( pinSets )
+    avgDegByCardTable, avgOptimalDeg, avgOptimalDeg, avgOverallDeg, pinningNum, numOptimal = avgDegByCardData( pinSets )
 
-    print( avgDegByCardTable )
-    print( "avgOptimalDeg", avgOptimalDeg )
-    print( "avgMinimalDeg", avgMinimalDeg )
-    print( "avgOverallDeg", avgOverallDeg )
-    
-     
-    #printRow( name )
+    setFieldByName( "degDataMat", avgDegByCardTable, name)
+    setFieldByName( "avgOptDeg", avgOptimalDeg, name)
+    setFieldByName( "avgMinDeg", avgOptimalDeg, name)
+    setFieldByName( "avgOverallDeg", avgOverallDeg, name)
+    print( getRefinedTableMat( name ) )
+    setFieldByName( "refinedPinSetMat", getRefinedTableMat( name ), name )
+    setFieldByName( "pinNum", pinningNum, name )
+    setFieldByName( "totOpt", numOptimal, name )
+    setFieldByName( "totMin", len( pinSets["minPinSets"] ), name )
+    setFieldByName( "totPinSets", len( pinSets["pinSets"] ), name )
+
+    #print( htmlTable( getFieldByName( "refinedPinSetMat", name) ) )
 
 def avgDegByCardData( pinningSets ):
     pinDict = {}
@@ -197,7 +261,7 @@ def avgDegByCardData( pinningSets ):
 
     tableMatrix = [["Cardinality", "Optimal pinning sets", "Minimal (suboptimal) pinning sets", "Nonminimal pinning sets", "Average average degree"]]
 
-    for cardinal in pinDict:
+    for cardinal in sorted( pinDict ):
         tableRow = [cardinal]
         if cardinal == pinningNum:
             tableRow.append( numOptimal )            
@@ -215,9 +279,9 @@ def avgDegByCardData( pinningSets ):
         tableMatrix.append( tableRow )
     tableMatrix.append(["Total", numOptimal, numMinimal-numOptimal, len(pinningSets["pinSets"])-numMinimal, ""])
 
-    return htmlTable( tableMatrix ), sum( optAvgDegrees )/len( optAvgDegrees ), sum( minAvgDegrees )/len( minAvgDegrees ), sum( allAvgDegrees )/len( allAvgDegrees )
+    return tableMatrix, sum( optAvgDegrees )/len( optAvgDegrees ), sum( minAvgDegrees )/len( minAvgDegrees ), sum( allAvgDegrees )/len( allAvgDegrees ), pinningNum, numOptimal
 
-def refinedTableStr( name ):
+def getRefinedTableMat( name ):
     #minPinSets = getFieldByName( "minPinSets", name )    
     labelData = getPinningSetLabelData( name )
     #drawnpd = labelData["drawnpd"]
@@ -244,7 +308,8 @@ def refinedTableStr( name ):
         rgb = []
         for entry in minPinSetDict[pinningSet]["color"]:
             rgb.append( entry*255 )
-        refinedData.append( """<span style="font-size:100px;line-height:20px;color:rgb{};">&bull;</span>""".format( tuple( rgb ) ) )
+        refinedData.append( """rgb{}""".format( tuple( rgb ) ) )
+        #refinedData.append( """<span style='font-size:100px;line-height:20px;color:rgb{};'>&bull;</span>""".format( tuple( rgb ) ) )
         regions = set()
         for reg in pinningSet:
             regions.add( int( numericRegionLabels[reg] ) )
@@ -258,7 +323,7 @@ def refinedTableStr( name ):
         refinedData.append( "{:.2f}".format( sum( degSeq )/len( degSeq ) ) )
         refinedPinData.append( refinedData )
 
-    return htmlTable( refinedPinData )
+    return refinedPinData
 
 def htmlTable( data ):
     """Assumes data is a list of lists where the first list is the headers"""
@@ -280,8 +345,12 @@ def htmlTable( data ):
         tableStr += """
             <tr>"""
         for entry in data[i]:
-            tableStr += """
-                <td class="tg-0lax">{}</td>""".format(entry)
+            if type( entry ) == str and len( entry ) >= 3 and entry[0:3] == "rgb":
+                tableStr += """
+                    <td class="tg-0lax"><span style='font-size:100px;line-height:20px;color:{};'>&bull;</span></td>""".format(entry)
+            else:
+                tableStr += """
+                    <td class="tg-0lax">{}</td>""".format(entry)
         tableStr += """
             </tr>"""
     tableStr +=  """
@@ -290,10 +359,8 @@ def htmlTable( data ):
 
     return tableStr
 
-
-
 def generateImageFilesForWeb( name ):
-    minPinSets = getFieldByName( "minPinSets", name )    
+    minPinSets = eval( getFieldByName( "minPinSets", name ) )
     labelData = getPinningSetLabelData( name )
     drawnpd = labelData["drawnpd"]
     minPinSetDict = labelData["minPinSetDict"]
@@ -303,8 +370,8 @@ def generateImageFilesForWeb( name ):
     emptyLabels = labelData["emptyLabels"]
     G = labelData["G"]
 
-    if not os.path.isdir("docs/img/"+name):
-        os.mkdir("docs/img/"+name)
+    if not os.path.isdir("docs/multiloops/"+name):
+        os.mkdir("docs/multiloops/"+name)
 
     # save the semilattice
     posetFile = drawLattice( None, minPinSets, set( regList ), minPinSetDict, labelMode = "pinning_sets", \
@@ -344,8 +411,9 @@ def getPinningSetLabelData( name ):
     minPinSets = getFieldByName( "minPinSets", name )
     if minPinSets is None:
         raise( Exception("Pinning sets have not yet been computed") )
+    minPinSets = eval( minPinSets )
     
-    drawnpd = getFieldByName( "drawnpd", name)
+    drawnpd = eval( getFieldByName( "drawnpd", name) )
     G = SurfaceGraphFromPD( drawnpd )
     regList = list( G.wordDict.copy().keys() )
     regList.sort()

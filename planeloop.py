@@ -684,8 +684,6 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
     multiloops = []
     #countLoops = 0
     
-    
-    
     #i = 0
     mloopStrings = {}
     indexByComponent = {}
@@ -700,28 +698,22 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
         name = str( regions )+"_"+str( indexByComponent[multiloop.components] )+\
                "^"+str(multiloop.components)
         if numComponents == "any" or multiloop.components == numComponents:
-            #ID = cursor.execute("SELECT LAST_INSERT_ID()")
-            #if ID is None:
-            #    ID = -1
-            #insert_entry = """
-            #INSERT INTO mloops (id, pc, pd, sigma, components)
-            #VALUES
+            toAdd = """("{pc}", "{pd}", "{sigma}", {components}, "{epsilon}", Null, {numRegions},  "{rawname}",\
+                     Null, Null, Null, Null, Null, Null, Null, Null, Null, Null, Null),\n""".format(\
+                    pc = re.sub( r' ', '', str( multiloop.plantriCode ) ), pd = re.sub( r' ', '', str( multiloop.pd ) ),\
+                    sigma = multiloop.sigmaToString(), components = multiloop.components, epsilon = multiloop.epsilonToString(), numRegions = regions, rawname = name )
             if multiloop.components not in mloopStrings:
-                mloopStrings[multiloop.components] =[ """("{}", "{}", "{}", {}, "{}", Null, {},  "{}", Null, Null, Null),\n""".format(\
-                    re.sub( r' ', '', str( multiloop.plantriCode ) ), re.sub( r' ', '', str( multiloop.pd ) ),\
-                    multiloop.sigmaToString(), multiloop.components, multiloop.epsilonToString(), regions, name ) ]
+                mloopStrings[multiloop.components] =[ toAdd ]
             #print( insert_entry )
             else:
-                mloopStrings[multiloop.components].append( """("{}", "{}", "{}", {}, "{}", Null, {},  "{}", Null, Null, Null),\n""".format(\
-                    re.sub( r' ', '', str( multiloop.plantriCode ) ), re.sub( r' ', '', str( multiloop.pd ) ),\
-                    multiloop.sigmaToString(), multiloop.components, multiloop.epsilonToString(), regions, name ) )
+                mloopStrings[multiloop.components].append( toAdd )
            
             multiloops.append( multiloop )
             #print( i )
             #i+=1
     if mloopStrings != {} and db is not None:        
         insert_entry="""
-                INSERT INTO mloops (pc, pd, sigma, components, epsilon, drawnpd, numRegions, name, next, prev, minPinSets)
+                INSERT INTO mloops (pc, pd, sigma, components, epsilon, drawnpd, numRegions, name, minPinSets, degSequence, pinNum, totOpt, totMin, totPinSets, avgOptDeg, avgMinDeg, avgOverallDeg, refinedPinSetMat, degDataMat )
                 VALUES\n"""
         for numComponents in sorted( mloopStrings ):
             for mloop in mloopStrings[numComponents]:
@@ -2259,7 +2251,7 @@ def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeCo
         else:
             filename = "tex/img/"+filename[:190]+"_lattice.svg"
     else:
-        filename = "docs/img/"+webImFolder+ "/"+filename+"_lattice.svg"
+        filename = "docs/multiloops/"+webImFolder+ "/"+filename+"_lattice.svg"
     #print( filename )
 
     # convert to svg and save
@@ -2270,6 +2262,15 @@ def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeCo
     os.remove("temp.svg")
     # make the vertex labels white instead of black with regex
     newsvgString = re.sub( r'middle', 'middle; fill: #FFFFFF', svgString )
+    # tweak the height to make it more square 
+
+    # TODO (make height = max( width, oldheight), adjust the box as well (need to rewrite line 4 of the svg))
+    # for now let's be lazy and pray this works:
+
+    newsvgString = newsvgString.split("<svg xmlns:xlink")[0]+\
+        """<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="324.9pt" height="324.9pt" viewBox="0 0 324.9 324.9" xmlns="http://www.w3.org/2000/svg" version="1.1">\n"""+\
+        newsvgString.split("""version="1.1">""")[1]
+
     f = open( filename, 'w' )
     f.write( newsvgString )
     f.close()
@@ -3718,7 +3719,7 @@ def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets,\
         else:
             filename = "tex/img/"+filename[:200] +".svg"
     else:
-        filename = "docs/img/"+webImFolder+"/"+filename+".svg"
+        filename = "docs/multiloops/"+webImFolder+"/"+filename+".svg"
     words = {}
     for key in wordDict:
         words[key] = wordDict[key].seq
