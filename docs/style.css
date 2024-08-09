@@ -1,0 +1,46 @@
+body {
+	margin:40px auto;
+	max-width:650px;
+	line-height:1.6;
+	font-size:18px;
+	color:#444;
+	padding:0 10px;
+}
+h1,h2,h3{ 
+	line-height:1.2;
+}
+br{
+	clear:both;
+	margin-top:1px;
+}
+.images {
+	text-align:center;
+}
+.images img {
+	width:650px;
+	height:650px;
+}
+.images div {
+	width:650px;
+	text-align:center;
+}
+.images div span {
+	display:block;
+}
+.margin_right {
+	margin-right:50px;
+}
+.float {
+	float:left;
+	margin-right:5px;
+	margin-left:5px;
+	margin-bottom:25px;
+}
+
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:10px;
+overflow:hidden;padding:10px 5px;word-break:normal;word-wrap:break-word;text-overflow:ellipsis }
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:10px;
+font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;word-wrap:break-word;text-overflow:ellipsis }
+.tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
+.tg .tg-0lax{text-align:left;vertical-align:top}

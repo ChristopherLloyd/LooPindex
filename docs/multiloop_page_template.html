@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head><meta
+	charset="utf-8"><meta
+	name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+	<title>LooPin Atlas = {rawname}</title>
+	<link rel="shortcut icon" href="webicon.svg"/>
+	<link rel="stylesheet" type="text/css" href="../../style.css">	
+	<script src="https://tikzjax.com/v1/tikzjax.js"></script>
+	<script>
+	MathJax = {{
+		tex: {{
+			inlineMath: [['$', '$'],['\\(', '\\)']]
+		}}
+	}};
+	</script>
+	<script type="text/javascript" id="MathJax-script" async
+		src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+	</script>
+</head>
+ <body>  
+	<div style="float: left"><a href = "{linkprev}">&lt&lt&lt Prev</a></div>
+	<div style="float: right"><a href = "{linknext}">Next &gt&gt&gt</a></div>
+	<div style="margin: 0 auto;  width: 200px;"><a href = "{linkcontext}">In context</a></div>
+    <hr>
+    <h1>{texname}</h1>
+
+	<h2>Minimal pinning sets</h2>
+	<a href="{pinset_svg_path}" style="display: block;" title="Pinning sets for {rawname}"><object data="{pinset_svg_path}" style="width: 100%; pointer-events: none;" >Pinning sets for {rawname}</object></a>
+	<br><hr>
+
+	<h2>Minimal pinning semi-lattice</h2>
+	<a href="{lattice_svg_path}" style="display: block;" title="Pinning semi lattice for {rawname}"><object data="{lattice_svg_path}" style="width: 100%; pointer-events: none;" >Pinning semi lattice for {rawname}</object></a>
+	<br><hr>
+
+	<h2>Pinning data</h2>
+
+	<ul>
+		<li>Pinning number: {pinnum}</li>
+		<li>Total optimal pinning sets: {numOpt}</li>
+		<li>Total minimal pinning sets: {numMin}</li>
+		<li>Total pinning sets: {numTot}</li>
+		<li>Average optimal pinning set average degree: {avgOptDeg}</li>
+		<li>Average minimal pinning set average degree: {avgMinDeg}</li>
+		<li>Average pinning set average degree: {avgOverallDeg}</li>
+	</ul>
+
+	<h3>Refined data for the minimal pinning sets</h3>
+	
+	{refinedTableStr}
+
+	<h3>Pinning sets/average degree by cardinal</h3>
+	
+	{degTableStr}
+
+	<br><hr>
+
+	<h2><span id="Other">Other information about this multiloop</span></h2>
+	
+	{othercomments}
+
+	<h3>Combinatorial encoding data</h3>
+
+	<ul>
+
+	<li>Permutation representation
+		<ul>
+			<li>$\sigma=$ {sigma}</li>
+			<li>$\epsilon=$ {epsilon}</li>
+		</ul>
+	</li>
+
+	<li>SnapPy PD code: {drawnpd}</li>
+
+	<li>Plantri embedding: {pc}</li>
+	
+	<li><a href = "{loopdir}">View all images of this multiloop</a></li>
+
+	</ul>
+	
+	<hr>
+
+	<div style="float: left"><a href = "{linkprev}">&lt&lt&lt Prev</a></div>
+	<div style="float: right"><a href = "{linknext}">Next &gt&gt&gt</a></div>
+	<div style="margin: 0 auto;  width: 200px;"><a href = "{linkcontext}">In context</a></div>
+	
+</body>
+</html>
