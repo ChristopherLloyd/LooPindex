@@ -28,15 +28,14 @@ def main():
 
     #generateImageFilesForWeb( "11_97^1" )
 
-    #testloops = ["8_1^3", "8_2^3", "11_97^1","10_18^1","10_19^1","10_20^1","10_21^1"]
-    #testloops = ["8_1^3", "11_97^1"]
+    testloops = ["10_18^1","10_19^1","10_20^1","10_21^1"]
+    #testloops = ["8_1^3", "8_2^3", "11_97^1"]
 
-    testloops = ["11_97^1"]
+    #testloops = ["11_97^1"]
 
     for name in testloops:
         storeDataForWeb( name )
         makeWebPage( name )
-        break
     return
 
     storeDataForWeb( "11_97^1" )
