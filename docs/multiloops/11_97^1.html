@@ -4,9 +4,9 @@
 	charset="utf-8"><meta
 	name="viewport"
 	content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-	<title>LooPin Atlas = 11_97^1</title>
+	<title>LooPin Atlas - 11_97^1</title>
 	<link rel="shortcut icon" href="webicon.svg"/>
-	<link rel="stylesheet" type="text/css" href="../../style.css">	
+	<link rel="stylesheet" type="text/css" href="../style.css">	
 	<script src="https://tikzjax.com/v1/tikzjax.js"></script>
 	<script>
 	MathJax = {
@@ -20,18 +20,16 @@
 	</script>
 </head>
  <body>  
-	<div style="float: left"><a href = "../11_96^1/11_96^1.html">&lt&lt&lt Prev</a></div>
-	<div style="float: right"><a href = "../11_98^1/11_98^1.html">Next &gt&gt&gt</a></div>
-	<div style="margin: 0 auto;  width: 200px;"><a href = "../../11^1.html">In context</a></div>
+	<div style="float: left"><a href = "11_96^1.html">&lt&lt&lt Prev</a></div>
+	<div style="float: right"><a href = "11_98^1.html">Next &gt&gt&gt</a></div>
+	<div style="margin: 0 auto;  width: 200px;"><a href = "../11^1.html">In context</a></div>
     <hr>
-    <h1>$11_{97}^{1}$</h1>
-
-	<h2>Minimal pinning sets</h2>
-	<a href="11_97^1-num+minpinning.svg" style="display: block;" title="Pinning sets for 11_97^1"><object data="11_97^1-num+minpinning.svg" style="width: 100%; pointer-events: none;" >Pinning sets for 11_97^1</object></a>
+	<h2>$11_{97}^{1}$ - Minimal pinning sets</h2>
+	<a href="11_97^1/pindata.svg" style="display: block;" title="Pinning sets for 11_97^1"><object data="11_97^1/pindata.svg" style="width: 100%; pointer-events: none;" >Pinning sets for 11_97^1</object></a>
 	<br><hr>
 
 	<h2>Minimal pinning semi-lattice</h2>
-	<a href="11_97^1_lattice.svg" style="display: block;" title="Pinning semi lattice for 11_97^1"><object data="11_97^1_lattice.svg" style="width: 100%; pointer-events: none;" >Pinning semi lattice for 11_97^1</object></a>
+	<a href="11_97^1/lattice.svg" style="display: block;" title="Pinning semi lattice for 11_97^1"><object data="11_97^1/lattice.svg" style="width: 100%; pointer-events: none;" >Pinning semi lattice for 11_97^1</object></a>
 	<br><hr>
 
 	<h2>Pinning data</h2>
@@ -41,9 +39,9 @@
 		<li>Total optimal pinning sets: 2</li>
 		<li>Total minimal pinning sets: 13</li>
 		<li>Total pinning sets: 395</li>
-		<li>Average optimal pinning set average degree: 3.24615</li>
-		<li>Average minimal pinning set average degree: 3.24615</li>
-		<li>Average pinning set average degree: 3.23145</li>
+		<li>Average over optimal pinning sets of their average region degree: 3.0</li>
+		<li>Average over minimal pinning sets of their average region degree: 3.24615</li>
+		<li>Average over pinning sets of their average region degree:: 3.23145</li>
 	</ul>
 
 	<h3>Refined data for the minimal pinning sets</h3>
@@ -252,34 +250,49 @@
 
 	<br><hr>
 
-	<h2><span id="Other">Other information about this multiloop</span></h2>
+	<h2><span id="Other">Other information about this loop</span></h2>
 	
 	
+	
+	<h3>Properties</h3>
+	
+	<ul>
+	
+	<li>Region degree sequence: [3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4]</li>
+	
+	<li>Minimal region degree: 3</li>
+	
+	<li>Is multisimple: No</li>
+	
+	</ul>
 
 	<h3>Combinatorial encoding data</h3>
 
 	<ul>
-
-	<li>Permutation representation
-		<ul>
-			<li>$\sigma=$ ((-18,-5,1,6)(-6,-11,7,12)(-12,-17,13,18)(-13,-4,14,5)(-1,-10,2,11)(-7,-16,8,17)(-8,-3,9,4)(-14,-9,15,10)(-2,-15,3,16))</li>
-			<li>$\epsilon=$ ((-1,1)(-2,2)(-3,3)(-4,4)(-5,5)(-6,6)(-7,7)(-8,8)(-9,9)(-10,10)(-11,11)(-12,12)(-13,13)(-14,14)(-15,15)(-16,16)(-17,17)(-18,18))</li>
-		</ul>
-	</li>
-
-	<li>SnapPy PD code: [(6, 1, 7, 2), (11, 2, 12, 3), (16, 3, 17, 4), (12, 7, 13, 8), (17, 8, 18, 9), (4, 9, 5, 10), (18, 13, 1, 14), (5, 14, 6, 15), (10, 15, 11, 16)]</li>
-
+	
 	<li>Plantri embedding: [[1,2,3,4],[0,4,5,2],[0,1,5,3],[0,2,6,7],[0,7,8,1],[1,8,6,2],[3,5,8,7],[3,6,8,4],[4,7,6,5]]</li>
 	
-	<li><a href = ".">View all images of this multiloop</a></li>
+	<li>PD code: [[18,5,1,6],[6,11,7,12],[12,17,13,18],[13,4,14,5],[1,10,2,11],[7,16,8,17],[8,3,9,4],[14,9,15,10],[2,15,3,16]]</li>
+
+	<li>Permutation representation (action on half-edges):
+		<ul>
+			<li>Vertex permutation $\sigma=$ (6,1,-7,-2)(11,2,-12,-3)(16,3,-17,-4)(12,7,-13,-8)(17,8,-18,-9)(4,9,-5,-10)(18,13,-1,-14)(5,14,-6,-15)(10,15,-11,-16)</li>
+			<li>Edge permutation $\epsilon=$ (-1,1)(-2,2)(-3,3)(-4,4)(-5,5)(-6,6)(-7,7)(-8,8)(-9,9)(-10,10)(-11,11)(-12,12)(-13,13)(-14,14)(-15,15)(-16,16)(-17,17)(-18,18)</li>
+			<li>Face permutation $\phi=(\sigma\epsilon)^{-1}=$ (-1,6,14)(-2,11,15,-6)(-3,16,-11)(-4,-10,-16)(-5,-15,10)(-7,12,2)(-8,17,3,-12)(-9,4,-17)(-13,18,8)(-14,5,9,-18)(1,13,7)</li>
+		</ul>		
+	</li>
 
 	</ul>
 	
+	<h3>Loop annotated with half-edges</h3>
+	
+	<a href="11_97^1/annotated.svg" style="display: block;" title="11_97^1 annotated with perm rep"><object data="11_97^1/annotated.svg" style="width: 100%; pointer-events: none;" >11_97^1 annotated with half-edges</object></a>
+	
 	<hr>
 
-	<div style="float: left"><a href = "../11_96^1/11_96^1.html">&lt&lt&lt Prev</a></div>
-	<div style="float: right"><a href = "../11_98^1/11_98^1.html">Next &gt&gt&gt</a></div>
-	<div style="margin: 0 auto;  width: 200px;"><a href = "../../11^1.html">In context</a></div>
+	<div style="float: left"><a href = "11_96^1.html">&lt&lt&lt Prev</a></div>
+	<div style="float: right"><a href = "11_98^1.html">Next &gt&gt&gt</a></div>
+	<div style="margin: 0 auto;  width: 200px;"><a href = "../11^1.html">In context</a></div>
 	
 </body>
 </html>

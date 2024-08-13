@@ -44,6 +44,7 @@ from latextable_lite import utils
 import mysql.connector
 import matplotlib.pyplot as plt
 import re
+#from plinkpd2 import getLEwithPD
 
 
 #import pylatex as p
@@ -178,7 +179,44 @@ missing = [[5, 8, 6, 1], [4, 20, 5, 9], [7, 19, 8, 20], [6, 19, 7, 18],[1, 16, 2
 
 # Main
 
+def test16( loop ):
+    drawnpd = plinkPD( loop )
+    mloop = Spherimultiloop( drawnpd )
+    print( "sigma=", mloop.sigmaToString() )
+    print( "epsilon=", mloop.epsilonToString() )
+    print( "phi=", mloop.phiToString() )
+    print( "degree sequence=", mloop.getDegreeSequence() )
+    print( "min region degree=", mloop.minRegionDegree() )
+    print( "is multisimple=", mloop.isMultiSimple() )
+
+    return
+
+
+    G = SurfaceGraphFromPD( drawnpd )
+    regList = list( G.wordDict.copy().keys() )
+    regList.sort()
+
+    numericRegionLabels = {}
+    #degreeRegionLabels = {}
+    emptyLabels = {}
+    for i in range( len( regList ) ):
+        numericRegionLabels[regList[i]] = binSet(regList[i])
+    #   degreeRegionLabels[regList[i]] = len( G.wordDict[regList[i]] )
+        emptyLabels[regList[i]] = ""
+
+    plinkImgFile( str( loop ), drawnpd, G.adjDict, G.wordDict,\
+                                  [],None,\
+                                  emptyLabels, pdToComponents( drawnpd ), filename = "testing2"+str(loop), sigmaAnnotated=True )
+
+
 def main():
+    test16( smallMonorbigonLess[0] )
+    test16( smallMonorbigonLess[4] )
+    test16( smallMonorbigonLess[5] )
+    test16( monalisa )
+    return
+    #print( sigmaFromPDCode( [(6, 1, 7, 2), (11, 2, 12, 3), (16, 3, 17, 4), (12, 7, 13, 8), (17, 8, 18, 9), (4, 9, 5, 10), (18, 13, 1, 14), (5, 14, 6, 15), (10, 15, 11, 16)] ))
+    #return
     #createCatalog( "debug case" , {3:[weird3case],8:[labelIssue1],9:[labelIssue2,labelIssue3]} )#,8:[another3,link8],9:[link9],12:[monalisa]}, debug = False )
     #for entry in generateMultiloops( crossings = 13, numComponents = 4, allowReflections = True, primeOnly = True ):
     #    print( "Original PD code:", entry["pd"] )
@@ -690,7 +728,7 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
     null = None
     for graph in graphs:
         #data = planarData( graph, debug = False )
-        multiloop = Spherimultiloop( graph )
+        multiloop = Spherimultiloop( pc = graph )
         if multiloop.components not in indexByComponent:
             indexByComponent[multiloop.components] = 1
         else:
@@ -698,13 +736,17 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
         name = str( regions )+"_"+str( indexByComponent[multiloop.components] )+\
                "^"+str(multiloop.components)
         if numComponents == "any" or multiloop.components == numComponents:
-            toAdd = """("{pc}", "{pd}", "{sigma}", {components}, "{epsilon}", Null, {numRegions},  "{rawname}",\
-                     Null, Null, Null, Null, Null, Null, Null, Null, Null, Null, Null),\n""".format(\
+            toAdd = """("{pc}", "{pd}", {sigma}, {components}, {epsilon}, {phi}, {drawnpd}, {numRegions},  "{rawname}",\
+                     {minPinSets}, "{degSequence}", {minRegDeg}, {isMultiSimple}, {pinNum}, {totOpt}, {totMin}, {totPinSets},\
+                    {avgOptDeg}, {avgMinDeg},{avgOverallDeg}, {refinedPinSetMat}, {degDataMat}),\n""".format(\
                     pc = re.sub( r' ', '', str( multiloop.plantriCode ) ), pd = re.sub( r' ', '', str( multiloop.pd ) ),\
-                    sigma = multiloop.sigmaToString(), components = multiloop.components, epsilon = multiloop.epsilonToString(), numRegions = regions, rawname = name )
+                    sigma = "Null", components = multiloop.components, epsilon = "Null", phi = "Null",\
+                    drawnpd = "Null", minPinSets = "Null", degSequence = multiloop.getDegreeSequence(), minRegDeg = multiloop.minRegionDegree(),\
+                    isMultiSimple = multiloop.isMultiSimple(), pinNum = "Null",\
+                    totOpt = "Null", totMin = "Null", totPinSets = "Null", avgOptDeg = "Null", avgMinDeg = "Null", avgOverallDeg = "Null",\
+                    refinedPinSetMat = "Null", degDataMat = "Null", numRegions = regions, rawname = name )
             if multiloop.components not in mloopStrings:
-                mloopStrings[multiloop.components] =[ toAdd ]
-            #print( insert_entry )
+                mloopStrings[multiloop.components] =[ toAdd ] 
             else:
                 mloopStrings[multiloop.components].append( toAdd )
            
@@ -713,7 +755,7 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
             #i+=1
     if mloopStrings != {} and db is not None:        
         insert_entry="""
-                INSERT INTO mloops (pc, pd, sigma, components, epsilon, drawnpd, numRegions, name, minPinSets, degSequence, pinNum, totOpt, totMin, totPinSets, avgOptDeg, avgMinDeg, avgOverallDeg, refinedPinSetMat, degDataMat )
+                INSERT INTO mloops (pc, pd, sigma, components, epsilon, phi, drawnpd, numRegions, name, minPinSets, degSequence, minRegionDegree, isMultiSimple, pinNum, totOpt, totMin, totPinSets, avgOptDeg, avgMinDeg, avgOverallDeg, refinedPinSetMat, degDataMat )
                 VALUES\n"""
         for numComponents in sorted( mloopStrings ):
             for mloop in mloopStrings[numComponents]:
@@ -770,6 +812,46 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
         graphs.append( graph )
     for g in graphs:
         print( g )"""
+    
+def sigmaFromPDCode( pdcode ):
+    n = len( pdcode )
+    coordsDict = {}
+    for i in range( n ):
+        for j in range( 4 ):
+            if pdcode[i][j] not in coordsDict:
+                coordsDict[ pdcode[i][j] ] = [(i,j)]
+            else:
+                coordsDict[ pdcode[i][j] ].append((i,j))
+
+    sig = []
+    for entry in pdcode:
+        sig.append( list( entry ) )
+
+    comps = pdToComponents( pdcode )
+
+    for component in comps:
+        startCoords = coordsDict[ component[0] ][0]
+        curCoords = startCoords
+        while True:
+            editCoords = (curCoords[0],(curCoords[1]+2)%4)
+            nextEntry = abs( sig[editCoords[0]][editCoords[1]] )
+            sig[editCoords[0]][editCoords[1]] *= -1
+            if coordsDict[nextEntry][0] == editCoords:           
+                curCoords = coordsDict[nextEntry][1]
+            else:
+                curCoords = coordsDict[nextEntry][0]
+            if curCoords == startCoords:
+                break
+
+    sigStr = "("
+    for quad in sig:
+        sigStr += str( quad )
+    sigStr = re.sub( r'\[', '(', sigStr )
+    sigStr = re.sub( r'\]', ')', sigStr )
+    sigStr = re.sub( r' ', '', sigStr )
+    sigStr+=")"
+    return sig, sigStr
+
 
 def planarData( graph, debug = False ):#, loopsOnly ):
     """Converts a plantri graph to sigma and pd code, and calculates the number of loop components.
@@ -2251,7 +2333,7 @@ def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeCo
         else:
             filename = "tex/img/"+filename[:190]+"_lattice.svg"
     else:
-        filename = "docs/multiloops/"+webImFolder+ "/"+filename+"_lattice.svg"
+        filename = "docs/multiloops/"+webImFolder+ "/"+filename+"lattice.svg"
     #print( filename )
 
     # convert to svg and save
@@ -2262,14 +2344,18 @@ def posetPlot( sageObject, heights, heightsToBalance, colors, vertlabels, edgeCo
     os.remove("temp.svg")
     # make the vertex labels white instead of black with regex
     newsvgString = re.sub( r'middle', 'middle; fill: #FFFFFF', svgString )
-    # tweak the height to make it more square 
 
-    # TODO (make height = max( width, oldheight), adjust the box as well (need to rewrite line 4 of the svg))
-    # for now let's be lazy and pray this works:
-
-    newsvgString = newsvgString.split("<svg xmlns:xlink")[0]+\
-        """<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="324.9pt" height="324.9pt" viewBox="0 0 324.9 324.9" xmlns="http://www.w3.org/2000/svg" version="1.1">\n"""+\
-        newsvgString.split("""version="1.1">""")[1]
+    # make the image wider if it's taller than it is wide, but save the original dimensions as a comment
+    whString = """<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="{width}pt" height="{height}pt" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" version="1.1">"""
+    commentString = """<!-- Original dimensions: {} -->"""
+    oldWidth = float( newsvgString.split("""<svg xmlns:xlink="http://www.w3.org/1999/xlink" width=\"""")[1].split("""pt" height=\"""")[0] )
+    height = float( newsvgString.split("""" height=\"""")[1].split("""pt" viewBox=\"""")[0] )
+    width = max( height, oldWidth )
+    #print( "oldWidth", oldWidth )
+    #print( "height", height)
+    #print( "width", width)
+    newsvgString = newsvgString.split("<svg xmlns:xlink")[0]+whString.format( width=width, height=height)+"\n"+\
+        commentString.format( whString.format( width = oldWidth, height=height) )+ newsvgString.split("""version="1.1">""")[1]
 
     f = open( filename, 'w' )
     f.write( newsvgString )
@@ -2848,21 +2934,63 @@ def getPinSets( link, minOnly = True, debug = False, treeBase = None, rewriteFro
 
 class Spherimultiloop:
     """Keeps track of all the data associated to a loop in the sphere,
-    given as a PD code or plantri embedding."""
+    given as a PD code or plantri embedding."""       
 
-    def __init__( self, plantriCode ):
-        self.plantriCode = plantriCode
-        self.pd, self.sigma, self.components = self.planarData()
-        
-    #def __init__( self, pdCode ):
-    #    # getting sigma from the pdCode is basically done in Surface Graph
-    #    # so that code can be moved here
-    #    pass
+    def __init__( self, pd = None, pc = None ):
+        if pd is not None and pc is not None:
+            raise Exception( "Must provide either a pd code or plantri code, not both" )
+        if pd is not None:
+            self.sigma = sigmaFromPDCode(pd)[0]
+            self.pd = pd
+            self.components = len( pdToComponents( self.pd ) )
+        if pc is not None:
+            self.plantriCode = pc
+            self.pd, self.sigma, self.components = self.planarData()
+
+    def getSigmaPerm( self ):
+        sigmaStr = ""
+        #print( self.sigma )
+        for entry in self.sigma:
+            sigmaStr += "("
+            for i in range( 4 ):
+                if entry[i]>0:
+                    sigmaStr += str( entry[i]+len( self.sigma )*2 )
+                else:
+                    sigmaStr += str( -entry[i] )
+                sigmaStr += ","
+            sigmaStr = sigmaStr[:-1]+")"
+        return Permutation( sigmaStr )
+    
+    def getEpsilonPerm(self):
+        epsStr = ""
+        for i in range( 1, 2*len( self.sigma) + 1 ):
+            epsStr += "("+str(i)+","+str( 2*len( self.sigma) + i )+")"
+        return Permutation( epsStr )
+
+    def getPhiPerm( self ):
+        return (self.getSigmaPerm()*self.getEpsilonPerm()).inverse()
+    
+    def getDegreeSequence( self ):
+        phi = self.getPhiPerm().to_cycles()
+        seq = []
+        for cycle in phi:
+            seq.append( len( cycle ) )
+        return sorted( seq )
+
+    def minRegionDegree( self ):
+        return self.getDegreeSequence()[0]
+    
+    def isMultiSimple( self ):
+        components = pdToComponents( self.pd )
+        for quad in self.pd:
+            for comp in components:
+                if quad[0] in comp and quad[1] in comp:
+                    return False
+        return True
 
     def planarData( self ):
         """Converts a plantri graph to sigma and pd code, and calculates the number of loop components.
-           There may be ambiguity if parallel edges,
-           so we note from plantri documentation:
+           There may be ambiguity if parallel edges, so we note from plantri documentation:
            
           In case there are parallel edges, there might be more than one graph
           whose PLANAR CODE is the same up to rotation of the neighbour lists. 
@@ -2965,20 +3093,37 @@ class Spherimultiloop:
         return pdcode, sigma, numComponents
 
     def sigmaToString( self ):
-        toReturn = "("
+        toReturn = ""
         for quad in self.sigma:
             toReturn += str( quad )
         toReturn = re.sub( r'\[', '(', toReturn )
         toReturn = re.sub( r'\]', ')', toReturn )
         toReturn = re.sub( r' ', '', toReturn )
-        return toReturn+")"
+        return toReturn
 
     def epsilonToString( self ):
-        toReturn = "("
-        for i in range( 1, 2*len( self.sigma) + 1 ):
+        toReturn = ""
+        for i in range( 1, 2*len( self.sigma ) + 1 ):
             toReturn += "("+str(-i)+","+str( i )+")"
-        return toReturn + ")"
-        
+        return toReturn
+    
+    def phiToString( self ):
+        readablePhi = []
+        for cycle in self.getPhiPerm().to_cycles():
+            cyc = []
+            for i in range( len( cycle ) ):
+                if cycle[i] > len( self.pd )*2:
+                    cyc.append( cycle[i] - len( self.pd )*2 )
+                else:
+                    cyc.append( -cycle[i] )
+            readablePhi.append( cyc )
+        toReturn = ""
+        for quad in readablePhi:
+            toReturn += str( quad )
+        toReturn = re.sub( r'\[', '(', toReturn )
+        toReturn = re.sub( r'\]', ')', toReturn )
+        toReturn = re.sub( r' ', '', toReturn )
+        return toReturn
 
 
 class SurfaceGraph:
@@ -3667,11 +3812,15 @@ def plinkPDtoRawPD( link ):
         pd_out.append( cycle )
     return pd_out
 
-def plinkPD( link ):
+from plinkpd2 import getLEwithPD
+def plinkPD( link, returnLE = False ):
     """This function is a workaround to get the output PD code when plotting links
     with snappy from an input PD code. The reason it does external scripting
     and file I/O is a workaround for a known multithreading issue with snappy."""
-    return eval( check_output(['python3', 'plinkpd2.py', str(link) ]) )
+    if not returnLE:
+        return eval( check_output(['python3', 'plinkpd2.py', str(link) ]) )
+    else:
+        return getLEwithPD( eval( link ) )
     #filename = getUnusedFileName( "txt" )
     #call(['python3', 'plinkpd.py', str(link), filename]) 
     #f = open( filename, 'r' ) # can wait here if plinkpd.py doesn't have enough time to write to file
@@ -3679,6 +3828,9 @@ def plinkPD( link ):
     #f.close()
     #os.remove( filename )
     #return code
+
+#def getLEwithPD_1( link ):
+#    return( getLEwithPD( link ) )
 
 # The functions below experiment with multithreading rather than subprocess.call
 # to deal with the snappy multithreading issue
@@ -3712,7 +3864,7 @@ def plinkFromPD( link ):
 
 def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets,\
                  minPinSetDict, regionLabels, components, tolerance = 0.0000001,\
-                  bufferFrac = None, diamFrac = None, filename = None, debug = False, forWeb = False, webImFolder = None ):
+                  bufferFrac = None, diamFrac = None, filename = None, debug = False, forWeb = False, webImFolder = None, sigmaAnnotated = False ):
     if not forWeb:
         if filename is None:
             filename = getUnusedFileName( "svg", "tex/img/" )
@@ -3726,7 +3878,7 @@ def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets,\
     data = {"link":link,"drawnpd":drawnpd,"adjDict":adjDict,"regWords":words,"minPinSets":minPinSets,\
             "tolerance":tolerance,"minPinSetDict":minPinSetDict,"regionLabels":regionLabels,\
             "components":components,"filename":filename,"debug":debug,\
-            "bufferFrac":bufferFrac,"diamFrac":diamFrac}
+            "bufferFrac":bufferFrac,"diamFrac":diamFrac,"annotated":sigmaAnnotated}
     call(['python3', 'saveLoop.py', str(data), "padding", "padding", "padding"])
     return filename
 

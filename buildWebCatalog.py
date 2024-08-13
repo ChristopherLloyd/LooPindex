@@ -26,6 +26,19 @@ def main():
 
     #generateImageFilesForWeb( "11_97^1")
 
+    #generateImageFilesForWeb( "11_97^1" )
+
+    #testloops = ["8_1^3", "8_2^3", "11_97^1","10_18^1","10_19^1","10_20^1","10_21^1"]
+    #testloops = ["8_1^3", "11_97^1"]
+
+    testloops = ["11_97^1"]
+
+    for name in testloops:
+        storeDataForWeb( name )
+        makeWebPage( name )
+        break
+    return
+
     storeDataForWeb( "11_97^1" )
     makeWebPage( "11_97^1" )
     """storeDataForWeb( "10_18^1" )
@@ -41,7 +54,7 @@ def main():
     #print( nextName( "10_1^1" ) )
     #print( prevName( "10_1^1" ) )
 
-    # things to record (now or later): max number of minimal pinning sets to which a region belongs? is it monorbigonless? is it simple? is it a counterexample?
+    # things to record (now or later): max number of minimal pinning sets to which a region belongs? is it an interesting counterexample?
 
 def createDatabase( maxRegions = 12 ):
     response = input( "Erase the existing database? (y/n)")    
@@ -65,11 +78,14 @@ def createDatabase( maxRegions = 12 ):
         sigma VARCHAR(500),
         components INT,
         epsilon VARCHAR(500),
+        phi VARCHAR(500),
         drawnpd VARCHAR(500),        
         numRegions INT,
         name VARCHAR(20),
         minPinSets VARCHAR(1028),
         degSequence VARCHAR( 500 ),
+        minRegionDegree INT,
+        isMultiSimple BOOL,
         pinNum INT,
         totOpt INT,
         totMin INT,
@@ -142,29 +158,40 @@ def printRow( name ):
         print( columns[i], ":", entries[i] )
 
 def storeDrawnPD( name ):
-    setFieldByName( "drawnpd", plinkPD( getFieldByName( "pd", name) ), name)
+    setFieldByName( "drawnpd", plinkPD( getFieldByName( "pd", name) ), name )
 
 def storeDataForWeb( name ):
     storeMinPinSetDataForWeb( name )
     generateImageFilesForWeb( name )
 
+
 def makeWebPage( name ):
     f = open( "docs/multiloop_page_template.html", 'r' )
     templateStr = f.read()
     f.close()
-    f = open( "docs/multiloops/"+name+"/"+name+".html", "w")
+    f = open( "docs/multiloops/"+name+".html", "w")
     pName = prevName( name )
     nName = nextName( name )
     context = name.split("_")[0]+"^"+name.split("^")[1]+".html"
 
-    #print( templateStr )
+    if getFieldByName( "isMultiSimple", name ) == 0:
+        msimp = "No"
+    else:
+        msimp = "Yes"
+
+    if getFieldByName( "components", name ) == 1:
+        loopOrMultiloop = "loop"
+        loopOrMultiloopCapitalized = "Loop"
+    else:
+        loopOrMultiloop = "multiloop"
+        loopOrMultiloopCapitalized = "Multiloop"
  
     f.write( templateStr.format( rawname = name, texname = texName( name ),\
-                                 linkprev = "../"+pName+"/"+pName+".html", \
-                                 linknext = "../"+nName+"/"+nName+".html", \
-                                 linkcontext = "../../"+context, \
-                                 pinset_svg_path = name+"-num+minpinning.svg",\
-                                 lattice_svg_path = name+"_lattice.svg",\
+                                 linkprev = pName+".html", \
+                                 linknext = nName+".html", \
+                                 linkcontext = "../"+context, \
+                                 pinset_svg_path = name+"/pindata.svg",\
+                                 lattice_svg_path = name+"/lattice.svg",\
                                  pinnum = getFieldByName( "pinNum", name),\
                                  numOpt = getFieldByName( "totOpt", name),\
                                  numMin = getFieldByName( "totMin", name),\
@@ -174,12 +201,18 @@ def makeWebPage( name ):
                                  avgOverallDeg = getFieldByName( "avgOverallDeg", name ),\
                                  refinedTableStr = htmlTable( eval( getFieldByName( "refinedPinSetMat", name ) ) ),\
                                  degTableStr = htmlTable( eval( getFieldByName( "degDataMat", name ) ) ),\
+                                 degseq = getFieldByName( "degSequence", name ),\
+                                 mindeg = getFieldByName( "minRegionDegree", name ),\
+                                 ismultisimp = msimp,\
                                  othercomments = "",\
+                                 loopOrMultiloop = loopOrMultiloop,\
+                                 loopOrMultiloopCapitalized = loopOrMultiloopCapitalized,\
                                  sigma = getFieldByName( "sigma", name ),\
                                  epsilon = getFieldByName( "epsilon", name ),\
+                                 annotated_svg_path = name+"/annotated.svg",\
+                                 phi = getFieldByName( "phi", name ),\
                                  pc = getFieldByName( "pc", name ),\
-                                 drawnpd = getFieldByName( "drawnpd", name ),\
-                                 loopdir = "." ) )
+                                 pd = getFieldByName( "pd", name ) ) )
     f.close()
 
 
@@ -188,18 +221,23 @@ def storeMinPinSetDataForWeb( name, debug = False ):
 
     storeDrawnPD( name )
     drawnpd = eval( getFieldByName( "drawnpd", name) )
-    print( drawnpd )
+    #print( drawnpd )
+    mloop = Spherimultiloop(drawnpd)
+    setFieldByName( "sigma", mloop.sigmaToString(), name)
+    setFieldByName( "epsilon", mloop.epsilonToString(), name)
+    setFieldByName( "phi", mloop.phiToString(), name)
+
     pinSets = getPinSets( drawnpd, debug=debug )
 
     setFieldByName( "minPinSets", pinSets["minPinSets"], name)
 
-    avgDegByCardTable, avgOptimalDeg, avgOptimalDeg, avgOverallDeg, pinningNum, numOptimal = avgDegByCardData( pinSets )
+    avgDegByCardTable, avgOptimalDeg, avgMinimalDeg, avgOverallDeg, pinningNum, numOptimal = avgDegByCardData( pinSets )
 
     setFieldByName( "degDataMat", avgDegByCardTable, name)
     setFieldByName( "avgOptDeg", avgOptimalDeg, name)
-    setFieldByName( "avgMinDeg", avgOptimalDeg, name)
+    setFieldByName( "avgMinDeg", avgMinimalDeg, name)
     setFieldByName( "avgOverallDeg", avgOverallDeg, name)
-    print( getRefinedTableMat( name ) )
+    #print( getRefinedTableMat( name ) )
     setFieldByName( "refinedPinSetMat", getRefinedTableMat( name ), name )
     setFieldByName( "pinNum", pinningNum, name )
     setFieldByName( "totOpt", numOptimal, name )
@@ -252,6 +290,9 @@ def avgDegByCardData( pinningSets ):
         if isMinimal:
             minAvgDegrees.append( thisAvgDegree )
         allAvgDegrees.append( thisAvgDegree )
+
+    #print( "opts:", len( optAvgDegrees ), optAvgDegrees )
+    #print( "mins:", len( minAvgDegrees ), minAvgDegrees)
         
         #gonalities = []
         #for reg in regs:
@@ -281,6 +322,8 @@ def avgDegByCardData( pinningSets ):
 
     return tableMatrix, sum( optAvgDegrees )/len( optAvgDegrees ), sum( minAvgDegrees )/len( minAvgDegrees ), sum( allAvgDegrees )/len( allAvgDegrees ), pinningNum, numOptimal
 
+
+
 def getRefinedTableMat( name ):
     #minPinSets = getFieldByName( "minPinSets", name )    
     labelData = getPinningSetLabelData( name )
@@ -292,7 +335,7 @@ def getRefinedTableMat( name ):
     #emptyLabels = labelData["emptyLabels"]
     G = labelData["G"]
 
-    print( minPinSetDict )
+    #print( minPinSetDict )
 
     sortedKeys = sorted( list( minPinSetDict ), key = lambda fset: minPinSetDict[fset]["label"] )
         
@@ -375,37 +418,42 @@ def generateImageFilesForWeb( name ):
 
     # save the semilattice
     posetFile = drawLattice( None, minPinSets, set( regList ), minPinSetDict, labelMode = "pinning_sets", \
-                                         regionLabels = None, forWeb = True, webImFolder = name, filename = name )
+                                         regionLabels = None, forWeb = True, webImFolder = name, filename = "" )
  
     # save raw loop
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict, G.wordDict,\
                                   [],None,\
-                                  emptyLabels, pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = name+"-raw" )
+                                  emptyLabels, pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "raw"  )
+    
+    # save annotated loop
+    plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict, G.wordDict,\
+                                  [],None,\
+                                  emptyLabels, pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "annotated", sigmaAnnotated = True )
     
     # save raw with numeric labels
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict, G.wordDict,\
                                   [],None,\
-                                  numericRegionLabels, pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = name+"-num" )
+                                  numericRegionLabels, pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "labels_numeric" )
     
     # save raw with degree labels
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict, G.wordDict,\
                                   [],None,\
-                                  degreeRegionLabels, pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = name+"-deg" )
+                                  degreeRegionLabels, pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "labels_degree" )
     
     # save raw + pinning data
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict,\
                                          G.wordDict, minPinSets, minPinSetDict, emptyLabels,\
-                                        pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = name+"-raw+minpinning", debug=False )
+                                        pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "pindata_raw", debug=False )
     
     # save numeric + pinning data
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict,\
                                          G.wordDict, minPinSets, minPinSetDict, numericRegionLabels,\
-                                        pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = name+"-num+minpinning", debug=False )
+                                        pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "pindata", debug=False )
     
     # save degree + pinning data
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict,\
                                          G.wordDict, minPinSets, minPinSetDict, degreeRegionLabels,\
-                                        pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = name+"-deg+minpinning", debug=False )
+                                        pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "pindata_degree", debug=False )
     
 def getPinningSetLabelData( name ):
     minPinSets = getFieldByName( "minPinSets", name )

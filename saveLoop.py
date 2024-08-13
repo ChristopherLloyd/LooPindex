@@ -19,8 +19,9 @@ def cleanFile():
     removedArrows = re.sub(r'<polygon.+?/>', '',toParse)
     removedComponentLabels = re.sub(r'<text.+?<circle', '<circle',removedArrows,1)
     thickened = re.sub(r'stroke-width="3.0"', 'stroke-width="6.0"',removedComponentLabels )
+    transparentRects = re.sub(r'<rect x', '<rect opacity = "0.8" x',thickened )
     f = open( filename, 'w' )
-    f.write( thickened )
+    f.write( transparentRects )
     f.close()
 
 if len( sys.argv ) > 2:
@@ -28,7 +29,8 @@ if len( sys.argv ) > 2:
     # get args from command line
     data = eval( sys.argv[1] )
     link = eval( data["link"] )
-    print( data )
+    #print( data )
+    #input()
     drawnpd = data["drawnpd"]
     adjDict = data["adjDict"]
     regWords = data["regWords"]
@@ -41,6 +43,7 @@ if len( sys.argv ) > 2:
     debug = data["debug"]
     bufferFrac = data["bufferFrac"]
     diamFrac = data["diamFrac"]
+    annotated = data["annotated"]
 
 else: #debug test cases
     # test case with 1 strand
@@ -121,9 +124,9 @@ while True:
     #LE = None
     #print("hi")
 
-print( "original:", link )
-print( "drawn:", drawnpd )
-print( "components:", components )
+#print( "original:", link )
+#print( "drawn:", drawnpd )
+#print( "components:", components )
 
 if badpdcount > 0:
     print( "For pd=", link)
@@ -217,6 +220,7 @@ for a in LE.Arrows:
                 assert( False )
                 corners[(seg[0],seg[1])][1]=seg
         else:
+            #c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
             if crosses[closeData[1]]["segs"] is None:
                 crosses[closeData[1]]["segs"] = [seg]
                 jumps = {seg[2]-seg[0]:0,seg[0]-seg[2]:2,seg[3]-seg[1]:3,seg[1]-seg[3]:1}
@@ -275,6 +279,42 @@ for reg in regWords:
 
 # associate appropriate region labels to each corner
 
+# Compute the size of the pl grid
+nonzeroDistances = set()
+for i in range( len( LE.Crossings )-1 ):
+    for j in range( i+1, len( LE.Crossings ) ):
+        crs1 = LE.Crossings[i]
+        crs2 = LE.Crossings[j]
+        nonzeroDistances.add( abs( crs1.x - crs2.x )+abs( crs1.y - crs2.y ) )
+gridLength = min( nonzeroDistances )
+labelFontSize = max( int( gridLength/5 ), 1 )
+offset = gridLength/6
+# Define parameters for plotted data in regions based on grid size
+
+if bufferFrac is not None:
+    leftbuffer = gridLength*bufferFrac #1/10
+else:
+    leftbuffer = gridLength*1/15
+topbuffer = leftbuffer
+
+if diamFrac is not None:
+    diam = gridLength*diamFrac #1/4 
+else:
+    diam = gridLength*1/7 #1/7 or 1/8
+circleWidth = 0
+dotFontSize = max( int( diam*0.9 ), 1 )
+spacing = (diam+circleWidth)*1.1
+labelsPerLine = 5
+#diam = 8
+#leftbuffer = 10
+
+# create dictionary for the next label based on the current label (for annotate=True)
+nextOf = {}
+for i in range( len( components ) ):
+    compsize = len( components[i] )
+    for j in range( len( components[i] ) ):
+        nextOf[components[i][j]]=components[i][(j+1)%compsize]
+
 for cross in crosses:
     for choice in ["a","b"]:
         # label each outgoing segment
@@ -290,18 +330,53 @@ for cross in crosses:
         # follow until the next crossing
         while not closeData[0]:
             corners[(nextx,nexty)]['strand'] = label
-            #c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
+            
             if len( sys.argv ) > 2: 
                 corners[(nextx,nexty)]['regs'] = set( adjDict[label] )
                 #for reg in adjDict[label]:
                 #    regToSegCoords[reg].append((nextx,nexty))
                 coordList.append((nextx,nexty))
-            if len( sys.argv ) <= 2 or debug:
-                c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
+            #if len( sys.argv ) <= 2 or debug:
+            #    c.create_text(nextx,nexty,text=label, fill="blue", font=('Helvetica 15 bold')) 
             curSeg = corners[(nextx,nexty)]["nextseg"]
             (curx,cury) = (nextx,nexty)
             (nextx,nexty) = (curSeg[2],curSeg[3])
             closeData = closeTo(nextx,nexty,crosses)
+
+        if annotated:
+            seg = curSeg
+            jumps = {seg[2]-seg[0]:0,seg[0]-seg[2]:2,seg[3]-seg[1]:3,seg[1]-seg[3]:1}
+            #offset = 10#max(jumps)
+            direction = jumps[max(jumps)]
+            #dirDict = {0:"right",1:"up",2:"left",3:"down" }
+            #if label + 1 == len(drawnpd)*2+1:
+            #    nextLabel = 1
+            #else:
+            #    nextLabel = label + 1
+            nextLabel = nextOf[ label ]
+            prevLabel = label            
+            if direction == 0: #moving right
+                textNext = c.create_text(nextx+offset,nexty,text=-nextLabel, fill="black", font=('Helvetica {} bold'.format(dotFontSize)), anchor = "sw")
+                textPrev = c.create_text(nextx-offset,nexty,text=prevLabel, fill="black", font=('Helvetica {} bold'.format(dotFontSize)), anchor = "ne")
+            if direction == 2: #moving left
+                textNext = c.create_text(nextx-offset,nexty,text=-nextLabel, fill="black", font=('Helvetica {} bold'.format(dotFontSize)), anchor = "ne")
+                textPrev = c.create_text(nextx+offset,nexty,text=prevLabel, fill="black", font=('Helvetica {} bold'.format(dotFontSize)), anchor = "sw")
+            if direction == 1: #moving up
+                textNext = c.create_text(nextx,nexty-offset,text=-nextLabel, fill="black", font=('Helvetica {} bold'.format(dotFontSize)), anchor = "se")
+                textPrev = c.create_text(nextx,nexty+offset,text=prevLabel, fill="black", font=('Helvetica {} bold'.format(dotFontSize)), anchor = "nw")
+            if direction == 3: #moving down
+                textNext = c.create_text(nextx,nexty+offset,text=-nextLabel, fill="black", font=('Helvetica {} bold'.format(dotFontSize)), anchor = "nw")
+                textPrev = c.create_text(nextx,nexty-offset,text=prevLabel, fill="black", font=('Helvetica {} bold'.format(dotFontSize)), anchor = "se")
+            upshift = diam/7
+            x1, y1, x2, y2 = c.bbox(textNext)
+            width = 0
+            outline = "black" #loop red = tkColorfromRgb((216,38,38))
+            r=c.create_rectangle(x1, y1-upshift, x2, y2-upshift , fill="white", outline = outline , width = width ) 
+            c.tag_lower(r,textNext)
+            x1, y1, x2, y2 = c.bbox(textPrev)
+            r=c.create_rectangle(x1, y1-upshift, x2, y2-upshift, fill="white", outline = outline, width = width )
+            c.tag_lower(r,textPrev)
+
         coordList.append(closeData[1])
         # put the crossing/corner coordinates into the appropriate place in each region polygon
         if len( sys.argv ) > 2:
@@ -317,7 +392,11 @@ for cross in crosses:
                 #if reg not in regToSegCoords:
                 #    regToSegCoords[reg] = [coordList.copy()]
                 #else:
-                #    regToSegCoords[reg].append( coordList.copy() )                
+                #    regToSegCoords[reg].append( coordList.copy() )
+                #
+
+
+                
         
 if len( sys.argv ) <= 2:   
     input("Press any key to close the window")
@@ -412,35 +491,11 @@ for reg in regPolysSage:
 #    print()
     #assert( corners[(x,y)][1] is not None )
 
-# Compute the size of the pl grid
-nonzeroDistances = set()
-for i in range( len( LE.Crossings )-1 ):
-    for j in range( i+1, len( LE.Crossings ) ):
-        crs1 = LE.Crossings[i]
-        crs2 = LE.Crossings[j]
-        nonzeroDistances.add( abs( crs1.x - crs2.x )+abs( crs1.y - crs2.y ) )
-gridLength = min( nonzeroDistances )
+
 #c.create_rectangle( crs.x, crs.y,crs.x+gridLength,crs.y+gridLength,\
 #                       outline = "orange", width = 10 )
 
-# Define parameters for plotted data in regions based on grid size
-labelFontSize = max( int( gridLength/5 ), 1 )
-if bufferFrac is not None:
-    leftbuffer = gridLength*bufferFrac #1/10
-else:
-    leftbuffer = gridLength*1/15
-topbuffer = leftbuffer
 
-if diamFrac is not None:
-    diam = gridLength*diamFrac #1/4 
-else:
-    diam = gridLength*1/7 #1/7 or 1/8
-circleWidth = 0
-dotFontSize = max( int( diam*0.9 ), 1 )
-spacing = (diam+circleWidth)*1.1
-labelsPerLine = 5
-#diam = 8
-#leftbuffer = 10
 
     
 # associate boundary coordinates to regions
