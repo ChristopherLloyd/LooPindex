@@ -78,7 +78,7 @@ def writeIndexPage( names, title, filename, desc=None, next = None, prev = None 
 def generatePageString( names, title, desc, next, prev  ):
     thumbnailStr = """
     <div class="float">
-        <a href="multiloops/{name}/clean.svg" title="{name}"><img alt="{name}" src="multiloops/{name}/clean.svg" decoding="async"/></a>
+        <a href="multiloops/{name}.html" title="{name}"><img alt="{name}" src="multiloops/{name}/clean.svg" decoding="async"/></a>
         <span>{texname}</span>
     </div>
     """
