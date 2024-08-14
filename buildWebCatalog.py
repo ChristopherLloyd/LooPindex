@@ -14,48 +14,168 @@ except NameError as msg:
     #raise Exception( msg ) # database not found
     
 def main():
+
+
     #createDatabase()
-    #storeMinPinSets( "12_360^1" )
-    #generateImageFilesForWeb( "12_360^1")
-    #storeRefinedPinningData( "12_360^1" )
-    #print( getFieldByName( "drawnpd", "12_361^1"  ) )
+    #return
 
-    #storeMinPinSets( "10_18^1" )
-    #generateImageFilesForWeb( "10_18^1")
-    #storeRefinedPinningData( "10_18^1")
+    # 12^3_74 has too many minimal pinning sets
+    # 12^3_75 is borderline
 
-    #generateImageFilesForWeb( "11_97^1")
+    #tenOne = namesSatisfyingQuery( "numRegions = 10 and components = 1")
 
-    #generateImageFilesForWeb( "11_97^1" )
+    #print( tenOne )
 
-    testloops = ["10_18^1","10_19^1","10_20^1","10_21^1"]
-    #testloops = ["8_1^3", "8_2^3", "11_97^1"]
+    titles = ["4^2","5^1","6^1","6^2","7^1","7^2","8^1","8^2","8^3","9^1","9^2","9^3","10^1","10^2","10^3","10^4","11^1","11^2","11^3","11^4","12^1","12^2","12^3","12^4","12^5"]
 
-    #testloops = ["11_97^1"]
+    for regs in [4,5,6,7,8,9,10,11,12]:
+        for comps in [1,2,3,4,5]:
+            query = namesSatisfyingQuery( "numRegions = {} and components = {}".format( regs, comps ) )
+            if query != []:
+                
+                if comps == 1:
+                    M = "Loops"
+                    m = "loops"
+                    c = "component"
+                else:
+                    M = "Multiloops"
+                    m = "multiloops"
+                    c = "components"
+                if len( query ) == 1:
+                    m = m[:-1]
+                pageName = "{}^{}".format(regs,comps)
+                print( "Building index page", pageName, "with", len(query), "entries.")
+                try: 
+                    prev = titles[titles.index( pageName )-1]
+                except IndexError:
+                    pass
+                try: 
+                    next = titles[titles.index( pageName )+1]
+                except IndexError:
+                    pass               
 
-    for name in testloops:
-        storeDataForWeb( name )
-        makeWebPage( name )
-    return
-
-    storeDataForWeb( "11_97^1" )
-    makeWebPage( "11_97^1" )
-    """storeDataForWeb( "10_18^1" )
-    makeWebPage( "10_18^1" )
-    storeDataForWeb( "10_19^1" )
-    makeWebPage( "10_19^1" )
-    storeDataForWeb( "10_20^1" )
-    makeWebPage( "10_20^1" )
-    storeDataForWeb( "10_21^1" )
-    makeWebPage( "10_21^1" )"""
-    #print( refinedTableStr( "11_97^1") )
-    #print( texName( "10_1^1" ) )
-    #print( nextName( "10_1^1" ) )
-    #print( prevName( "10_1^1" ) )
+                writeIndexPage( query, "{} with {} regions and {} {}".format(M,regs,comps,c),\
+                                filename = "{}.html".format( pageName ), desc = "{} {} total.".format(len(query),m),\
+                                     next=next, prev=prev )
 
     # things to record (now or later): max number of minimal pinning sets to which a region belongs? is it an interesting counterexample?
 
-def createDatabase( maxRegions = 12 ):
+def computePinSetsAndBuildPagesForWeb( n = 12 ): # has been done for n=12
+    # minpinsets field not large enough for forweb[958] (12^2_301) at 1024, now it is doubled to 2048
+    forweb = namesSatisfyingQuery( "numRegions < {}".format( n + 1 ) )
+    storeDataForWebMany( forweb )
+    makeWebPagesMany( forweb )
+
+def writeIndexPage( names, title, filename, desc=None, next = None, prev = None ):
+    """Generates a page with thumbnails for all the loops in names with the given title and description.
+    names may be a list or dictionary whose values are lists. if it is a list then no subheaders are written,
+    if it is a dictionary, the keys are the subheaders."""
+
+    f = open( "docs/"+filename, 'w')
+    f.write( generatePageString( names, title, desc, next, prev) )
+    f.close()
+
+def generatePageString( names, title, desc, next, prev  ):
+    thumbnailStr = """
+    <div class="float">
+        <a href="multiloops/{name}/clean.svg" title="{name}"><img alt="{name}" src="multiloops/{name}/clean.svg" decoding="async"/></a>
+        <span>{texname}</span>
+    </div>
+    """
+
+    sublistSeparator = "\t\t\t<br>\n\t\t\t<hr>\n"
+
+    subListHeader = """
+    <h2><span id="{subtitle}">{subtitle}</span></h2>
+    """
+
+    listWrapper = """
+    <div class="images">
+
+    {thumbnaillist}
+
+    </div>
+    """
+    
+    header = """<!DOCTYPE html><html>
+    <head><meta
+    charset="utf-8"><meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>{title}</title>
+    <link rel="shortcut icon" href="webicon.svg"/>
+    <link rel="stylesheet" type="text/css" href="style.css">	
+    <script>
+    MathJax = {{
+        tex: {{
+            inlineMath: [['$', '$'],['\\(', '\\)']]
+        }}
+    }};
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    </head>
+
+    <body>
+    """
+
+    footer = """
+    </body>\n</html>\n"""
+
+    navbar = """
+    <div style="float: left"><a href = "{linkprev}">Previous page</a></div>
+	<div style="float: right"><a href = "{linknext}">Next page</a></div>
+	<div style="margin: 0 auto;  width: 200px;"><a href = "toc.html">Contents</a></div>
+    """
+
+    if prev is None:
+        prev = "PREV"
+    if next is None:
+        next = "NEXT"
+
+    pageStr = header.format(title=title)+navbar.format(linkprev=prev+".html", linknext=next+".html")+\
+        "\n\n\t<hr>\n\t<h1>{title}</h1>\n".format( title=title )
+    if desc is not None:
+        pageStr += "\n\t<p>{desc}</p>\n\n".format( desc=desc )
+
+
+    if type( names ) == list:
+        listStr = ""
+        for name in names:
+            listStr += thumbnailStr.format( name=name, texname = texName( name ) )
+        pageStr += listWrapper.format(thumbnaillist=listStr)
+        return pageStr+"<br>\n\t<hr>\n" + navbar+footer
+    
+    if type( names ) == dict:
+        for subtitle in names:
+            listStr = ""
+            for name in names[subtitle]:
+                listStr += thumbnailStr.format( name=name, texname = texName( name ) )
+            pageStr += subListHeader.format(subtitle=subtitle)
+            pageStr += listWrapper.format(thumbnaillist=listStr)
+            pageStr += sublistSeparator
+        pageStr = pageStr[:len(sublistSeparator)]
+        return pageStr + "<br>\n\t<hr>\n"+navbar.format(linkprev=prev+".html", linknext=next+".html") + footer
+
+    raise( Exception( "names was a bad type" ) )  
+
+def storeDataForWebMany( names ):
+    """Analyze pinning data and generate images. Very slow/expensive."""
+    go = input( "Ready to analyze {} multiloops. Continue? (y/n)".format(len(names)))
+    if go != 'y':
+        return
+    for i in range(len( names ) ):
+        print( "Analyzing {} ({} of {})".format( names[i], i+1, len( names )  ) )
+        storeDataForWeb( names[i] )
+
+def makeWebPagesMany( names ):
+    """Generate web paes based on data in the database. Also very slow for some reason, but should not depend on anything about the loop."""
+    for i in range( len( names ) ):
+        print( "Writing web page for {} ({} of {})".format( names[i], i+1, len( names ) ) )
+        makeWebPage( names[i] )
+
+def createDatabase( maxRegions = 16 ):
     response = input( "Erase the existing database? (y/n)")    
     if response != 'y':
         return
@@ -72,17 +192,17 @@ def createDatabase( maxRegions = 12 ):
     create_table = """
         CREATE TABLE mloops(
         id INT AUTO_INCREMENT PRIMARY KEY,
-        pc VARCHAR(500),
-        pd VARCHAR(500),     
-        sigma VARCHAR(500),
+        pc VARCHAR(250),
+        pd VARCHAR(250),     
+        sigma VARCHAR(250),
         components INT,
-        epsilon VARCHAR(500),
-        phi VARCHAR(500),
-        drawnpd VARCHAR(500),        
+        epsilon VARCHAR(250),
+        phi VARCHAR(250),
+        drawnpd VARCHAR(250),        
         numRegions INT,
         name VARCHAR(20),
-        minPinSets VARCHAR(1028),
-        degSequence VARCHAR( 500 ),
+        minPinSets VARCHAR(500),
+        degSequence VARCHAR(75),
         minRegionDegree INT,
         isMultiSimple BOOL,
         pinNum INT,
@@ -92,8 +212,8 @@ def createDatabase( maxRegions = 12 ):
         avgOptDeg FLOAT,
         avgMinDeg FLOAT,
         avgOverallDeg FLOAT,
-        refinedPinSetMat VARCHAR( 2048 ),
-        degDataMat VARCHAR( 2048 )        
+        refinedPinSetMat VARCHAR(5000),
+        degDataMat VARCHAR(1000)        
         )
     """
     cursor.execute(create_table)
@@ -115,10 +235,15 @@ def name_k_after( name, k ):
         return None
     return nextName
 
-def texName( name ):
-    pieces = name.split( "_" )
-    morepieces = pieces[1].split( "^" )
-    return "$"+pieces[0]+"_{"+morepieces[0]+"}^{"+morepieces[1]+"}$"
+#def smartName( name ):
+#    comps = name.split( "^" )[1]
+#    ind = name.split("^")[0].split("_")[1]
+#    regs = name.split("_")[0]
+#    return regs+"^"+comps+"_"+ind
+
+def texName( name ): 
+    pieces = re.split( "[_^]", name )
+    return "$"+pieces[0]+"^{"+pieces[1]+"}_{"+pieces[2]+"}$"
 
 def nextName( name ):
     return name_k_after( name, 1 )
@@ -126,21 +251,19 @@ def nextName( name ):
 def prevName( name ):
     return name_k_after( name, -1 )
 
+def namesSatisfyingQuery( queryParams ):
+    query = 'select name from mloops where {};'.format( queryParams )
+    cursor.execute( query )
+    result = []
+    for elt in cursor.fetchall():
+        result.append( elt[0] )
+    return result
+
 def getFieldByName( field, name ):
     query = 'select {} from mloops where name = "{}";'.format(field, name) 
     #print( query )
     cursor.execute( query )
     result = cursor.fetchall()[0][0]
-    if result is None:  # Null value       
-        return None
-    """if type( result ) == str:
-        try:
-            result =  eval( result )
-            return result
-        except TypeError:
-            return result
-    else:
-        return result"""
     return result
 
 def setFieldByName( field, value, name ):
@@ -148,42 +271,61 @@ def setFieldByName( field, value, name ):
     db.commit()
 
 def printRow( name ):
+    data = rowDict( name )
+    for key in data:
+        print( key, ":", data[key] )
+
+def rowDict( name ):
     cursor.execute("SHOW columns FROM mloops")
     columns = [column[0] for column in cursor.fetchall()]
     cursor.execute( 'select * from mloops where name = "{}";'.format( name) )
     #print( "returned", cursor.fetchall()[0][1] )
     entries = cursor.fetchall()[0]
+    data = {}
     for i in range( len( entries )):
-        print( columns[i], ":", entries[i] )
+        data[columns[i]] = entries[i]
+    return data
 
 def storeDrawnPD( name ):
     setFieldByName( "drawnpd", plinkPD( getFieldByName( "pd", name) ), name )
 
 def storeDataForWeb( name ):
+    print( " Computing pinning sets for {}".format( name ) )
     storeMinPinSetDataForWeb( name )
+    print( " Generating images for {}".format( name ) )
     generateImageFilesForWeb( name )
 
-
 def makeWebPage( name ):
+    
     f = open( "docs/multiloop_page_template.html", 'r' )
     templateStr = f.read()
     f.close()
     f = open( "docs/multiloops/"+name+".html", "w")
-    pName = prevName( name )
+    try:
+        pName = prevName( name )
+    except IndexError:
+        pName = "nopreviousexists"
     nName = nextName( name )
-    context = name.split("_")[0]+"^"+name.split("^")[1]+".html"
+    context = name.split("_")[0]+".html"
 
-    if getFieldByName( "isMultiSimple", name ) == 0:
+    data = rowDict( name )
+
+    if data["isMultiSimple"] == 0:
         msimp = "No"
     else:
         msimp = "Yes"
 
-    if getFieldByName( "components", name ) == 1:
+    if data[ "components" ] == 1:
         loopOrMultiloop = "loop"
         loopOrMultiloopCapitalized = "Loop"
     else:
         loopOrMultiloop = "multiloop"
         loopOrMultiloopCapitalized = "Multiloop"
+
+    refinedTableHeaders = [["Pin label", "Pin color", "Regions", "Cardinality", "Degree sequence","Mean-degree"]]
+    cardinalTableHeaders = [["Cardinality", "Optimal pinning sets", "Minimal suboptimal pinning sets", "Nonminimal pinning sets", "Averaged mean-degree"]]
+
+    #print( "hi ")
  
     f.write( templateStr.format( rawname = name, texname = texName( name ),\
                                  linkprev = pName+".html", \
@@ -191,29 +333,28 @@ def makeWebPage( name ):
                                  linkcontext = "../"+context, \
                                  pinset_svg_path = name+"/pindata.svg",\
                                  lattice_svg_path = name+"/lattice.svg",\
-                                 pinnum = getFieldByName( "pinNum", name),\
-                                 numOpt = getFieldByName( "totOpt", name),\
-                                 numMin = getFieldByName( "totMin", name),\
-                                 numTot = getFieldByName( "totPinSets", name ),\
-                                 avgOptDeg = getFieldByName( "avgOptDeg", name ),\
-                                 avgMinDeg = getFieldByName( "avgMinDeg", name ),\
-                                 avgOverallDeg = getFieldByName( "avgOverallDeg", name ),\
-                                 refinedTableStr = htmlTable( eval( getFieldByName( "refinedPinSetMat", name ) ) ),\
-                                 degTableStr = htmlTable( eval( getFieldByName( "degDataMat", name ) ) ),\
-                                 degseq = getFieldByName( "degSequence", name ),\
-                                 mindeg = getFieldByName( "minRegionDegree", name ),\
+                                 pinnum = data["pinNum"],\
+                                 numOpt = data["totOpt"],\
+                                 numMin = data["totMin"],\
+                                 numTot = data["totPinSets"],\
+                                 avgOptDeg = data[ "avgOptDeg" ],\
+                                 avgMinDeg = data["avgMinDeg"],\
+                                 avgOverallDeg = data["avgOverallDeg"],\
+                                 refinedTableStr = htmlTable( refinedTableHeaders+eval( data["refinedPinSetMat"] )[1:] ),\
+                                 degTableStr = htmlTable( cardinalTableHeaders+eval( data[ "degDataMat"] )[1:] ),\
+                                 degseq = data[ "degSequence" ],\
+                                 mindeg = data[ "minRegionDegree" ],\
                                  ismultisimp = msimp,\
                                  othercomments = "",\
                                  loopOrMultiloop = loopOrMultiloop,\
                                  loopOrMultiloopCapitalized = loopOrMultiloopCapitalized,\
-                                 sigma = getFieldByName( "sigma", name ),\
-                                 epsilon = getFieldByName( "epsilon", name ),\
+                                 sigma = data[ "sigma" ],\
+                                 epsilon = data["epsilon"],\
                                  annotated_svg_path = name+"/annotated.svg",\
-                                 phi = getFieldByName( "phi", name ),\
-                                 pc = getFieldByName( "pc", name ),\
-                                 pd = getFieldByName( "pd", name ) ) )
+                                 phi = data["phi"],\
+                                 pc = data["pc"],\
+                                 pd = data["pd"] ) ) 
     f.close()
-
 
 def storeMinPinSetDataForWeb( name, debug = False ):
     """Computes and stores the minimal pinning set data in the database"""
@@ -299,7 +440,8 @@ def avgDegByCardData( pinningSets ):
         
         #gonalityDict[frozenset(elt)]={"gons":gonalities,"min":isMinimal}
 
-    tableMatrix = [["Cardinality", "Optimal pinning sets", "Minimal (suboptimal) pinning sets", "Nonminimal pinning sets", "Average average degree"]]
+    #tableMatrix = [["Cardinality", "Optimal pinning sets", "Minimal (suboptimal) pinning sets", "Nonminimal pinning sets", "Averaged mean-degree"]]
+    tableMatrix = [[]] # use empty headers to save space
 
     for cardinal in sorted( pinDict ):
         tableRow = [cardinal]
@@ -321,8 +463,6 @@ def avgDegByCardData( pinningSets ):
 
     return tableMatrix, sum( optAvgDegrees )/len( optAvgDegrees ), sum( minAvgDegrees )/len( minAvgDegrees ), sum( allAvgDegrees )/len( allAvgDegrees ), pinningNum, numOptimal
 
-
-
 def getRefinedTableMat( name ):
     #minPinSets = getFieldByName( "minPinSets", name )    
     labelData = getPinningSetLabelData( name )
@@ -338,7 +478,9 @@ def getRefinedTableMat( name ):
 
     sortedKeys = sorted( list( minPinSetDict ), key = lambda fset: minPinSetDict[fset]["label"] )
         
-    refinedPinData = [["Pin label", "Pin color", "Regions", "Cardinality", "Degree sequence","Average degree"]]
+    #refinedPinData = [["Pin label", "Pin color", "Regions", "Cardinality", "Degree sequence","Mean-degree"]]
+    refinedPinData = [[]] # use empty headers to save sapce
+
     for pinningSet in sortedKeys:
         refinedData = []
         label = minPinSetDict[pinningSet]["letterLabel"]
@@ -422,7 +564,7 @@ def generateImageFilesForWeb( name ):
     # save raw loop
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict, G.wordDict,\
                                   [],None,\
-                                  emptyLabels, pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "raw"  )
+                                  emptyLabels, pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "clean"  )
     
     # save annotated loop
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict, G.wordDict,\
@@ -442,7 +584,7 @@ def generateImageFilesForWeb( name ):
     # save raw + pinning data
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict,\
                                          G.wordDict, minPinSets, minPinSetDict, emptyLabels,\
-                                        pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "pindata_raw", debug=False )
+                                        pdToComponents( drawnpd ), forWeb = True, webImFolder = name, filename = "pindata_clean", debug=False )
     
     # save numeric + pinning data
     plinkImgFile( str( getFieldByName( "pd", name) ), drawnpd, G.adjDict,\

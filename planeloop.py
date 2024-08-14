@@ -733,8 +733,7 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
             indexByComponent[multiloop.components] = 1
         else:
             indexByComponent[multiloop.components] += 1
-        name = str( regions )+"_"+str( indexByComponent[multiloop.components] )+\
-               "^"+str(multiloop.components)
+        name = str( regions )+"^"+str(multiloop.components)+"_"+str( indexByComponent[multiloop.components] )               
         if numComponents == "any" or multiloop.components == numComponents:
             toAdd = """("{pc}", "{pd}", {sigma}, {components}, {epsilon}, {phi}, {drawnpd}, {numRegions},  "{rawname}",\
                      {minPinSets}, "{degSequence}", {minRegDeg}, {isMultiSimple}, {pinNum}, {totOpt}, {totMin}, {totPinSets},\
@@ -753,18 +752,27 @@ def generateMultiloops( regions, numComponents = 1, includeReflections = False, 
             multiloops.append( multiloop )
             #print( i )
             #i+=1
-    if mloopStrings != {} and db is not None:        
-        insert_entry="""
+    if mloopStrings != {} and db is not None:
+        chunksize = 50000        
+        prefix ="""
                 INSERT INTO mloops (pc, pd, sigma, components, epsilon, phi, drawnpd, numRegions, name, minPinSets, degSequence, minRegionDegree, isMultiSimple, pinNum, totOpt, totMin, totPinSets, avgOptDeg, avgMinDeg, avgOverallDeg, refinedPinSetMat, degDataMat )
                 VALUES\n"""
+        insert_entry = ""
+        i = 0
         for numComponents in sorted( mloopStrings ):
             for mloop in mloopStrings[numComponents]:
+                if i == chunksize:
+                    #print( insert_entry )
+                    cursor.execute(prefix+insert_entry[:-2])
+                    insert_entry = ""
+                    i = 0
                 insert_entry += mloop
+                i += 1
+        cursor.execute(prefix+insert_entry[:-2])
 
-        #print( insert_entry )
+        
 
-        insert_entry = insert_entry[:-2]
-        cursor.execute(insert_entry)
+        
 
     if db is not None:
 
@@ -3864,7 +3872,7 @@ def plinkFromPD( link ):
 
 def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets,\
                  minPinSetDict, regionLabels, components, tolerance = 0.0000001,\
-                  bufferFrac = None, diamFrac = None, filename = None, debug = False, forWeb = False, webImFolder = None, sigmaAnnotated = False ):
+                  bufferFrac = None, diamFrac = None, filename = None, debug = False, forWeb = False, webImFolder = None, sigmaAnnotated = False, LE = None ):
     if not forWeb:
         if filename is None:
             filename = getUnusedFileName( "svg", "tex/img/" )
@@ -3879,6 +3887,7 @@ def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets,\
             "tolerance":tolerance,"minPinSetDict":minPinSetDict,"regionLabels":regionLabels,\
             "components":components,"filename":filename,"debug":debug,\
             "bufferFrac":bufferFrac,"diamFrac":diamFrac,"annotated":sigmaAnnotated}
+    LE = LE
     call(['python3', 'saveLoop.py', str(data), "padding", "padding", "padding"])
     return filename
 
