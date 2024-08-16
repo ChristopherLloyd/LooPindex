@@ -16,14 +16,27 @@ br{
 .images {
 	text-align:center;
 }
+
 .images img {
-	width:200px;
-	height:200px;
+width:200px;
+height:200px;
 }
 .images div {
-	width:200px;
-	text-align:center;
+width:200px;
+text-align:center;
 }
+
+@media (max-width: 600px) {
+  .images img {
+	width:100px;
+	height:100px;
+	}
+	.images div {
+	width:100px;
+	text-align:center;
+	}
+}
+
 .images div span {
 	display:block;
 }

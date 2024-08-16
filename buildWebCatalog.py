@@ -14,7 +14,9 @@ except NameError as msg:
     #raise Exception( msg ) # database not found
     
 def main():
+    #writeMainIndexPagesForWeb(  )
 
+    #makeWebPagesMany( namesSatisfyingQuery( "numRegions < 13") )
 
     #createDatabase()
     #return
@@ -26,6 +28,14 @@ def main():
 
     #print( tenOne )
 
+    query = namesSatisfyingQuery( "isMultiSimple = 1 and numRegions < 13")
+    writeIndexPage( query, "all multisimple", "Multisimple multiloops with 12 or fewer regions", "multisimple.html",\
+                    desc = "{} multiloops total.".format( len( query )) ) 
+
+    # things to record (now or later): max number of minimal pinning sets to which a region belongs? is it an interesting counterexample?
+
+
+def writeMainIndexPagesForWeb():
     titles = ["4^2","5^1","6^1","6^2","7^1","7^2","8^1","8^2","8^3","9^1","9^2","9^3","10^1","10^2","10^3","10^4","11^1","11^2","11^3","11^4","12^1","12^2","12^3","12^4","12^5"]
 
     for regs in [4,5,6,7,8,9,10,11,12]:
@@ -54,11 +64,10 @@ def main():
                 except IndexError:
                     pass               
 
-                writeIndexPage( query, "{} with {} regions and {} {}".format(M,regs,comps,c),\
+                writeIndexPage( query, pageName, "{} with {} regions and {} {}".format(M,regs,comps,c),\
                                 filename = "{}.html".format( pageName ), desc = "{} {} total.".format(len(query),m),\
                                      next=next, prev=prev )
 
-    # things to record (now or later): max number of minimal pinning sets to which a region belongs? is it an interesting counterexample?
 
 def computePinSetsAndBuildPagesForWeb( n = 12 ): # has been done for n=12
     # minpinsets field not large enough for forweb[958] (12^2_301) at 1024, now it is doubled to 2048
@@ -66,20 +75,20 @@ def computePinSetsAndBuildPagesForWeb( n = 12 ): # has been done for n=12
     storeDataForWebMany( forweb )
     makeWebPagesMany( forweb )
 
-def writeIndexPage( names, title, filename, desc=None, next = None, prev = None ):
+def writeIndexPage( names, pagetitle, title, filename, desc=None, next = None, prev = None ):
     """Generates a page with thumbnails for all the loops in names with the given title and description.
     names may be a list or dictionary whose values are lists. if it is a list then no subheaders are written,
     if it is a dictionary, the keys are the subheaders."""
 
     f = open( "docs/"+filename, 'w')
-    f.write( generatePageString( names, title, desc, next, prev) )
+    f.write( generatePageString( names, pagetitle, title, desc, next, prev) )
     f.close()
 
-def generatePageString( names, title, desc, next, prev  ):
+def generatePageString( names, pagetitle, title, desc, next, prev  ):
     thumbnailStr = """
     <div class="float">
-        <a href="multiloops/{name}.html" title="{name}"><img alt="{name}" src="multiloops/{name}/clean.svg" decoding="async"/></a>
-        <span>{texname}</span>
+        <a href="multiloops/{name}.html" id="{name}" title="{name}"><img alt="{name}" src="multiloops/{name}/clean.svg" decoding="async"/>
+        <span>{texname}</span></a>
     </div>
     """
 
@@ -102,7 +111,7 @@ def generatePageString( names, title, desc, next, prev  ):
     charset="utf-8"><meta
     name="viewport"
     content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-    <title>{title}</title>
+    <title>LooPindex - {pagetitle}</title>
     <link rel="shortcut icon" href="webicon.svg"/>
     <link rel="stylesheet" type="text/css" href="style.css">	
     <script>
@@ -124,8 +133,8 @@ def generatePageString( names, title, desc, next, prev  ):
     </body>\n</html>\n"""
 
     navbar = """
-    <div style="float: left"><a href = "{linkprev}">Previous page</a></div>
-	<div style="float: right"><a href = "{linknext}">Next page</a></div>
+    <div style="float: left"><a href = "{linkprev}">Prev</a></div>
+	<div style="float: right"><a href = "{linknext}">Next</a></div>
 	<div style="margin: 0 auto;  width: 200px;"><a href = "toc.html">Contents</a></div>
     """
 
@@ -134,7 +143,7 @@ def generatePageString( names, title, desc, next, prev  ):
     if next is None:
         next = "NEXT"
 
-    pageStr = header.format(title=title)+navbar.format(linkprev=prev+".html", linknext=next+".html")+\
+    pageStr = header.format(pagetitle=pagetitle)+navbar.format(linkprev=prev+".html", linknext=next+".html")+\
         "\n\n\t<hr>\n\t<h1>{title}</h1>\n".format( title=title )
     if desc is not None:
         pageStr += "\n\t<p>{desc}</p>\n\n".format( desc=desc )
@@ -145,9 +154,7 @@ def generatePageString( names, title, desc, next, prev  ):
         for name in names:
             listStr += thumbnailStr.format( name=name, texname = texName( name ) )
         pageStr += listWrapper.format(thumbnaillist=listStr)
-        return pageStr+"<br>\n\t<hr>\n" + navbar+footer
-    
-    if type( names ) == dict:
+    elif type( names ) == dict:
         for subtitle in names:
             listStr = ""
             for name in names[subtitle]:
@@ -156,9 +163,10 @@ def generatePageString( names, title, desc, next, prev  ):
             pageStr += listWrapper.format(thumbnaillist=listStr)
             pageStr += sublistSeparator
         pageStr = pageStr[:len(sublistSeparator)]
-        return pageStr + "<br>\n\t<hr>\n"+navbar.format(linkprev=prev+".html", linknext=next+".html") + footer
-
-    raise( Exception( "names was a bad type" ) )  
+    else:
+         raise( Exception( "names was a bad type" ) )  
+    
+    return pageStr + "<br>\n\t<hr>\n"+navbar.format(linkprev=prev+".html", linknext=next+".html") + footer   
 
 def storeDataForWebMany( names ):
     """Analyze pinning data and generate images. Very slow/expensive."""
@@ -306,7 +314,7 @@ def makeWebPage( name ):
     except IndexError:
         pName = "nopreviousexists"
     nName = nextName( name )
-    context = name.split("_")[0]+".html"
+    context = name.split("_")[0]+".html"+"#"+name
 
     data = rowDict( name )
 
