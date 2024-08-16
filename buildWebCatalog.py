@@ -18,6 +18,8 @@ def main():
 
     #makeWebPagesMany( namesSatisfyingQuery( "numRegions < 13") )
 
+    #return
+
     #createDatabase()
     #return
 
@@ -28,11 +30,25 @@ def main():
 
     #print( tenOne )
 
+    # make monorbigonlesspage 
+    
+
+    return
+
+ 
+    # things to record (now or later): max number of minimal pinning sets to which a region belongs? is it an interesting counterexample?
+
+def makeMonorbigonless():
+    query = namesSatisfyingQuery( "minRegionDegree > 2 and numRegions < 13")
+    writeIndexPage( query, "all multisimple", "Multisimple multiloops with 12 or fewer regions", "asdjfk.html",\
+                    desc = "{} multiloops total.".format( len( query )) ) 
+    
+def makeMultiSimple():
+    # make multisimple page
     query = namesSatisfyingQuery( "isMultiSimple = 1 and numRegions < 13")
     writeIndexPage( query, "all multisimple", "Multisimple multiloops with 12 or fewer regions", "multisimple.html",\
                     desc = "{} multiloops total.".format( len( query )) ) 
 
-    # things to record (now or later): max number of minimal pinning sets to which a region belongs? is it an interesting counterexample?
 
 
 def writeMainIndexPagesForWeb():

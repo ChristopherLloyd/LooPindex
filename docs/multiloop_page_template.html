@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head><meta
+	charset="utf-8"><meta
+	name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+	<title>LooPindex - {rawname}</title>
+	<link rel="shortcut icon" href="../webicon.svg"/>
+	<link rel="stylesheet" type="text/css" href="../style.css">	
+	<script src="https://tikzjax.com/v1/tikzjax.js"></script>
+	<script>
+	MathJax = {{
+		tex: {{
+			inlineMath: [['$', '$'],['\\(', '\\)']]
+		}}
+	}};
+	</script>
+	<script type="text/javascript" id="MathJax-script" async
+		src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+	</script>
+</head>
+ <body>  
+	<div style="float: left"><a href = "{linkprev}">Prev</a></div>
+	<div style="float: right"><a href = "{linknext}">Next</a></div>
+	<div style="margin: 0 auto;  width: 200px;"><a href = "{linkcontext}">In context</a></div>
+    <hr>
+	<h2>{texname} - Minimal pinning sets</h2>
+	<a href="{pinset_svg_path}" style="display: block;" title="Pinning sets for {rawname}"><object data="{pinset_svg_path}" style="width: 100%; pointer-events: none;" >Pinning sets for {rawname}</object></a>
+	<br><hr>
+
+	<h2>Minimal pinning semi-lattice</h2>
+	<p>(y-axis = cardinality)</p>
+	<a href="{lattice_svg_path}" style="display: block;" title="Pinning semi lattice for {rawname}"><object data="{lattice_svg_path}" style="width: 100%; pointer-events: none;" >Pinning semi lattice for {rawname}</object></a>
+	<br><hr>
+
+	<h2>Pinning data</h2>
+
+	<ul>
+		<li>Pinning number of this {loopOrMultiloop}: {pinnum}</li>
+		<li>Total number of pinning sets: {numTot}</li>
+		<ul>
+			<li>of which optimal: {numOpt}</li>
+			<li>of which minimal: {numMin}</li>
+		</ul>
+		<li> The mean region-degree (mean-degree) of a pinning set is
+		<ul>		
+			<li>on average over all pinning sets: {avgOverallDeg}</li>
+			<li>on average over minimal pinning sets: {avgMinDeg}</li>
+			<li>on average over optimal pinning sets: {avgOptDeg}</li>			
+		</ul>
+	</ul>
+
+	<h3>Refined data for the minimal pinning sets</h3>
+	
+	{refinedTableStr}
+
+	<h3>Data for pinning sets in each cardinal</h3>
+	
+	{degTableStr}
+
+	<br><hr>
+
+	<h2><span id="Other">Other information about this {loopOrMultiloop}</span></h2>
+	
+	{othercomments}
+	
+	<h3>Properties</h3>
+	
+	<ul>
+	
+	<li>Region degree sequence: {degseq}</li>
+	
+	<li>Minimal region degree: {mindeg}</li>
+	
+	<li>Is multisimple: {ismultisimp}</li>
+	
+	</ul>
+
+	<h3>Combinatorial encoding data</h3>
+
+	<ul>
+	
+	<li>Plantri embedding: {pc}</li>
+	
+	<li>PD code (use to draw this {loopOrMultiloop} with SnapPy): {pd}</li>
+
+	<li>Permutation representation (action on half-edges):
+		<ul>
+			<li>Vertex permutation $\sigma=$ {sigma}</li>
+			<li>Edge permutation $\epsilon=$ {epsilon}</li>
+			<li>Face permutation $\varphi=(\sigma\epsilon)^{{-1}}=$ {phi}</li>
+		</ul>		
+	</li>
+
+	</ul>
+	
+	<h3>{loopOrMultiloopCapitalized} annotated with half-edges</h3>
+	
+	<a href="{annotated_svg_path}" style="display: block;" title="{rawname} annotated with perm rep"><object data="{annotated_svg_path}" style="width: 100%; pointer-events: none;" >{rawname} annotated with half-edges</object></a>
+	
+	<hr>
+
+	<div style="float: left"><a href = "{linkprev}">Prev</a></div>
+	<div style="float: right"><a href = "{linknext}">Next</a></div>
+	<div style="margin: 0 auto;  width: 200px;"><a href = "{linkcontext}">In context</a></div>
+	
+</body>
+</html>
