@@ -31,6 +31,8 @@ def main():
     #print( tenOne )
 
     # make monorbigonlesspage 
+
+    computePinSetsAndBuildPagesForWeb( n=8 )
     
 
     return
@@ -48,8 +50,6 @@ def makeMultiSimple():
     query = namesSatisfyingQuery( "isMultiSimple = 1 and numRegions < 13")
     writeIndexPage( query, "all multisimple", "Multisimple multiloops with 12 or fewer regions", "multisimple.html",\
                     desc = "{} multiloops total.".format( len( query )) ) 
-
-
 
 def writeMainIndexPagesForWeb():
     titles = ["4^2","5^1","6^1","6^2","7^1","7^2","8^1","8^2","8^3","9^1","9^2","9^3","10^1","10^2","10^3","10^4","11^1","11^2","11^3","11^4","12^1","12^2","12^3","12^4","12^5"]
@@ -85,10 +85,11 @@ def writeMainIndexPagesForWeb():
                                      next=next, prev=prev )
 
 
-def computePinSetsAndBuildPagesForWeb( n = 12 ): # has been done for n=12
+def computePinSetsAndBuildPagesForWeb( n = 12, recomputePinData = False ): # has been done for n=12
     # minpinsets field not large enough for forweb[958] (12^2_301) at 1024, now it is doubled to 2048
     forweb = namesSatisfyingQuery( "numRegions < {}".format( n + 1 ) )
-    storeDataForWebMany( forweb )
+    if recomputePinData:
+        storeDataForWebMany( forweb )
     makeWebPagesMany( forweb )
 
 def writeIndexPage( names, pagetitle, title, filename, desc=None, next = None, prev = None ):
@@ -337,7 +338,7 @@ def makeWebPage( name ):
     if data["isMultiSimple"] == 0:
         msimp = "No"
     else:
-        msimp = "Yes"
+        msimp = '<a href="../multisimple.html#{}">Yes</a>'.format( name )
 
     if data[ "components" ] == 1:
         loopOrMultiloop = "loop"
@@ -348,6 +349,11 @@ def makeWebPage( name ):
 
     refinedTableHeaders = [["Pin label", "Pin color", "Regions", "Cardinality", "Degree sequence","Mean-degree"]]
     cardinalTableHeaders = [["Cardinality", "Optimal pinning sets", "Minimal suboptimal pinning sets", "Nonminimal pinning sets", "Averaged mean-degree"]]
+
+    if data[ "minRegionDegree" ] > 2:
+        minDegStr = '<a href="../index.html#{}">{}</a>'.format( name, data[ "minRegionDegree" ] )
+    else:
+        minDegStr = str( data[ "minRegionDegree" ] )
 
     #print( "hi ")
  
@@ -367,7 +373,7 @@ def makeWebPage( name ):
                                  refinedTableStr = htmlTable( refinedTableHeaders+eval( data["refinedPinSetMat"] )[1:] ),\
                                  degTableStr = htmlTable( cardinalTableHeaders+eval( data[ "degDataMat"] )[1:] ),\
                                  degseq = data[ "degSequence" ],\
-                                 mindeg = data[ "minRegionDegree" ],\
+                                 mindeg = minDegStr,\
                                  ismultisimp = msimp,\
                                  othercomments = "",\
                                  loopOrMultiloop = loopOrMultiloop,\
