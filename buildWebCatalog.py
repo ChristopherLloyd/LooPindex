@@ -32,8 +32,9 @@ def main():
 
     # make monorbigonlesspage 
 
-    computePinSetsAndBuildPagesForWeb( n=8 )
-    
+    computePinSetsAndBuildPagesForWeb( n=12 )
+
+    #makeWebPagesMany( "10^1_18", "")    
 
     return
 
