@@ -3872,14 +3872,17 @@ def plinkFromPD( link ):
 
 def plinkImgFile( link, drawnpd, adjDict, wordDict, minPinSets,\
                  minPinSetDict, regionLabels, components, tolerance = 0.0000001,\
-                  bufferFrac = None, diamFrac = None, filename = None, debug = False, forWeb = False, webImFolder = None, sigmaAnnotated = False, LE = None ):
-    if not forWeb:
+                  bufferFrac = None, diamFrac = None, filename = None, debug = False, forWeb = False, webImFolder = None, sigmaAnnotated = False, LE = None, simpleSave = False ):
+    if not forWeb and not simpleSave:
         if filename is None:
             filename = getUnusedFileName( "svg", "tex/img/" )
         else:
             filename = "tex/img/"+filename[:200] +".svg"
     else:
-        filename = "docs/multiloops/"+webImFolder+"/"+filename+".svg"
+        if forWeb and not simpleSave:
+            filename = "docs/multiloops/"+webImFolder+"/"+filename+".svg"
+        else: #(simpleSave and forWeb) or (simpleSave and not forWeb)
+            filename = filename+".svg"
     words = {}
     for key in wordDict:
         words[key] = wordDict[key].seq
