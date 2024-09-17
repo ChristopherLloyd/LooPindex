@@ -2,7 +2,7 @@ from planeloop import *
 
 def main():
     oloop = link9
-    oloop = tripleLem # has a monogon
+    #oloop = tripleLem # has a monogon
     loop = plinkPD( oloop )
     print( loop )
     
@@ -29,40 +29,54 @@ def main():
     print( s.sigma )
 
     def subWord( strtLabel, stpLabels ):
-        word = [-strtLabel]
+        word = []
         curLabel = strtLabel
         #we have to do silly sign adjustments due to past transgressions
         sgn = sign(0, strtLabel )
-        while abs( curLabel ) not in stpLabels:
+        while curLabel not in stpLabels or curLabel==strtLabel:
+            word.append( -curLabel )
             curLabel = ( curLabel -  1 ) % (2*len( loop ))
             if sgn < 0:
                 curLabel -= 2*len(loop)             
             if curLabel == 0:
-                curLabel = 2*len( loop )
-            word.append( -curLabel )
+                curLabel = 2*len( loop )           
         return word, curLabel
     
 
     def findBigon( x, y, startIndex1, startIndex2 ):
         stopLabelsY = y#[abs(y[0]),abs(y[1]),abs(y[2]),abs(y[3])]
         stopLabelsX = x#[abs(x[0]),abs(x[1]),abs(x[2]),abs(x[3])]
+
+        #print( "Start:", x)
+        #print( "Stop:", y)
+        
         skip = False
         w1, stop1 = subWord( x[startIndex1], stopLabelsX+stopLabelsY )
-        #print( w1, stop1 )
+        #print( "w1, stop1:", w1, stop1 )
         if stop1 in stopLabelsX:
             skip = True
         w2, stop2 = subWord( x[startIndex2], stopLabelsX+stopLabelsY )
+        #print( "w2, stop2:", w2, stop2 )
         if stop2 in stopLabelsX:
             skip = True
+
+        #print( "skip", skip)
         if skip:
             return
-        if not ( set( [stop1, stop2] ) == set( [stopLabelsY[0], stopLabelsY[2]]) or set( [stop1, stop2] ) == set( [stopLabelsY[1], stopLabelsY[3]]) ):
+            
+        #print( "stop1, stop2", stop1, stop2)
+        #print( "stopLabelsY[0], stopLabelsY[2]]", stopLabelsY[0], stopLabelsY[2])
+        #print( "stopLabelsY[1], stopLabelsY[3]])", stopLabelsY[1], stopLabelsY[3] )
+        #input()
+        if set( [stop1, stop2] ) != set( [stopLabelsY[0], stopLabelsY[2]]) and \
+                set( [stop1, stop2] ) != set( [stopLabelsY[1], stopLabelsY[3]]):
             return w1, w2
+        #print( "No corner at y")
             #bigonWords.append( Word(w1)/Word(w2) )
     
     monogonWords = []
     for vertcycle in s.sigma:
-        stopLabels = [abs(vertcycle[1]),abs(vertcycle[3])]
+        stopLabels = [vertcycle[1],vertcycle[3]]
         for startLabel in [vertcycle[0], vertcycle[2]]:
             monogonWords.append( Word( subWord( startLabel, stopLabels )[0] ) )
 
@@ -70,13 +84,10 @@ def main():
         print( "Monogon words", monogonWords[-1], monogonWords[-2])
         print()
 
-    return
-
-
-    print( "Monogon words")
-    for word in monogonWords:
-        print( word )
-    print()
+    #print( "Monogon words")
+    #for word in monogonWords:
+    #    print( word )
+    #print()
 
     bigonWords = []
     for i in range( len( s.sigma ) - 1 ):
@@ -86,42 +97,69 @@ def main():
             #stopLabelsY = [abs(y[0]),abs(y[1]),abs(y[2]),abs(y[3])]
             #stopLabelsX = [abs(x[0]),abs(x[1]),abs(x[2]),abs(x[3])]
 
-            bigonFound = False
+            #bigonFound = False
             bigonCount = 0
+            bigonsToAdd = []
+
+            
+
+            #print()
+            #print( "Start:", x)
+            #print( "Stop:", y)
 
             # test two opposing corners
+            # in practice (because of pd code labeling conventions)
+            # orientations of outgoing labels agree and
+            # this is always the case of interlaced chords
+            # so you will always find two bigons            
 
             bigonSegs = findBigon( x, y, 0, 1)
             if bigonSegs is not None:
-                bigonWords.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
+                bigonsToAdd.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
                 bigonCount += 1
-                print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
-                print( "first")
+                #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
+                #print( "first")
 
             bigonSegs = findBigon( x, y, 2, 3)
             if bigonSegs is not None:
-                bigonWords.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
+                bigonsToAdd.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
                 bigonCount += 1
-                print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
-                print( "second")
+                #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
+                #print( "second")
 
             # test from the other two opposing corners if a bigon is not yet found
+            # in practice (because of pd code labeling conventions)
+            # orientations of outgoing labels are opposite signs and
+            # this is always the case of non-interlaced chords
+            # so you will only find one bigon
                         
             bigonSegs = findBigon( x, y, 1, 2)
             if bigonSegs is not None:
-                bigonWords.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
+                bigonsToAdd.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
                 bigonCount += 1
-                print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
-                print( "third")
+                #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
+                #print( "third")
 
             bigonSegs = findBigon( x, y, 3, 0)
             if bigonSegs is not None:
-                bigonWords.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
+                bigonsToAdd.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
                 bigonCount += 1
-                print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
-                print( "fourth")
+                #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
+                #print( "fourth")
             
             assert( bigonCount <= 2 )
+
+            bigonWords += bigonsToAdd
+            print( "Star vertex ", x )
+            print( "End vertex ", x )
+
+            print( "Bigon words", end = " "  )
+            for i in range( bigonCount ):
+                print(bigonsToAdd[i], end=" " )
+            print()
+            print()
+
+
 
             """
             skip = False
@@ -177,10 +215,10 @@ def main():
                 input() """
 
 
-    print( "Bigon words")
-    for word in bigonWords:
-        print( word )
-    print()
+    #print( "Bigon words")
+    #for word in bigonWords:
+    #    print( word )
+    #print()
 
 
             
