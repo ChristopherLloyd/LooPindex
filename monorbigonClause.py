@@ -1,10 +1,27 @@
 from planeloop import *
+from buildWebCatalog import *
+#import mysql.connector
+#import os
+# https://dev.mysql.com/doc/mysql-getting-started/en/#mysql-getting-started-basic-ops
+
+#db = mysql.connector.connect( username=os.environ.get('MYSQL_USER'), password=os.environ.get('MYSQL_PASS') )
+#cursor = db.cursor()
+
+try:
+    cursor.execute("USE multiloops")
+except NameError as msg:
+    traceback.print_exc()
+    #raise Exception( msg ) # database not found
 
 def main():
-    debug = True
-    oloop = link9
+    name = '11^1_97'
+    name = '10^1_18'
+    oloop = getFieldByName( "pd", name )
+    loop = eval( getFieldByName( "drawnpd", name ) )
+    debug = False
+    #loop = link9
     #oloop = tripleLem # has a monogon
-    loop = plinkPD( oloop )
+    #loop = plinkPD( oloop )
     print( loop )
     
     G = SurfaceGraphFromPD( loop )
@@ -80,12 +97,12 @@ def main():
     for vertcycle in s.sigma:
         stopLabels = [vertcycle[1],vertcycle[3]]
         for startLabel in [vertcycle[0], vertcycle[2]]:
-            monogonWords.append( Word( subWord( startLabel, stopLabels )[0] ) )
+            monogonWords.append( [Word( subWord( startLabel, stopLabels )[0] ), vertcycle] )
 
-        if debug:
-            print( "Vertex ", vertcycle )
-            print( "Monogon words", monogonWords[-1], monogonWords[-2])
-            print()
+        #if debug:
+        #    print( "Vertex ", vertcycle )
+        #    print( "Monogon words", monogonWords[-1], monogonWords[-2])
+        #    print()
 
     #print( "Monogon words")
     #for word in monogonWords:
@@ -109,14 +126,14 @@ def main():
 
             bigonSegs = findBigon( x, y, 0, 1)
             if bigonSegs is not None:
-                bigonsToAdd.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
+                bigonsToAdd.append( [Word(bigonSegs[0])/Word(bigonSegs[1]), x, y] )
                 bigonCount += 1
                 #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
                 #print( "first")
 
             bigonSegs = findBigon( x, y, 2, 3)
             if bigonSegs is not None:
-                bigonsToAdd.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
+                bigonsToAdd.append( [Word(bigonSegs[0])/Word(bigonSegs[1]), x, y] )
                 bigonCount += 1
                 #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
                 #print( "second")
@@ -134,7 +151,7 @@ def main():
                         
             bigonSegs = findBigon( x, y, 1, 2)
             if bigonSegs is not None:
-                bigonsToAdd.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
+                bigonsToAdd.append( [Word(bigonSegs[0])/Word(bigonSegs[1]), x, y] )
                 bigonCount += 1
                 #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
                 #print( "third")
@@ -143,7 +160,7 @@ def main():
 
             bigonSegs = findBigon( x, y, 3, 0)
             if bigonSegs is not None:
-                bigonsToAdd.append( Word(bigonSegs[0])/Word(bigonSegs[1]) )
+                bigonsToAdd.append( [Word(bigonSegs[0])/Word(bigonSegs[1]), x, y] )
                 bigonCount += 1
                 #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
                 #print( "fourth")
@@ -151,15 +168,15 @@ def main():
             assert( bigonCount <= 2 )
 
             bigonWords += bigonsToAdd
-            if debug:
-                print( "Start vertex ", x )
-                print( "End vertex ", y )
+            #if debug:
+            #    print( "Start vertex ", x )
+            #    print( "End vertex ", y )#
 
-                print( "Bigon words", end = " "  )
-                for k in range( bigonCount ):
-                    print(bigonsToAdd[k], end=" " )
-                print()
-                print()
+            #    print( "Bigon words", end = " "  )
+            #    for k in range( bigonCount ):
+            #        print(bigonsToAdd[k], end=" " )
+            #    print()
+            #    print()
 
 
     #return
@@ -169,22 +186,18 @@ def main():
     for pruneWords in [monogonWords, bigonWords]:
         for i in range( len( pruneWords ) ):
             projWord = []
-            for letter in pruneWords[i].seq:
+            for letter in pruneWords[i][0].seq:
                 if abs( letter ) in T.adjDict:
                     projWord.append( letter )
             #print( monogonWords[i] )
             #print( projWord )
-            pruneWords[i] = Word( projWord )
+            pruneWords[i][0] = Word( projWord )
 
     
     for word in monogonWords+bigonWords:
-        print( word, end= " " )
+        print( word[0], end= " " )
 
     print()
-
-    #return
-    # nothing below is working for us because there is a problem with the winding number idea
-    # we are going to have to implement frisch
 
     regList = list( T.wordDict.copy().keys() )
     regList.sort()
@@ -192,72 +205,75 @@ def main():
     regLabels = {}
     for i in range( len( regList ) ):
         regLabels[regList[i]] = i+1
-    infRegion = regList[0]
+    #infRegion = regList[0]
 
-    monobigClause = set()
-    
-    for wordList in [monogonWords, bigonWords]:
-        for word in wordList:
-            outer = {1}
-            inner = set()
-            for i in range( 1, len( regList ) ):
-                fillWord = T.reducedWordRep( word, fullRegSet.difference( {infRegion,regList[i]} ), source = infRegion )[0]
-                #if word.seq == [-8, -7, -6, 11, 12, 14]:
-                #    print( "region", i+1, "fillWord", fillWord )
-                if fillWord.seq == []:# len( fillWord.seq ) % 2 == 0: # try Z_2 []:
-                    outer.add( i+1 )
-                else:
-                    inner.add( i+1 )
+    monobigClause = dict()
 
-            #if outer == {1,7} or inner == {1,7}:
-            #    print( "outer:", outer)
-            #    print( "inner:", inner)
-            #    print( word )
-            #    print( word.seq )
-            #    input()
-
-            outerSupSet = False
-            outerSubSet = False
-            innerSupSet = False
-            innerSubSet = False
-            toRemove = set()
-            for disj in monobigClause:
-                if disj < outer:
-                    outerSupSet = True
-                if outer < disj:
-                    toRemove.add( disj )                    
-                    outerSubSet = True      
+    for j in range( len( regList ) ):#: in regList:
+        infRegion = regList[j]        
+        for wordList in [monogonWords, bigonWords]:
+            for word in wordList:
+                #outer = {1}
+                nonZeroWinding = set()
+                for i in range( 0, len( regList ) ):
+                    #if regList[i] == infRegion:
+                    #    continue
+                    fillWord = T.reducedWordRep( word[0], fullRegSet.difference( {infRegion,regList[i]} ), source = infRegion )[0]
+                    #if word.seq == [-8, -7, -6, 11, 12, 14]:
+                    #    print( "region", i+1, "fillWord", fillWord )
+                    if fillWord.seq == []:
+                        continue                        
+                    else:
+                        nonZeroWinding.add( i+1 )
 
 
-                if disj < inner:
-                    innerSupSet = True
-                if inner < disj:
-                    toRemove.add( disj )
-                    innerSubSet = True
+                #if outer == {1,7} or inner == {1,7}:
+                #    print( "outer:", outer)
+                #    print( "inner:", inner)
+                #    print( word )
+                #    print( word.seq )
+                #    input()
 
-            
-            if outerSupSet and outerSubSet:
-                print( "outer:", outer)
-                raise( Exception( "Monorbigon clause violates antichain property") )
+                supset = False
+                subset = False
+                toRemove = set()
+                for disj in monobigClause:
+                    if disj < nonZeroWinding:
+                        supset = True
+                    if nonZeroWinding < disj:
+                        toRemove.add( disj )                    
+                        subset = True      
 
-            if innerSupSet and innerSubSet:
-                print( "inner:", inner)
-                raise( Exception( "Monorbigon clause violates antichain property") )
 
-            for clause in toRemove:
-                monobigClause.remove( clause )
-            if not outerSupSet or outerSubSet:
-                monobigClause.add( frozenset( outer ) )
-            if not innerSupSet or innerSubSet:
-                monobigClause.add( frozenset( inner ) )
+                    #if disj < inner:
+                    #    innerSupSet = True
+                    #if inner < disj:
+                    #    toRemove.add( disj )
+                    #    innerSubSet = True
 
-            #print( "monorbigon clause", monobigClause)
+                
+                if supset and subset:
+                    print( "nonzeroWinding:", nonZeroWinding)
+                    raise( Exception( "Monorbigon clause violates antichain property") )
+
+                #if innerSupSet and innerSubSet:
+                #    print( "inner:", inner)
+                #    raise( Exception( "Monorbigon clause violates antichain property") )
+
+                for clause in toRemove:
+                    del monobigClause[clause]
+                if not supset or subset:
+                    monobigClause[frozenset( nonZeroWinding ) ]=word+[j+1]
+                #if not innerSupSet or innerSubSet:
+                #    monobigClause.add( frozenset( inner ) )
+
+                #print( "monorbigon clause", monobigClause)
 
     #print(monobigClause)
 
-    print( "Immersed monorbigon clause:")
+    print( "Monorbigon clause:")
     for disjunction in monobigClause:
-        print( list( disjunction ))
+        print( " clause: {:<30} at vertex/vertices: {:<40} and infinite region {:<10}".format( str(list( disjunction )), str( monobigClause[ disjunction ][1:-1]  ), monobigClause[ disjunction ][-1] ) )
 
     return
 
