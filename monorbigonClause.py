@@ -1,6 +1,7 @@
 from planeloop import *
 
 def main():
+    debug = True
     oloop = link9
     #oloop = tripleLem # has a monogon
     loop = plinkPD( oloop )
@@ -10,7 +11,8 @@ def main():
     #print( G )
     T = G.spanningTree()
     T.createCyclicGenOrder()
-    print( T )
+    #print( T.wordDict )
+    print( T.adjDict )
     gammaListUnpruned = pdToComponents( loop )
     #print( gammaListUnpruned )
     gammalist = []
@@ -22,11 +24,11 @@ def main():
         gammalist.append( Word( gamma ) )
         #print( gammalist[-1] )
     gamma = gammalist[0]
-    print( gamma )
+    #print( gamma )
 
 
     s = Spherimultiloop( pd=loop )
-    print( s.sigma )
+    #print( s.sigma )
 
     def subWord( strtLabel, stpLabels ):
         word = []
@@ -80,9 +82,10 @@ def main():
         for startLabel in [vertcycle[0], vertcycle[2]]:
             monogonWords.append( Word( subWord( startLabel, stopLabels )[0] ) )
 
-        print( "Vertex ", vertcycle )
-        print( "Monogon words", monogonWords[-1], monogonWords[-2])
-        print()
+        if debug:
+            print( "Vertex ", vertcycle )
+            print( "Monogon words", monogonWords[-1], monogonWords[-2])
+            print()
 
     #print( "Monogon words")
     #for word in monogonWords:
@@ -94,24 +97,15 @@ def main():
         for j in range( i+1, len(s.sigma)):
             x = s.sigma[i]
             y = s.sigma[j]
-            #stopLabelsY = [abs(y[0]),abs(y[1]),abs(y[2]),abs(y[3])]
-            #stopLabelsX = [abs(x[0]),abs(x[1]),abs(x[2]),abs(x[3])]
-
-            #bigonFound = False
+ 
             bigonCount = 0
             bigonsToAdd = []
-
-            
-
-            #print()
-            #print( "Start:", x)
-            #print( "Stop:", y)
 
             # test two opposing corners
             # in practice (because of pd code labeling conventions)
             # orientations of outgoing labels agree and
             # this is always the case of interlaced chords
-            # so you will always find two bigons            
+            # so you will always find two or zero bigons            
 
             bigonSegs = findBigon( x, y, 0, 1)
             if bigonSegs is not None:
@@ -127,11 +121,16 @@ def main():
                 #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
                 #print( "second")
 
+            if bigonCount == 0:
+                # if bigons are found already, then none will be found here,
+                # so you could put the snippets below here for a speedup
+                pass
+            
             # test from the other two opposing corners if a bigon is not yet found
             # in practice (because of pd code labeling conventions)
             # orientations of outgoing labels are opposite signs and
             # this is always the case of non-interlaced chords
-            # so you will only find one bigon
+            # so you will always find one bigon
                         
             bigonSegs = findBigon( x, y, 1, 2)
             if bigonSegs is not None:
@@ -139,6 +138,8 @@ def main():
                 bigonCount += 1
                 #print( x, y, Word(bigonSegs[0]), Word(bigonSegs[1]) )
                 #print( "third")
+
+            # you can also skip the check below if you found one above (with our PD convention)
 
             bigonSegs = findBigon( x, y, 3, 0)
             if bigonSegs is not None:
@@ -150,88 +151,125 @@ def main():
             assert( bigonCount <= 2 )
 
             bigonWords += bigonsToAdd
-            print( "Star vertex ", x )
-            print( "End vertex ", x )
+            if debug:
+                print( "Start vertex ", x )
+                print( "End vertex ", y )
 
-            print( "Bigon words", end = " "  )
-            for i in range( bigonCount ):
-                print(bigonsToAdd[i], end=" " )
-            print()
-            print()
-
-
-
-            """
-            skip = False
-            w1, stop1 = subWord( x[0], stopLabelsX+stopLabelsY )
-            if stop1 in stopLabelsX:
-                skip = True
-            w2, stop2 = subWord( x[1], stopLabelsX+stopLabelsY )
-            if stop2 in stopLabelsX:
-                skip = True
-            if not ( set( [stop1, stop2] ) == set( [stopLabels[0], stopLabels[2]]) or set( [stop1, stop2] ) == set( [stopLabels[1], stopLabels[3]]) ) and not skip:
-                bigonWords.append( Word(w1)/Word(w2) )
-                bigonFound = True
-                bigonCount += 1
-                print( x, y, Word( w1 ), Word( w2 ) )
-                print( "first")
-                input()
-
-            w1, stop1 = subWord( x[2], stopLabelsX+stopLabelsY )
-            w2, stop2 = subWord( x[3], stopLabelsX+stopLabelsY  )
-            if not ( set( [stop1, stop2] ) == set( [stopLabels[0], stopLabels[2]]) or set( [stop1, stop2] ) == set( [stopLabels[1], stopLabels[3]]) ):
-                bigonWords.append( Word(w1)/Word(w2) )
-                bigonFound = True
-                bigonCount += 1
-                print( x, y, Word( w1 ), Word( w2 ) )
-                print( "second")
-                input()
-
-         
-
-            w1, stop1 = subWord( x[1], stopLabelsX+stopLabelsY  )
-            w2, stop2 = subWord( x[2], stopLabelsX+stopLabelsY  )
-            print( stop1, stop2 )
-            print( stopLabels )
-            print( set( [stop1, stop2] ) )
-            print( set( [stopLabels[0], stopLabels[2]] ) )
-            print( set( [stopLabels[1], stopLabels[3]] ) )
-            if not ( set( [stop1, stop2] ) == set( [stopLabels[0], stopLabels[2]]) or set( [stop1, stop2] ) == set( [stopLabels[1], stopLabels[3]]) ):
-                bigonWords.append( Word(w1)/Word(w2) )
-                bigonCount += 1
-                print( x, y, Word( w1 ), Word( w2 ) )
-                print( "Ye")
-                print( "third")
-                input()
-                
-
-            w1, stop1 = subWord( x[3], stopLabelsX+stopLabelsY  )
-            w2, stop2 = subWord( x[0], stopLabelsX+stopLabelsY  )
-            if not ( set( [stop1, stop2] ) == set( [stopLabels[0], stopLabels[2]]) or set( [stop1, stop2] ) == set( [stopLabels[1], stopLabels[3]]) ):
-                bigonWords.append( Word(w1)/Word(w2) )
-                bigonCount += 1
-                print( x, y, Word( w1 ), Word( w2 ) )
-                print( "fourth")
-                input() """
+                print( "Bigon words", end = " "  )
+                for k in range( bigonCount ):
+                    print(bigonsToAdd[k], end=" " )
+                print()
+                print()
 
 
-    #print( "Bigon words")
-    #for word in bigonWords:
-    #    print( word )
-    #print()
+    #return
 
+
+    print( T  )
+    for pruneWords in [monogonWords, bigonWords]:
+        for i in range( len( pruneWords ) ):
+            projWord = []
+            for letter in pruneWords[i].seq:
+                if abs( letter ) in T.adjDict:
+                    projWord.append( letter )
+            #print( monogonWords[i] )
+            #print( projWord )
+            pruneWords[i] = Word( projWord )
+
+    
+    for word in monogonWords+bigonWords:
+        print( word, end= " " )
+
+    print()
+
+    #return
+    # nothing below is working for us because there is a problem with the winding number idea
+    # we are going to have to implement frisch
+
+    regList = list( T.wordDict.copy().keys() )
+    regList.sort()
+    fullRegSet = set( regList )
+    regLabels = {}
+    for i in range( len( regList ) ):
+        regLabels[regList[i]] = i+1
+    infRegion = regList[0]
+
+    monobigClause = set()
+    
+    for wordList in [monogonWords, bigonWords]:
+        for word in wordList:
+            outer = {1}
+            inner = set()
+            for i in range( 1, len( regList ) ):
+                fillWord = T.reducedWordRep( word, fullRegSet.difference( {infRegion,regList[i]} ), source = infRegion )[0]
+                #if word.seq == [-8, -7, -6, 11, 12, 14]:
+                #    print( "region", i+1, "fillWord", fillWord )
+                if fillWord.seq == []:# len( fillWord.seq ) % 2 == 0: # try Z_2 []:
+                    outer.add( i+1 )
+                else:
+                    inner.add( i+1 )
+
+            #if outer == {1,7} or inner == {1,7}:
+            #    print( "outer:", outer)
+            #    print( "inner:", inner)
+            #    print( word )
+            #    print( word.seq )
+            #    input()
+
+            outerSupSet = False
+            outerSubSet = False
+            innerSupSet = False
+            innerSubSet = False
+            toRemove = set()
+            for disj in monobigClause:
+                if disj < outer:
+                    outerSupSet = True
+                if outer < disj:
+                    toRemove.add( disj )                    
+                    outerSubSet = True      
+
+
+                if disj < inner:
+                    innerSupSet = True
+                if inner < disj:
+                    toRemove.add( disj )
+                    innerSubSet = True
 
             
-            
+            if outerSupSet and outerSubSet:
+                print( "outer:", outer)
+                raise( Exception( "Monorbigon clause violates antichain property") )
 
-                
+            if innerSupSet and innerSubSet:
+                print( "inner:", inner)
+                raise( Exception( "Monorbigon clause violates antichain property") )
+
+            for clause in toRemove:
+                monobigClause.remove( clause )
+            if not outerSupSet or outerSubSet:
+                monobigClause.add( frozenset( outer ) )
+            if not innerSupSet or innerSubSet:
+                monobigClause.add( frozenset( inner ) )
+
+            #print( "monorbigon clause", monobigClause)
+
+    #print(monobigClause)
+
+    print( "Immersed monorbigon clause:")
+    for disjunction in monobigClause:
+        print( list( disjunction ))
+
+    return
+
+    input( "Press and key to draw loop")
+    drawLoopWithRegLabels( oloop, loop, G )
 
 
-                       
+    
     #print( monogonWords )
 
 
-
+    # project monogon and bigon words to the spanning tree
 
     return
     drawAnnotatedLoop( oloop, loop, G)
@@ -244,6 +282,15 @@ def drawAnnotatedLoop( pd, drawnpd, G ):
         emptyLabels[regList[i]] = ""
     plinkImgFile( str( pd ), drawnpd, G.adjDict, G.wordDict,[],None,emptyLabels,\
                  pdToComponents( drawnpd ), forWeb = False, filename = str( drawnpd )+"annotated", sigmaAnnotated = True, simpleSave = True )
+    
+def drawLoopWithRegLabels( pd, drawnpd, G ):
+    regList = list( G.wordDict.copy().keys() )
+    regList.sort()
+    numLabels = {}
+    for i in range( len( regList ) ):
+        numLabels[regList[i]] = i+1
+    plinkImgFile( str( pd ), drawnpd, G.adjDict, G.wordDict,[],None,numLabels,\
+                 pdToComponents( drawnpd ), forWeb = False, filename = str( drawnpd )+"numLabels", sigmaAnnotated = False, simpleSave = True )
 
 if __name__ == "__main__":
     main()
