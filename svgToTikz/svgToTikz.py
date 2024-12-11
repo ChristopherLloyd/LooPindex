@@ -1,3 +1,9 @@
+# A python utility for using svg2tikz in the way we want
+# Usage: Add the current directory to $PYTHONPATH
+# run the script on a file:
+# python3 -m svgToTikz <filename>
+# output is a file with .tex extension in .
+
 import svg2tikz
 import sys
 import re
@@ -7,7 +13,24 @@ import re
 
 filename = sys.argv[1]
 
+fontsize = None
+#try:
+#    fontsize = int( sys.argv[2] )
+#except IndexError:
+#    pass
+# gadget_attempt_3.svg: 72 for the edge gadget figure
+# reduction_supporting_figs.svg: 32 
+# monorbigon_cases.svg: 42
+# perm_rep_example.svg and perm_rep_local.svg: 10 #but I did it manually afterward, first I set it to None
+# lifts_crossing_domain3.svg: 10
+# 8^3_2labels_degree.svg and the other 5: 30
+# gadgets_around_graph_2.svg: 50
+# gadget_segments... :16
+# opts.svg, subopts.svg: 18
+
 #print( filename, type( filename ) )
+
+#print( fontsize , "hI")
 
 f = open( filename, 'r')
 toConvert = "<svg"+f.read().split( "<svg", 1)[1]
@@ -15,7 +38,11 @@ toConvert = "<svg"+f.read().split( "<svg", 1)[1]
 #print( toConvert)
 f.close()
 f = open( filename.split(".")[0]+".tex", 'w')
+#codeoutput="figonly" gives the tikz picture only
+#codeoutput="standalone" gives a standalone file
 toWrite = svg2tikz.convert_svg(toConvert, ids=['1', '2', 'id2'], verbose=True, codeoutput="figonly", t="math")
+
+#print( "yo")
 #print( "writing", toWrite )
 
 #bold all the text in the tikz
@@ -26,15 +53,24 @@ toWrite = svg2tikz.convert_svg(toConvert, ids=['1', '2', 'id2'], verbose=True, c
 toWrite = re.sub( "\\\\\$", "$", toWrite ) #fix escaped dollar signs
 toWrite = re.sub( "\\\\\{", "{", toWrite ) #fix escaped curly brackets
 toWrite = re.sub( "\\\\\}", "}", toWrite ) #fix escaped curly brackets
+toWrite = re.sub( "\{\}", "", toWrite ) #kill empty curly brackets
 toWrite = re.sub( "\\\\\_", "_", toWrite ) #fix escaped underscores
 toWrite = re.sub( "\\\\\^", "^", toWrite ) #fix escaped tildes
 toWrite = re.sub( "\$\\\\backslash\$", "\\\\", toWrite ) #fix this annoying thing
 
-# use the anyfontsize package to scale the font if scalefont doesn't work
-# put the text on layer2 or this won't work
-insert = "\\tikzstyle{every node}=[font=\\fontsize{72}{72}\\selectfont]"
-splt = toWrite.split("layer2",1)
-toWrite = splt[0]+"layer2\n"+insert+"\n"+splt[1]
+#print( toWrite )
+
+# all text must be on its own layer or this won't work. or maybe it will anyway idk
+
+
+fontsize = 18
+if fontsize is not None:
+    insert = "\\tikzstyle{{every node}}=[font=\\fontsize{{{}}}{{{}}}\\selectfont]".format( fontsize, fontsize )
+else:
+    insert = ""
+splt = toWrite.split("%text",1)
+if len( splt ) > 1:
+    toWrite = splt[0]+insert+"\n%text"+splt[1]
 
 f.write( toWrite )
 f.close()
