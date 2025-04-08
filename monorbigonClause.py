@@ -15,7 +15,7 @@ except NameError as msg:
 
 def main():
     name = '11^1_97'
-    name = '10^1_18'
+    #name = '10^1_18'
     oloop = getFieldByName( "pd", name )
     loop = eval( getFieldByName( "drawnpd", name ) )
     debug = False

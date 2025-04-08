@@ -26,7 +26,11 @@ fontsize = None
 # 8^3_2labels_degree.svg and the other 5: 30
 # gadgets_around_graph_2.svg: 50
 # gadget_segments... :16
-# opts.svg, subopts.svg: 18
+# opts.svg, subopts.svg: 18 #and other snappy ones on the order of that example
+# tricky_subcase.svg: 50
+# milnordoodle.svg: 25
+# unicorn_annulus.svg: 35
+
 
 #print( filename, type( filename ) )
 
