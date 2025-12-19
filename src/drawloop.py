@@ -1,0 +1,452 @@
+# Author: Ryan Pham
+# Date: 7/27/25
+
+# draws a planar multiloop from a permutation representation with given unbounded region using the circle packing algorithm
+import svgwrite.path
+from permrep import Multiloop
+import matplotlib.pyplot as plt
+import numpy as np
+import svgwrite
+from cmath import phase
+from math import cos, sin, sqrt
+import os
+
+from typing import TypedDict
+
+
+class CircleResult(TypedDict):
+    """A typed dictionary to hold the results of circle adjacencies."""
+
+    internal: dict[int, list[int]]
+    external: dict[int, int]
+    sequences: list[list[int]]
+
+
+class CircleAssignments:
+    """A class to hold the circle assignments for vertices, edges, and faces."""
+
+    def __init__(self):
+        self.vertices: dict[int, int] = {}
+        self.edges: dict[int, int] = {}
+        self.faces: dict[int, int] = {}
+        self.next_circle_id = 1
+
+    def assign_vertex_circles(self, cycles: list[list[int]]) -> None:
+        """Assigns circle IDs incrementally to vertices."""
+        for cycle in cycles:
+            for he in cycle:
+                self.vertices[he] = self.next_circle_id
+            self.next_circle_id += 1
+
+    def assign_edge_circles(self, cycles: list[list[int]], multiloop) -> None:
+        """Assigns circle IDs incrementally to edges."""
+        for cycle in cycles:
+            self.edges[cycle[0]] = self.next_circle_id
+
+            # If both half-edges of the cycle are in the same vertex, it's a monogon.
+            # In this case, we need to assign two circle IDs to the edge.
+            if multiloop.is_samevert(cycle[0], cycle[1]):
+                self.next_circle_id += 1
+            self.edges[cycle[1]] = self.next_circle_id
+            self.next_circle_id += 1
+
+    def assign_face_circles(self, cycles: list[list[int]]) -> None:
+        """Assigns circle IDs incrementally to faces."""
+        for cycle in cycles:
+            for he in cycle:
+                self.faces[he] = self.next_circle_id
+            self.next_circle_id += 1
+
+
+class AdjacencyBuilder:
+    """A class to build the adjacency relationships between circles."""
+
+    def __init__(self, multiloop: "Multiloop", circles: CircleAssignments):
+        self.multiloop = multiloop
+        self.circles = circles
+        self.internal: dict[int, list[int]] = {}
+        self._initialize_internal_dict()
+        self.external: dict[int, int] = {}
+
+    def _initialize_internal_dict(self) -> None:
+        """Initializes the internal dictionary with empty lists for each circle."""
+        max_circle = self.circles.next_circle_id
+        for i in range(1, max_circle):
+            self.internal[i] = []
+
+    def _add_neighbor(self, neighbors: list[int], neighbor: int) -> list[int]:
+        """Adds a neighbor to the list if it is not already present."""
+        if neighbor not in neighbors:
+            neighbors.append(neighbor)
+        return neighbors
+
+    def _toggle_neighbor(self, neighbors: list[int], neighbor: int) -> list[int]:
+        """If a neighbor is already in the list, delete it."""
+        if neighbor not in neighbors:
+            neighbors.append(neighbor)
+        else:
+            neighbors.remove(neighbor)
+        return neighbors
+
+    def build_face_adjacencies(self) -> None:
+        """Builds the adjacency relationships for faces."""
+        for face_he, face_circle in self.circles.faces.items():
+            vertex_circle = self.circles.vertices[face_he]
+            edge_circle = self.circles.edges[face_he]
+            opposite_edge_circle = self.circles.edges[-face_he]
+
+            self.internal[face_circle] = self._toggle_neighbor(
+                self.internal[face_circle], vertex_circle
+            )
+
+            self.internal[face_circle] = self._add_neighbor(
+                self.internal[face_circle], edge_circle
+            )
+            self.internal[face_circle] = self._add_neighbor(
+                self.internal[face_circle], opposite_edge_circle
+            )
+
+    def build_vertex_adjacencies(self) -> None:
+        """Builds the adjacency relationships for vertices."""
+        for vert_he, vertex_circle in self.circles.vertices.items():
+            edge_circle = self.circles.edges[vert_he]
+            face_circle = self.circles.faces[vert_he]
+
+            self.internal[vertex_circle].append(edge_circle)
+
+            self.internal[vertex_circle] = self._toggle_neighbor(
+                self.internal[vertex_circle], face_circle
+            )
+
+    def build_edge_adjacencies(self) -> None:
+        """Builds the adjacency relationships for edges."""
+        for edge_he, edge_circle in self.circles.edges.items():
+            face_circle = self.circles.faces[edge_he]
+            opposite_face_circle = self.circles.faces[-edge_he]
+            vertex_circle = self.circles.vertices[edge_he]
+
+            self.internal[edge_circle] = self._add_neighbor(
+                self.internal[edge_circle], face_circle
+            )
+
+            if face_circle not in self.internal[vertex_circle]:
+                sig_edge_circle = self.circles.edges[self.multiloop.sig(edge_he)]
+                self.internal[edge_circle] = self._add_neighbor(
+                    self.internal[edge_circle], sig_edge_circle
+                )
+
+            self.internal[edge_circle] = self._add_neighbor(
+                self.internal[edge_circle], vertex_circle
+            )
+
+            if opposite_face_circle not in self.internal[vertex_circle]:
+                sig_inv_edge_circle = self.circles.edges[
+                    self.multiloop.sig.inv(edge_he)
+                ]
+                self.internal[edge_circle] = self._add_neighbor(
+                    self.internal[edge_circle], sig_inv_edge_circle
+                )
+
+            opposite_edge_circle = self.circles.edges[-edge_he]
+            if opposite_edge_circle != edge_circle:
+                self.internal[edge_circle] = self._add_neighbor(
+                    self.internal[edge_circle], opposite_face_circle
+                )
+                self.internal[edge_circle] = self._add_neighbor(
+                    self.internal[edge_circle], opposite_edge_circle
+                )
+
+    def process_infinite_face(self, inf_face: list[int]) -> None:
+        """Processes the infinite face to update internal and external circle relationships."""
+        for inf_he in inf_face:
+            face_circle = self.circles.faces[inf_he]
+            edge_circle = self.circles.edges[inf_he]
+            opposite_edge_circle = self.circles.edges[-inf_he]
+            vertex_circle = self.circles.vertices[inf_he]
+
+            self.internal.pop(face_circle, None)
+            self.internal.pop(edge_circle, None)
+            self.internal.pop(opposite_edge_circle, None)
+
+            self.external[edge_circle] = 1
+            self.external[opposite_edge_circle] = 1
+
+            try:
+                if face_circle in self.internal[vertex_circle]:
+                    self.internal.pop(vertex_circle, None)
+                    self.external[vertex_circle] = 1
+            except KeyError:
+                pass
+
+
+def build_sequences(
+    circles: "CircleAssignments", tau_cycles: list[list[int]]
+) -> list[list[int]]:
+    """Builds sequences of circle assignments for the given strands (tau) cycles."""
+    sequences = []
+
+    for strand in tau_cycles:
+        sequence = {"circle_ids": [], "half_edges": []}
+        for he in strand:
+            edge_circle = circles.edges[he]
+            opposite_edge_circle = circles.edges[-he]
+            vertex_circle = circles.vertices[he]
+
+            if opposite_edge_circle != edge_circle:
+                sequence["circle_ids"].append(opposite_edge_circle)
+                sequence["half_edges"].append(-he)
+
+            sequence["circle_ids"].append(edge_circle)
+            sequence["half_edges"].append(he)
+
+            sequence["circle_ids"].append(vertex_circle)
+            sequence["half_edges"].append(he)
+
+        sequences.append(sequence)
+    return sequences
+
+
+def generate_circles(multiloop: "Multiloop") -> CircleResult:
+    inf_face = multiloop.inf_face
+    circles = CircleAssignments()
+    circles.assign_face_circles(multiloop.phi.cycles)
+    circles.assign_vertex_circles(multiloop.sig.cycles)
+    circles.assign_edge_circles(multiloop.eps.cycles, multiloop)
+    
+
+    adj_builder = AdjacencyBuilder(multiloop, circles)
+    adj_builder.build_face_adjacencies()
+    adj_builder.build_vertex_adjacencies()
+    adj_builder.build_edge_adjacencies()
+    adj_builder.process_infinite_face(inf_face)
+
+    sequences = build_sequences(circles, multiloop.tau.cycles)
+
+    #print( "Circle assignments:",circles.vertices, circles.edges, circles.faces )
+    #print( "Adjacencies:",adj_builder )
+
+    return {
+        "internal": adj_builder.internal,
+        "external": adj_builder.external,
+        "sequences": sequences,
+        "circles": circles
+    }
+
+
+def drawloop(
+    circle_dict,
+    filename="circle_pack.svg",
+    sequences=None,
+    scale=200,
+    padding=50,
+    loopWidth = 3,
+    circleWidth = 5,
+    reg_dict = None,
+    mobidisc_data = None
+):
+    tolerance = 1e-2  # how accurately to approximate things
+    if not isinstance(filename, (str, bytes, os.PathLike)):
+        raise TypeError(f"Filename must be a string or path, got {type(filename)}")
+
+    # Determine bounds
+    min_x = min(z.real - r for z, r in circle_dict.values())
+    max_x = max(z.real + r for z, r in circle_dict.values())
+    min_y = min(z.imag - r for z, r in circle_dict.values())
+    max_y = max(z.imag + r for z, r in circle_dict.values())
+
+    width = (max_x - min_x) * scale + 2 * padding
+    height = (max_y - min_y) * scale + 2 * padding
+
+    dwg = svgwrite.Drawing(filename, size=(width, height))
+    dwg.viewbox(0, 0, width, height)
+
+    # Add white background
+    dwg.add(dwg.rect(insert=(0, 0), size=(width, height), fill="white"))
+
+    def to_svg_coords(center):
+        cx = (center.real - min_x) * scale + padding
+        cy = (max_y - center.imag) * scale + padding
+        return (cx, cy)
+
+    # Draw circles
+    for name, (center, radius) in circle_dict.items():
+        cx, cy = to_svg_coords(center)
+        r = radius * scale
+        if circleWidth != 0:
+            dwg.add(
+                dwg.circle(
+                    center=(cx, cy), r=r, fill="none", stroke="black", stroke_width=radius
+                )
+            )
+        
+        #dwg.add(
+        #    dwg.circle(
+        #        center=(cx, cy),
+        #        r=(radius),
+        #        fill="black",
+        #        stroke="black",
+        #        stroke_width=circleWidth * radius,
+        #    )
+        #)
+        if reg_dict is None:
+            dwg.add(
+                dwg.text(
+                    str(name),
+                    insert=(cx + r * 0.1, cy),
+                    fill="black",
+                    font_size=f"{45*radius+10}px",
+                    text_anchor="middle",
+                )
+            )
+        else:
+            try:
+                #reg_dict[name]
+                dwg.add(
+                    dwg.text(
+                        str(reg_dict[name]),
+                        insert=(cx, cy),
+                        fill="black",
+                        font_size=10*sqrt(r),
+                        style = 'text-anchor:middle;\
+                            dominant-baseline:middle',
+                    )
+                )
+            except KeyError:
+                pass
+    # Draw connection lines (black, thick)
+    if sequences:
+        colors = ["blue","red",svgwrite.rgb(0,200,0)] 
+        j = 0
+        k = 0
+        curColor = colors[j]
+        print( "SEQUENCES", sequences )
+        print( )
+        for sequence in sequences:
+            k+=1
+            circle_ids = sequence["circle_ids"]
+            print("data", circle_ids, j, curColor )
+            if k&0 == 1:
+                continue
+            for i in range(0, len(circle_ids)):
+                startcirc_center = circle_dict[circle_ids[i]][0]
+                startcirc_r = circle_dict[circle_ids[i]][1] * scale
+                targetcirc_center = circle_dict[circle_ids[(i + 1) % len(circle_ids)]][
+                    0
+                ]
+                targetcirc_r = (
+                    circle_dict[circle_ids[(i + 1) % len(circle_ids)]][1] * scale
+                )
+
+                endcirc_center = circle_dict[circle_ids[(i + 2) % len(circle_ids)]][0]
+                endcirc_r = (
+                    circle_dict[circle_ids[(i + 2) % len(circle_ids)]][1] * scale
+                )
+
+                def find_intersection(c1, r1, c2, r2):
+                    x1 = c1[0]
+                    x2 = c2[0]
+                    y1 = c1[1]
+                    y2 = c2[1]
+                    d = r1 + r2
+                    return ((x1 + (r1 * (x2 - x1)) / d), (y1 + (r1 * (y2 - y1)) / d))
+
+                start = to_svg_coords(startcirc_center)
+                target = to_svg_coords(targetcirc_center)
+                end = to_svg_coords(endcirc_center)
+                s_curve = find_intersection(start, startcirc_r, target, targetcirc_r)
+                e_curve = find_intersection(target, targetcirc_r, end, endcirc_r)
+
+                try:
+                    d_bet_se = sqrt(
+                        (s_curve[0] - e_curve[0]) ** 2 + (s_curve[1] - e_curve[1]) ** 2
+                    )
+
+                    if (
+                        abs((d_bet_se / 2) - targetcirc_r) < tolerance
+                    ):  # In case 3 circles are on the same line.
+                        dwg.add(
+                            dwg.line(
+                                start=s_curve,
+                                end=e_curve,
+                                stroke=curColor,
+                                stroke_width=loopWidth,
+                            )
+                        )
+                        continue
+                    r_curve = sqrt(
+                        ((d_bet_se / 2) ** 2 * targetcirc_r**2)
+                        / (targetcirc_r**2 - (d_bet_se / 2) ** 2)
+                    )
+
+                except ValueError:
+                    raise ValueError(
+                        f"Error finding the curve between start {s_curve} and end {e_curve} points. Half of the distance between them is {d_bet_se/2}, target circle radius is {targetcirc_r}."
+                    )
+                arc_path = svgwrite.path.Path(
+                    d=f"M {s_curve[0]},{s_curve[1]}",
+                    fill="none",
+                    stroke=curColor,
+                    stroke_width=loopWidth,
+                )
+
+                # Use the 'A' command for a circular arc
+                arc_path.push_arc(
+                    target=e_curve,  # End point of the arc
+                    rotation=0,  # No rotation
+                    r=r_curve,  # Radius of the arc
+                    large_arc=False,  # Large arc flag (False because we want a minor arc)
+                    angle_dir=(
+                        "+"
+                        if (s_curve[0] - e_curve[0]) * (target[1] - e_curve[1])
+                        - (s_curve[1] - e_curve[1]) * (target[0] - e_curve[0])
+                        > 0
+                        else "-"
+                    ),  # Sweep direction, use cross product to determine
+                    absolute=True,  # Absolute coordinates
+                )
+
+                dwg.add(arc_path)
+                # text = dwg.text(
+                #     str(-sequence[(i + 3) % len(sequence)]),
+                #     insert=start,
+                #     fill="red",
+                #     font_size="20px",
+                #     text_anchor="middle",
+                # )
+                # dwg.add(text)
+            j+=1
+            curColor = colors[j%len(colors)]
+
+    if mobidisc_data is not None:
+        print( mobidisc_data )
+        CNF_text = ""
+        clauses = []
+        for key in mobidisc_data:
+            clause = "("
+            regions = mobidisc_data[key]["regions"]
+            regions.sort()
+            for reg in regions:
+                clause += str(reg) + "\u2228"
+            clause = clause[:-1]+")"
+            CNF_text += clause
+            clauses.append( clause )
+        fnt = 0.3*scale
+        clauses.sort(key=len, reverse = True)
+        for i in range( len( clauses ) ):
+            add = clauses[i]
+            if i != 0:
+                add += " \u2227"
+            else:
+                add += "\u0020\u0020"
+            dwg.add(
+                dwg.text(
+                    add,
+                    insert=(width, height-fnt*(i+1)),
+                    fill="black",
+                    font_size= fnt,
+                    text_anchor="end",
+                )
+            )
+
+    dwg.save()
+    print(f"SVG saved to {filename}")

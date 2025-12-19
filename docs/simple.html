@@ -1,0 +1,369 @@
+<!DOCTYPE html><html>
+    <head><meta
+    charset="utf-8"><meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>LooPindex - simple multiloops</title>
+    <link rel="shortcut icon" href="webicon.svg"/>
+    <link rel="stylesheet" type="text/css" href="style.css">	
+    <script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'],['\(', '\)']]
+        }
+    };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    </head>
+
+    <body>
+    
+    <!--<div style="float: left"><a href = "PREV.html">Prev</a></div>
+	<div style="float: right"><a href = "NEXT.html">Next</a></div>
+	<div style="margin: 0 auto;  width: 200px;"><a href = "toc.html">Table of contents</a></div>
+    
+	<hr>-->
+	<h1>Simple multiloops with 12 or fewer regions</h1>
+
+	<p>65 multiloops total. By number of regions, the number of simple multiloops follows the sequence 1, 0, 1, 0, 4, 0, 10, 0, 49, 0, 336, 0, 3154... which has not yet been found on oeis.org.</p>
+
+    <div class="images">
+    
+    <div class="float">
+        <a href="multiloops/4^2_1.html" id="4^2_1" title="4^2_1"><img alt="4^2_1" src="multiloops/4^2_1/clean.svg" decoding="async"/>
+        <span>$4^{2}_{1}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/6^2_1.html" id="6^2_1" title="6^2_1"><img alt="6^2_1" src="multiloops/6^2_1/clean.svg" decoding="async"/>
+        <span>$6^{2}_{1}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/8^2_1.html" id="8^2_1" title="8^2_1"><img alt="8^2_1" src="multiloops/8^2_1/clean.svg" decoding="async"/>
+        <span>$8^{2}_{1}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/8^2_2.html" id="8^2_2" title="8^2_2"><img alt="8^2_2" src="multiloops/8^2_2/clean.svg" decoding="async"/>
+        <span>$8^{2}_{2}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/8^3_1.html" id="8^3_1" title="8^3_1"><img alt="8^3_1" src="multiloops/8^3_1/clean.svg" decoding="async"/>
+        <span>$8^{3}_{1}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/8^3_2.html" id="8^3_2" title="8^3_2"><img alt="8^3_2" src="multiloops/8^3_2/clean.svg" decoding="async"/>
+        <span>$8^{3}_{2}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^2_1.html" id="10^2_1" title="10^2_1"><img alt="10^2_1" src="multiloops/10^2_1/clean.svg" decoding="async"/>
+        <span>$10^{2}_{1}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^2_2.html" id="10^2_2" title="10^2_2"><img alt="10^2_2" src="multiloops/10^2_2/clean.svg" decoding="async"/>
+        <span>$10^{2}_{2}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^2_5.html" id="10^2_5" title="10^2_5"><img alt="10^2_5" src="multiloops/10^2_5/clean.svg" decoding="async"/>
+        <span>$10^{2}_{5}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^2_25.html" id="10^2_25" title="10^2_25"><img alt="10^2_25" src="multiloops/10^2_25/clean.svg" decoding="async"/>
+        <span>$10^{2}_{25}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^3_3.html" id="10^3_3" title="10^3_3"><img alt="10^3_3" src="multiloops/10^3_3/clean.svg" decoding="async"/>
+        <span>$10^{3}_{3}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^3_4.html" id="10^3_4" title="10^3_4"><img alt="10^3_4" src="multiloops/10^3_4/clean.svg" decoding="async"/>
+        <span>$10^{3}_{4}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^3_5.html" id="10^3_5" title="10^3_5"><img alt="10^3_5" src="multiloops/10^3_5/clean.svg" decoding="async"/>
+        <span>$10^{3}_{5}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^3_6.html" id="10^3_6" title="10^3_6"><img alt="10^3_6" src="multiloops/10^3_6/clean.svg" decoding="async"/>
+        <span>$10^{3}_{6}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^3_7.html" id="10^3_7" title="10^3_7"><img alt="10^3_7" src="multiloops/10^3_7/clean.svg" decoding="async"/>
+        <span>$10^{3}_{7}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/10^4_1.html" id="10^4_1" title="10^4_1"><img alt="10^4_1" src="multiloops/10^4_1/clean.svg" decoding="async"/>
+        <span>$10^{4}_{1}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_1.html" id="12^2_1" title="12^2_1"><img alt="12^2_1" src="multiloops/12^2_1/clean.svg" decoding="async"/>
+        <span>$12^{2}_{1}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_2.html" id="12^2_2" title="12^2_2"><img alt="12^2_2" src="multiloops/12^2_2/clean.svg" decoding="async"/>
+        <span>$12^{2}_{2}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_3.html" id="12^2_3" title="12^2_3"><img alt="12^2_3" src="multiloops/12^2_3/clean.svg" decoding="async"/>
+        <span>$12^{2}_{3}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_17.html" id="12^2_17" title="12^2_17"><img alt="12^2_17" src="multiloops/12^2_17/clean.svg" decoding="async"/>
+        <span>$12^{2}_{17}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_28.html" id="12^2_28" title="12^2_28"><img alt="12^2_28" src="multiloops/12^2_28/clean.svg" decoding="async"/>
+        <span>$12^{2}_{28}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_31.html" id="12^2_31" title="12^2_31"><img alt="12^2_31" src="multiloops/12^2_31/clean.svg" decoding="async"/>
+        <span>$12^{2}_{31}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_36.html" id="12^2_36" title="12^2_36"><img alt="12^2_36" src="multiloops/12^2_36/clean.svg" decoding="async"/>
+        <span>$12^{2}_{36}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_37.html" id="12^2_37" title="12^2_37"><img alt="12^2_37" src="multiloops/12^2_37/clean.svg" decoding="async"/>
+        <span>$12^{2}_{37}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_38.html" id="12^2_38" title="12^2_38"><img alt="12^2_38" src="multiloops/12^2_38/clean.svg" decoding="async"/>
+        <span>$12^{2}_{38}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_279.html" id="12^2_279" title="12^2_279"><img alt="12^2_279" src="multiloops/12^2_279/clean.svg" decoding="async"/>
+        <span>$12^{2}_{279}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_284.html" id="12^2_284" title="12^2_284"><img alt="12^2_284" src="multiloops/12^2_284/clean.svg" decoding="async"/>
+        <span>$12^{2}_{284}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_285.html" id="12^2_285" title="12^2_285"><img alt="12^2_285" src="multiloops/12^2_285/clean.svg" decoding="async"/>
+        <span>$12^{2}_{285}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^2_337.html" id="12^2_337" title="12^2_337"><img alt="12^2_337" src="multiloops/12^2_337/clean.svg" decoding="async"/>
+        <span>$12^{2}_{337}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_8.html" id="12^3_8" title="12^3_8"><img alt="12^3_8" src="multiloops/12^3_8/clean.svg" decoding="async"/>
+        <span>$12^{3}_{8}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_11.html" id="12^3_11" title="12^3_11"><img alt="12^3_11" src="multiloops/12^3_11/clean.svg" decoding="async"/>
+        <span>$12^{3}_{11}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_46.html" id="12^3_46" title="12^3_46"><img alt="12^3_46" src="multiloops/12^3_46/clean.svg" decoding="async"/>
+        <span>$12^{3}_{46}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_54.html" id="12^3_54" title="12^3_54"><img alt="12^3_54" src="multiloops/12^3_54/clean.svg" decoding="async"/>
+        <span>$12^{3}_{54}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_55.html" id="12^3_55" title="12^3_55"><img alt="12^3_55" src="multiloops/12^3_55/clean.svg" decoding="async"/>
+        <span>$12^{3}_{55}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_56.html" id="12^3_56" title="12^3_56"><img alt="12^3_56" src="multiloops/12^3_56/clean.svg" decoding="async"/>
+        <span>$12^{3}_{56}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_57.html" id="12^3_57" title="12^3_57"><img alt="12^3_57" src="multiloops/12^3_57/clean.svg" decoding="async"/>
+        <span>$12^{3}_{57}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_58.html" id="12^3_58" title="12^3_58"><img alt="12^3_58" src="multiloops/12^3_58/clean.svg" decoding="async"/>
+        <span>$12^{3}_{58}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_59.html" id="12^3_59" title="12^3_59"><img alt="12^3_59" src="multiloops/12^3_59/clean.svg" decoding="async"/>
+        <span>$12^{3}_{59}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_60.html" id="12^3_60" title="12^3_60"><img alt="12^3_60" src="multiloops/12^3_60/clean.svg" decoding="async"/>
+        <span>$12^{3}_{60}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_61.html" id="12^3_61" title="12^3_61"><img alt="12^3_61" src="multiloops/12^3_61/clean.svg" decoding="async"/>
+        <span>$12^{3}_{61}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_62.html" id="12^3_62" title="12^3_62"><img alt="12^3_62" src="multiloops/12^3_62/clean.svg" decoding="async"/>
+        <span>$12^{3}_{62}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_63.html" id="12^3_63" title="12^3_63"><img alt="12^3_63" src="multiloops/12^3_63/clean.svg" decoding="async"/>
+        <span>$12^{3}_{63}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_64.html" id="12^3_64" title="12^3_64"><img alt="12^3_64" src="multiloops/12^3_64/clean.svg" decoding="async"/>
+        <span>$12^{3}_{64}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_65.html" id="12^3_65" title="12^3_65"><img alt="12^3_65" src="multiloops/12^3_65/clean.svg" decoding="async"/>
+        <span>$12^{3}_{65}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_66.html" id="12^3_66" title="12^3_66"><img alt="12^3_66" src="multiloops/12^3_66/clean.svg" decoding="async"/>
+        <span>$12^{3}_{66}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_67.html" id="12^3_67" title="12^3_67"><img alt="12^3_67" src="multiloops/12^3_67/clean.svg" decoding="async"/>
+        <span>$12^{3}_{67}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_71.html" id="12^3_71" title="12^3_71"><img alt="12^3_71" src="multiloops/12^3_71/clean.svg" decoding="async"/>
+        <span>$12^{3}_{71}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_77.html" id="12^3_77" title="12^3_77"><img alt="12^3_77" src="multiloops/12^3_77/clean.svg" decoding="async"/>
+        <span>$12^{3}_{77}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_79.html" id="12^3_79" title="12^3_79"><img alt="12^3_79" src="multiloops/12^3_79/clean.svg" decoding="async"/>
+        <span>$12^{3}_{79}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_80.html" id="12^3_80" title="12^3_80"><img alt="12^3_80" src="multiloops/12^3_80/clean.svg" decoding="async"/>
+        <span>$12^{3}_{80}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_81.html" id="12^3_81" title="12^3_81"><img alt="12^3_81" src="multiloops/12^3_81/clean.svg" decoding="async"/>
+        <span>$12^{3}_{81}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_82.html" id="12^3_82" title="12^3_82"><img alt="12^3_82" src="multiloops/12^3_82/clean.svg" decoding="async"/>
+        <span>$12^{3}_{82}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_83.html" id="12^3_83" title="12^3_83"><img alt="12^3_83" src="multiloops/12^3_83/clean.svg" decoding="async"/>
+        <span>$12^{3}_{83}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_84.html" id="12^3_84" title="12^3_84"><img alt="12^3_84" src="multiloops/12^3_84/clean.svg" decoding="async"/>
+        <span>$12^{3}_{84}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^3_85.html" id="12^3_85" title="12^3_85"><img alt="12^3_85" src="multiloops/12^3_85/clean.svg" decoding="async"/>
+        <span>$12^{3}_{85}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^4_1.html" id="12^4_1" title="12^4_1"><img alt="12^4_1" src="multiloops/12^4_1/clean.svg" decoding="async"/>
+        <span>$12^{4}_{1}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^4_5.html" id="12^4_5" title="12^4_5"><img alt="12^4_5" src="multiloops/12^4_5/clean.svg" decoding="async"/>
+        <span>$12^{4}_{5}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^4_6.html" id="12^4_6" title="12^4_6"><img alt="12^4_6" src="multiloops/12^4_6/clean.svg" decoding="async"/>
+        <span>$12^{4}_{6}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^4_7.html" id="12^4_7" title="12^4_7"><img alt="12^4_7" src="multiloops/12^4_7/clean.svg" decoding="async"/>
+        <span>$12^{4}_{7}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^4_8.html" id="12^4_8" title="12^4_8"><img alt="12^4_8" src="multiloops/12^4_8/clean.svg" decoding="async"/>
+        <span>$12^{4}_{8}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^4_9.html" id="12^4_9" title="12^4_9"><img alt="12^4_9" src="multiloops/12^4_9/clean.svg" decoding="async"/>
+        <span>$12^{4}_{9}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^4_10.html" id="12^4_10" title="12^4_10"><img alt="12^4_10" src="multiloops/12^4_10/clean.svg" decoding="async"/>
+        <span>$12^{4}_{10}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^4_11.html" id="12^4_11" title="12^4_11"><img alt="12^4_11" src="multiloops/12^4_11/clean.svg" decoding="async"/>
+        <span>$12^{4}_{11}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^4_12.html" id="12^4_12" title="12^4_12"><img alt="12^4_12" src="multiloops/12^4_12/clean.svg" decoding="async"/>
+        <span>$12^{4}_{12}$</span></a>
+    </div>
+    
+    <div class="float">
+        <a href="multiloops/12^5_1.html" id="12^5_1" title="12^5_1"><img alt="12^5_1" src="multiloops/12^5_1/clean.svg" decoding="async"/>
+        <span>$12^{5}_{1}$</span></a>
+    </div>
+
+    </div>
+    <br>
+
+	<p><a href = "toc.html">Back to table of contents</a></p>
+
+    <!--<div style="float: left"><a href = "PREV.html">Prev</a></div>
+	<div style="float: right"><a href = "NEXT.html">Next</a></div>
+	<div style="margin: 0 auto;  width: 200px;"></div>-->
+    
+    </body>
+</html>
