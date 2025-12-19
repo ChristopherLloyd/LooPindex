@@ -27,9 +27,18 @@ fontsize = None
 # gadgets_around_graph_2.svg: 50
 # gadget_segments... :16
 # opts.svg, subopts.svg: 18 #and other snappy ones on the order of that example
+# opts_numeric.svg: 20
+# front_page_lattice: 16
 # tricky_subcase.svg: 50
 # milnordoodle.svg: 25
 # unicorn_annulus.svg: 35
+# dualbouquet_v2.svg: 12
+# torus1, torus2, torus3: 20
+# torus0: 30
+# torus_half: 30
+
+#simplepin figs
+# graph_reduction.svg: 12
 
 
 #print( filename, type( filename ) )
@@ -67,7 +76,7 @@ toWrite = re.sub( "\$\\\\backslash\$", "\\\\", toWrite ) #fix this annoying thin
 # all text must be on its own layer or this won't work. or maybe it will anyway idk
 
 
-fontsize = 18
+fontsize = 12
 if fontsize is not None:
     insert = "\\tikzstyle{{every node}}=[font=\\fontsize{{{}}}{{{}}}\\selectfont]".format( fontsize, fontsize )
 else:
